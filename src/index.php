@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -9,7 +11,27 @@
   <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700&display=swap">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script type="module">
+  // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
+ const firebaseConfig = {
+  apiKey: "AIzaSyAQszUApKHZ3lPrpc7HOINpdOWW3SgvUBM",
+  authDomain: "mannar-129a5.firebaseapp.com",
+  projectId: "mannar-129a5",
+  storageBucket: "mannar-129a5.firebasestorage.app",
+  messagingSenderId: "687710492532",
+  appId: "1:687710492532:web:c7b675da541271f8d83e21",
+  measurementId: "G-NXBLYJ5CXL"
+  };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+  </script>
 </head>
 <body>
 
@@ -52,48 +74,50 @@
   
   <div class="textbubble"> 
     <ul class="word-cloud" role="navigation" aria-label="Psychologie & Spiritualität Word Cloud">
-      <li><a href="#" data-weight="5">Achtsamkeit</a></li>
-      <li><a href="#" data-weight="8">Meditation</a></li>
-      <li><a href="#" data-weight="7">Selbstreflexion</a></li>
-      <li><a href="#" data-weight="9">Bewusstsein</a></li>
-      <li><a href="#" data-weight="4">Karma</a></li>
-      <li><a href="#" data-weight="6">Empathie</a></li>
-      <li><a href="#" data-weight="3">Resilienz</a></li>
-      <li><a href="#" data-weight="5">Loslassen</a></li>
-      <li><a href="#" data-weight="7">Ego</a></li>
-      <li><a href="#" data-weight="2">Intuition</a></li>
-      <li><a href="#" data-weight="6">Traumarbeit</a></li>
-      <li><a href="#" data-weight="4">Chakren</a></li>
-      <li><a href="#" data-weight="8">Seelenheil</a></li>
-      <li><a href="#" data-weight="5">Schwingung</a></li>
-      <li><a href="#" data-weight="9">Energiefluss</a></li>
-      <li><a href="#" data-weight="3">Erleuchtung</a></li>
-      <li><a href="#" data-weight="4">Schattenarbeit</a></li>
-      <li><a href="#" data-weight="7">Manifestation</a></li>
-      <li><a href="#" data-weight="2">Synchronicität</a></li>
-      <li><a href="#" data-weight="6">Innere Ruhe</a></li>
-      <li><a href="#" data-weight="3">Seelenreise</a></li>
-      <li><a href="#" data-weight="5">Selbstliebe</a></li>
-      <li><a href="#" data-weight="9">Spiritualität</a></li>
-      <li><a href="#" data-weight="4">Transzendenz</a></li>
-      <li><a href="#" data-weight="6">Metaphysik</a></li>
-      <li><a href="#" data-weight="8">Unterbewusstsein</a></li>
-      <li><a href="#" data-weight="2">Glaubenssätze</a></li>
-      <li><a href="#" data-weight="7">Inneres Kind</a></li>
-      <li><a href="#" data-weight="3">Dankbarkeit</a></li>
-      <li><a href="#" data-weight="5">Selbsterkenntnis</a></li>
-      <li><a href="#" data-weight="4">Harmonie</a></li>
-      <li><a href="#" data-weight="6">Lichtarbeit</a></li>
-      <li><a href="#" data-weight="8">Seelenverwandte</a></li>
-      <li><a href="#" data-weight="3">Vergebung</a></li>
-      <li><a href="#" data-weight="7">Transformation</a></li>
-      <li><a href="#" data-weight="9">Seinszustand</a></li>
-      <li><a href="#" data-weight="4">Frequenz</a></li>
-      <li><a href="#" data-weight="5">Universum</a></li>
-      <li><a href="#" data-weight="2">Luzides Träumen</a></li>
-    </ul>
+<li><a href="#" data-weight="5">Achtsamkeit</a></li>
+<li><a href="#" data-weight="8">Meditation</a></li>
+<li><a href="#" data-weight="7">Selbstreflexion</a></li>
+<li><a href="#" data-weight="9">Bewusstsein</a></li>
+<li><a href="#" data-weight="4">Karma</a></li>
+<li><a href="#" data-weight="6">Empathie</a></li>
+<li><a href="#" data-weight="3">Resilienz</a></li>
+<li><a href="#" data-weight="5">Loslassen</a></li>
+<li><a href="#" data-weight="7">Ego</a></li>
+<li><a href="#" data-weight="2">Intuition</a></li>
+<li><a href="#" data-weight="6">Traumarbeit</a></li>
+<li><a href="#" data-weight="4">Chakren</a></li>
+<li><a href="#" data-weight="8">Seelenheil</a></li>
+<li><a href="#" data-weight="5">Schwingung</a></li>
+<li><a href="#" data-weight="9">Energiefluss</a></li>
+<li><a href="#" data-weight="3">Erleuchtung</a></li>
+<li><a href="#" data-weight="4">Schattenarbeit</a></li>
+<li><a href="#" data-weight="7">Manifestation</a></li>
+<li><a href="#" data-weight="2">Synchronicität</a></li>
+<li><a href="#" data-weight="6">Innere Ruhe</a></li>
+<li><a href="#" data-weight="3">Seelenreise</a></li>
+<li><a href="#" data-weight="5">Selbstliebe</a></li>
+<li><a href="#" data-weight="9">Spiritualität</a></li>
+<li><a href="#" data-weight="4">Transzendenz</a></li>
+<li><a href="#" data-weight="6">Metaphysik</a></li>
+<li><a href="#" data-weight="8">Unterbewusstsein</a></li>
+<li><a href="#" data-weight="2">Glaubenssätze</a></li>
+<li><a href="#" data-weight="7">Inneres Kind</a></li>
+<li><a href="#" data-weight="3">Dankbarkeit</a></li>
+<li><a href="#" data-weight="5">Selbsterkenntnis</a></li>
+<li><a href="#" data-weight="4">Harmonie</a></li>
+<li><a href="#" data-weight="6">Lichtarbeit</a></li>
+<li><a href="#" data-weight="8">Seelenverwandte</a></li>
+<li><a href="#" data-weight="3">Vergebung</a></li>
+<li><a href="#" data-weight="7">Transformation</a></li>
+<li><a href="#" data-weight="9">Seinszustand</a></li>
+<li><a href="#" data-weight="4">Frequenz</a></li>
+<li><a href="#" data-weight="5">Universum</a></li>
+<li><a href="#" data-weight="2">Luzides Träumen</a></li>
+
+</ul>
   </div>
 </div>
+
 
 <!-- Portfolio section (placeholder) -->
 <div class="w3-content w3-container w3-padding-64" id="portfolio">
@@ -194,8 +218,7 @@
   </div>
   <p>&copy; 2025 Mannar | Peer und Genesungsbegleiter</p>
 </footer>
- 
 
-<script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
