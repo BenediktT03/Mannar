@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -11,27 +9,31 @@
   <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700&display=swap">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <script type="module">
-  // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+  <script type="module" src="https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js"></script>
+  <script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js';
+  import { getAuth } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js';
+  import { getFirestore } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js';
 
- const firebaseConfig = {
-  apiKey: "AIzaSyAQszUApKHZ3lPrpc7HOINpdOWW3SgvUBM",
-  authDomain: "mannar-129a5.firebaseapp.com",
-  projectId: "mannar-129a5",
-  storageBucket: "mannar-129a5.firebasestorage.app",
-  messagingSenderId: "687710492532",
-  appId: "1:687710492532:web:c7b675da541271f8d83e21",
-  measurementId: "G-NXBLYJ5CXL"
+  const firebaseConfig = {
+    apiKey: "AIzaSyAQszUApKHZ3lPrpc7HOINpdOWW3SgvUBM",
+    authDomain: "mannar-129a5.firebaseapp.com",
+    projectId: "mannar-129a5",
+    storageBucket: "mannar-129a5.appspot.com",
+    messagingSenderId: "687710492532",
+    appId: "1:687710492532:web:c7b675da541271f8d83e21"
   };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const storage = getStorage(app);
-  </script>
+  // Firebase initialisieren
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+</script>
+
+
+
 </head>
 <body>
 
@@ -62,7 +64,7 @@ import { getAnalytics } from "firebase/analytics";
 <!-- First section with Logo -->
 <div class="bgimg-1 w3-display-container" id="home">
   <div class="w3-display-middle" style="white-space:nowrap;">
-    <img src="./Bilder/IMG_4781.svg" alt="Mannar Logo" id="mainLogo">
+    <img src="./uploads/IMG_4781.svg" alt="Mannar Logo" id="mainLogo">
   </div>
 </div>
 

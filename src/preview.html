@@ -1,0 +1,199 @@
+
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Vorschau - Mannar</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+  <!-- Gleiche Styles wie in deiner Live-Seite/index.php -->
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css?family=Lato:400,700&display=swap">
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+  <!-- Firebase compat (genau wie live) -->
+  <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore-compat.js"></script>
+  
+<script src="./script-preview.js"></script>
+     
+</head>
+<body>
+
+<!-- Gleicher Seiten-Aufbau wie index.php -->
+<!-- Beispiel: Navbar -->
+<div class="w3-top">
+  <div class="w3-bar w3-white" id="myNavbar">
+    <!-- Deine Navbar-Links -->
+    <a href="#home" class="w3-bar-item w3-button">HOME</a>
+    <a href="#about" class="w3-bar-item w3-button w3-hide-small"><i class="fas fa-user"></i> ABOUT</a>
+    <a href="#portfolio" class="w3-bar-item w3-button w3-hide-small"><i class="fas fa-th"></i> PORTFOLIO</a>
+    <a href="#contact" class="w3-bar-item w3-button w3-hide-small"><i class="fas fa-envelope"></i> KONTAKT</a>
+    <!-- usw... -->
+  </div>
+</div>
+
+<!-- Hero-Bereich -->
+<div class="bgimg-1 w3-display-container" id="home">
+  <div class="w3-display-middle" style="white-space:nowrap;">
+    <img src="./uploads/IMG_4781.svg" alt="Mannar Logo" id="mainLogo" style="display:none;">
+  </div>
+</div>
+
+<!-- About-Sektion -->
+<div class="w3-content w3-container w3-padding-64" id="about">
+  <h2 id="aboutTitleDisplay" class="w3-center"></h2>
+  <p id="aboutSubtitleDisplay" class="w3-center"><em></em></p>
+  <p id="aboutText"></p>
+
+  <div class="textbubble">
+    <ul class="word-cloud" id="wordCloudList">
+      <!-- Wird dynamisch befüllt -->
+    </ul>
+  </div>
+</div>
+
+<!-- Portfolio-Sektion (Angebote) -->
+<div class="w3-content w3-container w3-padding-64" id="portfolio">
+  <h2 id="offeringsTitleDisplay" class="w3-center"></h2>
+  <p id="offeringsSubtitleDisplay" class="w3-center"><em></em></p>
+  
+  <!-- Drei Angebote / Cards, analog index.php -->
+  <div class="w3-row-padding">
+    <div class="w3-col m4 portfolio-item">
+      <div class="w3-card w3-round">
+        <img id="offer1ImageDisplay" src="/api/placeholder/400/300" alt="Angebot 1" style="width:100%">
+        <div class="w3-container">
+          <h3 id="offer1TitleDisplay"></h3>
+          <p id="offer1DescDisplay"></p>
+        </div>
+      </div>
+    </div>
+    <!-- Angebot 2 -->
+    <div class="w3-col m4 portfolio-item">
+      <div class="w3-card w3-round">
+        <img id="offer2ImageDisplay" src="/api/placeholder/400/300" alt="Angebot 2" style="width:100%">
+        <div class="w3-container">
+          <h3 id="offer2TitleDisplay"></h3>
+          <p id="offer2DescDisplay"></p>
+        </div>
+      </div>
+    </div>
+    <!-- Angebot 3 -->
+    <div class="w3-col m4 portfolio-item">
+      <div class="w3-card w3-round">
+        <img id="offer3ImageDisplay" src="/api/placeholder/400/300" alt="Angebot 3" style="width:100%">
+        <div class="w3-container">
+          <h3 id="offer3TitleDisplay"></h3>
+          <p id="offer3DescDisplay"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Kontakt-Sektion -->
+<div class="w3-content w3-container w3-padding-64" id="contact">
+  <h2 id="contactTitleDisplay" class="w3-center"></h2>
+  <p id="contactSubtitleDisplay" class="w3-center"></p>
+
+  <div class="w3-row w3-padding-32 w3-section">
+    <div class="w3-col m4 w3-container">
+      <img id="contactImageDisplay" src="/api/placeholder/400/300" class="w3-image w3-round" style="width:100%" alt="Kontaktbild">
+    </div>
+    <div class="w3-col m8 w3-panel">
+      <!-- Kontaktformular etc. -->
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer class="w3-center w3-black w3-padding-64 w3-opacity w3-hover-opacity-off">
+  <a href="#home" class="w3-button w3-light-grey">
+    <i class="fas fa-arrow-up w3-margin-right"></i>Nach oben
+  </a>
+  <div class="w3-xlarge w3-section social-icons">
+    <i class="fab fa-facebook w3-hover-opacity"></i>
+    <i class="fab fa-instagram w3-hover-opacity"></i>
+    <!-- usw. -->
+  </div>
+  <p>&copy; 2025 Mannar | Peer und Genesungsbegleiter</p>
+</footer>
+
+<script>
+if(!firebase.apps.length){
+  firebase.initializeApp({
+    apiKey: "AIzaSyAQszUApKHZ3lPrpc7HOINpdOWW3SgvUBM",
+  authDomain: "mannar-129a5.firebaseapp.com",
+  projectId: "mannar-129a5",
+  storageBucket: "mannar-129a5.firebasestorage.app",
+  messagingSenderId: "687710492532",
+  appId: "1:687710492532:web:c7b675da541271f8d83e21",
+  measurementId: "G-NXBLYJ5CXL"
+  });
+}
+const db = firebase.firestore();
+
+// Prüfen, ob ?draft=true
+const params = new URLSearchParams(window.location.search);
+const isDraft = (params.get('draft') === 'true');
+// docRef => draft oder main
+const docRef = db.collection("content").doc(isDraft ? "draft" : "main");
+
+docRef.get().then(snap => {
+  if(!snap.exists) return;
+  const data = snap.data() || {};
+
+  // About
+  if(data.aboutTitle) document.getElementById('aboutTitleDisplay').innerText = data.aboutTitle;
+  if(data.aboutSubtitle) document.getElementById('aboutSubtitleDisplay').innerText = data.aboutSubtitle;
+  if(data.aboutText) document.getElementById('aboutText').innerHTML = data.aboutText;
+
+  // Wortwolke
+  if(data.wordCloud && Array.isArray(data.wordCloud)){
+    const wc = document.getElementById('wordCloudList');
+    wc.innerHTML = "";
+    data.wordCloud.forEach(item => {
+      if(item && item.text){
+        const li = document.createElement('li');
+        const a  = document.createElement('a');
+        a.href = item.link || "#";
+        a.setAttribute('data-weight', item.weight || "5");
+        a.textContent = item.text;
+        li.appendChild(a);
+        wc.appendChild(li);
+      }
+    });
+  }
+
+  // Angebote
+  if(data.offeringsTitle) document.getElementById('offeringsTitleDisplay').innerText = data.offeringsTitle;
+  if(data.offeringsSubtitle) document.getElementById('offeringsSubtitleDisplay').innerText = data.offeringsSubtitle;
+
+  if(data.offer1Title)   document.getElementById('offer1TitleDisplay').innerText = data.offer1Title;
+  if(data.offer1Desc)    document.getElementById('offer1DescDisplay').innerHTML  = data.offer1Desc;
+  if(data.offer1_image)  document.getElementById('offer1ImageDisplay').src       = "./uploads/" + data.offer1_image;
+
+  if(data.offer2Title)   document.getElementById('offer2TitleDisplay').innerText = data.offer2Title;
+  if(data.offer2Desc)    document.getElementById('offer2DescDisplay').innerHTML  = data.offer2Desc;
+  if(data.offer2_image)  document.getElementById('offer2ImageDisplay').src       = "./uploads/" + data.offer2_image;
+
+  if(data.offer3Title)   document.getElementById('offer3TitleDisplay').innerText = data.offer3Title;
+  if(data.offer3Desc)    document.getElementById('offer3DescDisplay').innerHTML  = data.offer3Desc;
+  if(data.offer3_image)  document.getElementById('offer3ImageDisplay').src       = "./uploads/" + data.offer3_image;
+
+  // Kontakt
+  if(data.contactTitle)   document.getElementById('contactTitleDisplay').innerText = data.contactTitle;
+  if(data.contactSubtitle)document.getElementById('contactSubtitleDisplay').innerHTML = data.contactSubtitle;
+  if(data.contact_image)  document.getElementById('contactImageDisplay').src      = "./uploads/" + data.contact_image;
+
+  // usw. => Du kannst hier alle Felder befüllen, so wie in index.php
+});
+</script>
+</body>
+</html>
