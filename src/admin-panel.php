@@ -454,18 +454,11 @@
         <button id="addWordBtn" class="w3-button w3-blue w3-margin-top">
           <i class="fas fa-plus"></i> Add New Word
         </button>
-        
-        <div class="w3-panel w3-pale-blue w3-leftbar w3-border-blue w3-margin-top">
-          <p><i class="fas fa-info-circle"></i> <strong>Note:</strong> Word Cloud preview is disabled. Changes will only be visible on the published website.</p>
-        </div>
-      </div>
       
-      <div class="action-buttons">
-        <button id="saveWordCloudBtn" class="w3-button w3-green">
-          <i class="fas fa-save"></i> Save Word Cloud
-        </button>
-      </div>
-    </div>
+  <button id="saveWordCloudBtn" class="w3-button w3-green">
+    <i class="fas fa-save"></i> Save Word Cloud
+  </button>
+</div>
     
     <!-- Tab: Preview -->
     <div id="preview-tab" class="tab-content">
@@ -544,10 +537,7 @@
           </div>
         </div>
         
-        <div class="w3-panel w3-pale-blue w3-leftbar w3-border-blue w3-margin-top">
-          <p><i class="fas fa-info-circle"></i> <strong>Note:</strong> The color scheme applies to the entire website. Preview your changes before publishing.</p>
-        </div>
-      </div>
+       
       
       <div class="content-card">
         <h4>Typography</h4>

@@ -603,3 +603,98 @@ input[type="color"]::-webkit-color-swatch {
 #preview-tab.active {
   display: block !important;
 }
+
+/* Improved Word Cloud Admin Styling */
+#wordCloudContainer table {
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+#wordCloudContainer thead th {
+  background-color: var(--primary-color, #3498db);
+  color: white;
+  font-weight: 500;
+  padding: 12px 8px;
+}
+
+#wordCloudContainer .word-item td {
+  vertical-align: middle;
+  padding: 8px;
+}
+
+#wordCloudContainer .word-item:hover {
+  background-color: rgba(0,0,0,0.02);
+}
+
+#wordCloudContainer .draggable-handle {
+  color: #888;
+  padding: 8px;
+  text-align: center;
+  border-right: 1px solid #eee;
+}
+
+#wordCloudContainer .w3-input {
+  margin: 0;
+  border: 1px solid #ddd !important;
+}
+
+#wordCloudContainer .w3-input:focus {
+  border-color: var(--primary-color, #3498db) !important;
+  box-shadow: 0 0 0 2px rgba(33,150,243,0.1);
+}
+
+#wordCloudContainer .delete-word-btn {
+  padding: 4px 8px;
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  min-width: auto;
+}
+
+/* Word Cloud Live Preview */
+.word-cloud-preview {
+  background-color: #f8f9fa;
+  border-radius: var(--border-radius, 4px);
+  padding: 20px;
+  margin-top: 20px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.word-cloud-preview ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+}
+
+.word-cloud-preview li {
+  display: inline-block;
+  margin: 5px;
+}
+
+.word-cloud-preview a {
+  display: inline-block;
+  padding: 5px;
+  text-decoration: none;
+  transition: transform 0.3s ease;
+}
+
+.word-cloud-preview a:hover {
+  transform: scale(1.1);
+}
+
+/* Weight-based styling */
+.word-cloud-preview a[data-weight="1"] { font-size: 0.8em; color: #999; }
+.word-cloud-preview a[data-weight="2"] { font-size: 0.9em; color: #888; }
+.word-cloud-preview a[data-weight="3"] { font-size: 1em; color: #777; }
+.word-cloud-preview a[data-weight="4"] { font-size: 1.2em; color: #666; }
+.word-cloud-preview a[data-weight="5"] { font-size: 1.4em; color: #555; }
+.word-cloud-preview a[data-weight="6"] { font-size: 1.6em; color: #444; }
+.word-cloud-preview a[data-weight="7"] { font-size: 1.8em; color: #333; }
+.word-cloud-preview a[data-weight="8"] { font-size: 2em; color: #222; }
+.word-cloud-preview a[data-weight="9"] { font-size: 2.2em; color: #111; }

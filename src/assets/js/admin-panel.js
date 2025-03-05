@@ -497,42 +497,99 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     };
 
-    // Render wordcloud items
-    const renderWordCloudItems = () => {
-      if (!elements.wordCloudContainer) return;
-      
-      elements.wordCloudContainer.innerHTML = '';
-      
-      state.wordCloudData.forEach((word, index) => {
-        const wordItem = document.createElement('div');
-        wordItem.className = 'word-item';
-        wordItem.innerHTML = `
-          <span class="draggable-handle"><i class="fas fa-grip-lines"></i></span>
-          <input type="text" class="w3-input" value="${word.text || ''}" data-field="text" placeholder="Word" />
-          <input type="number" class="w3-input word-weight" value="${word.weight || 5}" data-field="weight" min="1" max="9" placeholder="Weight (1-9)" />
-          <input type="text" class="w3-input" value="${word.link || '#'}" data-field="link" placeholder="Link (optional)" />
-          <button class="w3-button w3-red w3-margin-left delete-word-btn">
-            <i class="fas fa-trash"></i>
-          </button>
-        `;
-        
-        // Event listeners for input changes
-        wordItem.querySelectorAll('input').forEach(input => {
-          input.addEventListener('change', () => {
-            const field = input.getAttribute('data-field');
-            const value = field === 'weight' ? parseInt(input.value) : input.value;
-            state.wordCloudData[index][field] = value;
-          });
-        });
-        
-        // Event listener for delete button
-        wordItem.querySelector('.delete-word-btn').addEventListener('click', () => {
-          state.wordCloudData.splice(index, 1);
-          renderWordCloudItems();
-        });
-        
-        elements.wordCloudContainer.appendChild(wordItem);
+  // Render wordcloud items
+const renderWordCloudItems = () => {
+  if (!elements.wordCloudContainer) return;
+  
+  elements.wordCloudContainer.innerHTML = '';
+  
+  if (state.wordCloudData.length === 0) {
+    elements.wordCloudContainer.innerHTML = `
+      <div class="w3-panel w3-pale-yellow w3-center">
+        <p>Keine Worte in der Wortwolke. Klicken Sie auf "Add New Word" um Worte hinzuzufügen.</p>
+      </div>
+    `;
+    return;
+  }
+  
+  // Create a table for better structure
+  const tableContainer = document.createElement('div');
+  tableContainer.className = 'w3-responsive';
+  
+  const table = document.createElement('table');
+  table.className = 'w3-table w3-bordered w3-striped';
+  
+  // Table header
+  const thead = document.createElement('thead');
+  thead.innerHTML = `
+    <tr class="w3-light-grey">
+      <th style="width:5%">Reihenfolge</th>
+      <th style="width:35%">Wort</th>
+      <th style="width:15%">Gewicht (1-9)</th>
+      <th style="width:35%">Link</th>
+      <th style="width:10%">Aktion</th>
+    </tr>
+  `;
+  table.appendChild(thead);
+  
+  // Table body
+  const tbody = document.createElement('tbody');
+  
+  state.wordCloudData.forEach((word, index) => {
+    const tr = document.createElement('tr');
+    tr.className = 'word-item';
+    
+    tr.innerHTML = `
+      <td class="draggable-handle" style="cursor:move">
+        <i class="fas fa-grip-lines"></i> ${index + 1}
+      </td>
+      <td>
+        <input type="text" class="w3-input w3-border" value="${word.text || ''}" data-field="text" placeholder="Wort eingeben">
+      </td>
+      <td>
+        <input type="number" class="w3-input w3-border" value="${word.weight || 5}" data-field="weight" min="1" max="9" placeholder="1-9">
+      </td>
+      <td>
+        <input type="text" class="w3-input w3-border" value="${word.link || '#'}" data-field="link" placeholder="Link (optional)">
+      </td>
+      <td class="w3-center">
+        <button class="w3-button w3-red w3-round delete-word-btn">
+          <i class="fas fa-trash"></i>
+        </button>
+      </td>
+    `;
+    
+    // Event listeners for input changes
+    tr.querySelectorAll('input').forEach(input => {
+      input.addEventListener('change', () => {
+        const field = input.getAttribute('data-field');
+        const value = field === 'weight' ? parseInt(input.value) : input.value;
+        state.wordCloudData[index][field] = value;
       });
+      
+      // Also listen for keyup events for more responsive updates
+      input.addEventListener('keyup', () => {
+        const field = input.getAttribute('data-field');
+        const value = field === 'weight' ? parseInt(input.value) : input.value;
+        state.wordCloudData[index][field] = value;
+      });
+    });
+    
+    // Event listener for delete button
+    tr.querySelector('.delete-word-btn').addEventListener('click', () => {
+      if (confirm('Sind Sie sicher, dass Sie dieses Wort löschen möchten?')) {
+        state.wordCloudData.splice(index, 1);
+        renderWordCloudItems();
+      }
+    });
+    
+    tbody.appendChild(tr);
+  });
+  
+  table.appendChild(tbody);
+  tableContainer.appendChild(table);
+  elements.wordCloudContainer.appendChild(tableContainer);
+};
       
       // Initialize drag-and-drop if the library is available
       if (typeof Sortable !== 'undefined') {
@@ -554,7 +611,7 @@ document.addEventListener('DOMContentLoaded', () => {
             state.wordCloudData = newWordData;
           }
         });
-      }
+      
     };
 
     // Add new word
@@ -566,48 +623,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Preview word cloud
-    if (elements.previewWordCloudBtn) {
-      elements.previewWordCloudBtn.addEventListener('click', () => {
-        // Open preview in a new tab
-        const previewWindow = window.open('', '_blank');
-        
-        // Generate preview HTML
-        const previewHTML = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <title>Word Cloud Preview</title>
-            <link rel="stylesheet" href="./assets/css/styles.css">
-            <style>
-              body { padding: 2rem; font-family: 'Lato', sans-serif; }
-              .preview-container { max-width: 800px; margin: 0 auto; }
-              .preview-title { text-align: center; margin-bottom: 2rem; }
-              .back-btn { position: fixed; top: 1rem; right: 1rem; padding: 0.5rem 1rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-            </style>
-          </head>
-          <body>
-            <button class="back-btn" onclick="window.close()">Close Preview</button>
-            <div class="preview-container">
-              <h1 class="preview-title">Word Cloud Preview</h1>
-              
-              <div class="textbubble">
-                <ul class="word-cloud" role="navigation" aria-label="Word Cloud">
-                  ${state.wordCloudData.map(word => `
-                    <li>
-                      <a href="${word.link || '#'}" data-weight="${word.weight || 5}">${word.text || 'Word'}</a>
-                    </li>
-                  `).join('')}
-                </ul>
-              </div>
-            </div>
-          </body>
-          </html>
-        `;
-        
-        previewWindow.document.write(previewHTML);
-        previewWindow.document.close();
-      });
-    }
+if (elements.previewWordCloudBtn) {
+  elements.previewWordCloudBtn.addEventListener('click', () => {
+    // Open preview in a new tab
+    const previewWindow = window.open('', '_blank');
+    
+    // Generate preview HTML
+    const previewHTML = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Word Cloud Preview</title>
+        <link rel="stylesheet" href="./assets/css/styles.css">
+        <style>
+          body { padding: 2rem; font-family: 'Lato', sans-serif; }
+          .preview-container { max-width: 800px; margin: 0 auto; }
+          .preview-title { text-align: center; margin-bottom: 2rem; }
+          .back-btn { position: fixed; top: 1rem; right: 1rem; padding: 0.5rem 1rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        </style>
+      </head>
+      <body>
+        <button class="back-btn" onclick="window.close()">Close Preview</button>
+        <div class="preview-container">
+          <h1 class="preview-title">Word Cloud Preview</h1>
+          
+          <div class="textbubble">
+            <ul class="word-cloud" role="navigation" aria-label="Word Cloud">
+              ${state.wordCloudData.map(word => `
+                <li>
+                  <a href="${word.link || '#'}" data-weight="${word.weight || 5}">${word.text || 'Word'}</a>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    previewWindow.document.write(previewHTML);
+    previewWindow.document.close();
+  });
+}
 
     // Save wordcloud
     if (elements.saveWordCloudBtn) {

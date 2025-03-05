@@ -151,15 +151,56 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Word Cloud preview is completely disabled as per requirements
       const wordCloudList = document.getElementById('wordCloudList');
-      if (wordCloudList) {
-        // Add disabled message
-        wordCloudList.innerHTML = `
-          <div class="w3-panel w3-pale-blue">
-            <p><i class="fas fa-info-circle"></i> Die Word Cloud Vorschau ist deaktiviert. 
-            Änderungen an der Word Cloud werden nur in der veröffentlichten Seite sichtbar.</p>
-          </div>
-        `;
-      }
+if (wordCloudList) {
+  // Load Word Cloud data from Firestore
+  db.collection("content").doc("wordCloud").get().then(doc => {
+    if (doc.exists && doc.data().words) {
+      wordCloudList.innerHTML = ''; // Clear the list
+      
+      const words = doc.data().words;
+      words.forEach(word => {
+        if (word && word.text) {
+          const li = document.createElement('li');
+          const a = document.createElement('a');
+          
+          a.href = word.link || "#";
+          a.setAttribute('data-weight', word.weight || "5");
+          a.textContent = word.text;
+          
+          // Initial style for animation
+          a.style.opacity = '0';
+          a.style.transform = 'translateY(20px)';
+          
+          li.appendChild(a);
+          wordCloudList.appendChild(li);
+        }
+      });
+      
+      // Animate the Word Cloud items
+      setTimeout(() => {
+        document.querySelectorAll('.word-cloud li a').forEach((word, index) => {
+          setTimeout(() => {
+            word.style.opacity = '1';
+            word.style.transform = 'translateY(0)';
+          }, 50 * index);
+        });
+      }, 300);
+    } else {
+      wordCloudList.innerHTML = `
+        <div class="w3-panel w3-pale-yellow">
+          <p><i class="fas fa-exclamation-triangle"></i> Keine Word Cloud Daten gefunden.</p>
+        </div>
+      `;
+    }
+  }).catch(error => {
+    console.error("Fehler beim Laden der Wortwolke:", error);
+    wordCloudList.innerHTML = `
+      <div class="w3-panel w3-pale-red">
+        <p><i class="fas fa-exclamation-circle"></i> Fehler beim Laden der Wortwolke: ${error.message}</p>
+      </div>
+    `;
+  });
+}
     }).catch(error => {
       console.error("Fehler beim Laden der Inhalte:", error);
       
@@ -180,4 +221,4 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
-});
+}); 
