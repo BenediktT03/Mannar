@@ -60,25 +60,24 @@
     
     <!-- Tabs for different sections -->
     <div class="tabs">
-      <button class="tab-btn" data-tab="dashboard">
-        <i class="fas fa-tachometer-alt"></i> Dashboard
-      </button>
-      <button class="tab-btn active" data-tab="content">
-        <i class="fas fa-edit"></i> Content
-      </button>
-      <button class="tab-btn" data-tab="pages">
-        <i class="fas fa-file-alt"></i> Pages
-      </button>
-      <button class="tab-btn" data-tab="wordcloud">
-        <i class="fas fa-cloud"></i> Word Cloud
-      </button>
-      <button class="tab-btn" data-tab="preview">
-        <i class="fas fa-eye"></i> Preview
-      </button>
-      <button class="tab-btn" data-tab="settings">
-        <i class="fas fa-cog"></i> Global Settings
-      </button>
-    </div>
+  <button class="tab-btn" data-tab="dashboard">
+    <i class="fas fa-tachometer-alt"></i> Dashboard
+  </button>
+  <!-- Content tab removed as requested -->
+  <button class="tab-btn active" data-tab="pages">
+    <i class="fas fa-file-alt"></i> Pages
+  </button>
+  <button class="tab-btn" data-tab="wordcloud">
+    <i class="fas fa-cloud"></i> Word Cloud
+  </button>
+  <button class="tab-btn" data-tab="preview">
+    <i class="fas fa-eye"></i> Preview
+  </button>
+  <button class="tab-btn" data-tab="settings">
+    <i class="fas fa-cog"></i> Global Settings
+  </button>
+</div>
+
     
     <!-- Tab: Dashboard -->
     <div id="dashboard-tab" class="tab-content">
@@ -252,185 +251,7 @@
       </div>
     </div>
     
-    <!-- Tab: Content -->
-    <div id="content-tab" class="tab-content active">
-      <!-- Section "About me" -->
-      <h3>About Me</h3>
-      <div class="w3-card w3-padding w3-margin-bottom content-card">
-        <label for="aboutTitle">Title:</label>
-        <input id="aboutTitle" type="text" class="w3-input w3-margin-bottom" />
-        <label for="aboutSubtitle">Subtitle:</label>
-        <input id="aboutSubtitle" type="text" class="w3-input w3-margin-bottom" />
-        <label for="aboutText">Description:</label>
-        <textarea id="aboutText" class="tinymce-editor w3-margin-bottom" rows="5"></textarea>
-      </div>
-
-      <!-- Section "Offerings/Portfolio" -->
-      <h3>My Offerings</h3>
-      <div class="w3-card w3-padding w3-margin-bottom content-card">
-        <label for="offeringsTitle">Section Title:</label>
-        <input id="offeringsTitle" type="text" class="w3-input w3-margin-bottom" />
-        <label for="offeringsSubtitle">Section Subtitle:</label>
-        <input id="offeringsSubtitle" type="text" class="w3-input w3-margin-bottom" />
-        
-        <div class="w3-row w3-margin-top">
-          <div class="w3-col m6">
-            <label>Title Font Size:</label>
-            <div class="w3-row">
-              <div class="w3-col s9">
-                <input type="range" id="offeringsTitleSize" min="1.5" max="3.5" step="0.1" value="2.5" class="w3-input" />
-              </div>
-              <div class="w3-col s3 w3-padding-small">
-                <span id="offeringsTitleSizeValue">2.5</span> em
-              </div>
-            </div>
-          </div>
-          <div class="w3-col m6">
-            <label>Subtitle Font Size:</label>
-            <div class="w3-row">
-              <div class="w3-col s9">
-                <input type="range" id="offeringsSubtitleSize" min="0.8" max="2" step="0.1" value="1.2" class="w3-input" />
-              </div>
-              <div class="w3-col s3 w3-padding-small">
-                <span id="offeringsSubtitleSizeValue">1.2</span> em
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Offering 1 -->
-      <div class="w3-card w3-padding w3-margin-bottom content-card">
-        <p><strong>Offering 1:</strong></p>
-        <label for="offer1Title">Title:</label>
-        <input id="offer1Title" type="text" class="w3-input w3-margin-bottom" />
-        <label for="offer1Desc">Description:</label>
-        <textarea id="offer1Desc" class="tinymce-editor w3-margin-bottom" rows="3"></textarea>
-        <label>Image for Offering 1:</label>
-        <div class="w3-row">
-          <div class="w3-col m9">
-            <div id="offer1ImagePreview" class="image-preview">
-              <img id="offer1Img" src="/api/placeholder/400/300" style="max-width: 100%; display: none;" />
-            </div>
-          </div>
-          <div class="w3-col m3 w3-padding-small">
-            <button id="offer1UploadBtn" class="w3-button w3-blue w3-block">
-              <i class="fas fa-upload"></i> Choose Image
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Offering 2 -->
-      <div class="w3-card w3-padding w3-margin-bottom content-card">
-        <p><strong>Offering 2:</strong></p>
-        <label for="offer2Title">Title:</label>
-        <input id="offer2Title" type="text" class="w3-input w3-margin-bottom" />
-        <label for="offer2Desc">Description:</label>
-        <textarea id="offer2Desc" class="tinymce-editor w3-margin-bottom" rows="3"></textarea>
-        <label>Image for Offering 2:</label>
-        <div class="w3-row">
-          <div class="w3-col m9">
-            <div id="offer2ImagePreview" class="image-preview">
-              <img id="offer2Img" src="/api/placeholder/400/300" style="max-width: 100%; display: none;" />
-            </div>
-          </div>
-          <div class="w3-col m3 w3-padding-small">
-            <button id="offer2UploadBtn" class="w3-button w3-blue w3-block">
-              <i class="fas fa-upload"></i> Choose Image
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Offering 3 -->
-      <div class="w3-card w3-padding w3-margin-bottom content-card">
-        <p><strong>Offering 3:</strong></p>
-        <label for="offer3Title">Title:</label>
-        <input id="offer3Title" type="text" class="w3-input w3-margin-bottom" />
-        <label for="offer3Desc">Description:</label>
-        <textarea id="offer3Desc" class="tinymce-editor w3-margin-bottom" rows="3"></textarea>
-        <label>Image for Offering 3:</label>
-        <div class="w3-row">
-          <div class="w3-col m9">
-            <div id="offer3ImagePreview" class="image-preview">
-              <img id="offer3Img" src="/api/placeholder/400/300" style="max-width: 100%; display: none;" />
-            </div>
-          </div>
-          <div class="w3-col m3 w3-padding-small">
-            <button id="offer3UploadBtn" class="w3-button w3-blue w3-block">
-              <i class="fas fa-upload"></i> Choose Image
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Section "Contact" -->
-      <h3>Contact</h3>
-      <div class="w3-card w3-padding w3-margin-bottom content-card">
-        <label for="contactTitle">Title:</label>
-        <input id="contactTitle" type="text" class="w3-input w3-margin-bottom" />
-        <label for="contactSubtitle">Subtitle/Note:</label>
-        <input id="contactSubtitle" type="text" class="w3-input w3-margin-bottom" />
-        <label>Image for Contact Area (e.g. Map):</label>
-        <div class="w3-row">
-          <div class="w3-col m9">
-            <div id="contactImagePreview" class="image-preview">
-              <img id="contactImg" src="/api/placeholder/400/300" style="max-width: 100%; display: none;" />
-            </div>
-          </div>
-          <div class="w3-col m3 w3-padding-small">
-            <button id="contactUploadBtn" class="w3-button w3-blue w3-block">
-              <i class="fas fa-upload"></i> Choose Image
-            </button>
-          </div>
-        </div>
-        
-        <div class="w3-row w3-margin-top">
-          <div class="w3-col m6">
-            <label>Title Font Size:</label>
-            <div class="w3-row">
-              <div class="w3-col s9">
-                <input type="range" id="contactTitleSize" min="1.5" max="3.5" step="0.1" value="2.5" class="w3-input" />
-              </div>
-              <div class="w3-col s3 w3-padding-small">
-                <span id="contactTitleSizeValue">2.5</span> em
-              </div>
-            </div>
-          </div>
-          <div class="w3-col m6">
-            <label>Subtitle Font Size:</label>
-            <div class="w3-row">
-              <div class="w3-col s9">
-                <input type="range" id="contactSubtitleSize" min="0.8" max="2" step="0.1" value="1.2" class="w3-input" />
-              </div>
-              <div class="w3-col s3 w3-padding-small">
-                <span id="contactSubtitleSizeValue">1.2</span> em
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Change Log Entry -->
-      <div class="w3-card w3-padding w3-margin-bottom content-card">
-        <div class="w3-panel w3-pale-blue">
-          <h4><i class="fas fa-history"></i> Change Log</h4>
-          <p>Enter a brief description of the changes you're making (optional):</p>
-          <textarea id="changeLogNotes" class="w3-input w3-border" placeholder="e.g., Updated about section, added new images, fixed typos"></textarea>
-        </div>
-      </div>
-
-      <!-- Save Button - Sticky at the bottom -->
-      <div class="action-buttons">
-        <button id="saveDraftBtn" class="w3-button w3-yellow w3-margin-right">
-          <i class="fas fa-save"></i> Save as Draft
-        </button>
-        <button id="publishBtn" class="w3-button w3-green">
-          <i class="fas fa-globe"></i> Publish
-        </button>
-      </div>
-    </div>
+    
     
     <!-- Tab: Pages -->
     <div id="pages-tab" class="tab-content">

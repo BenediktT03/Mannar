@@ -274,46 +274,103 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // TinyMCE Initialization with improved configuration
-    const initTinyMCE = (selector = '.tinymce-editor', inline = false) => {
-      // Remove any existing instances first for this selector
-      if (typeof tinymce !== 'undefined') {
-        tinymce.remove(selector);
-        
-        // Initialize with enhanced features
-        tinymce.init({
-          selector: selector,
-          height: inline ? 300 : 400,
-          menubar: !inline,
-          inline: inline,
-          plugins: [
-            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-            'insertdatetime', 'media', 'table', 'help', 'wordcount'
-          ],
-          toolbar: 'undo redo | formatselect | fontsizeselect | ' +
-            'bold italic backcolor forecolor | alignleft aligncenter ' +
-            'alignright alignjustify | bullist numlist outdent indent | ' +
-            'removeformat | link image | help',
-          content_style: 'body { font-family: "Lato", sans-serif; font-size: 16px; }',
-          font_size_formats: '8pt 10pt 12pt 14pt 16pt 18pt 20pt 24pt 36pt 48pt',
-          formats: {
-            alignleft: { selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li,table,img', classes: 'text-left' },
-            aligncenter: { selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li,table,img', classes: 'text-center' },
-            alignright: { selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li,table,img', classes: 'text-right' },
-            alignjustify: { selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li,table,img', classes: 'text-justify' }
-          },
-          setup: function(editor) {
-            editor.on('init', function() {
-              console.log('TinyMCE initialized for:', selector);
-            });
-            editor.on('change', function() {
-              state.isDirty = true;
-            });
-          }
+// TinyMCE Initialization with improved configuration
+const initTinyMCE = () => {
+  // Remove any existing instances first
+  if (typeof tinymce !== 'undefined') {
+    tinymce.remove();
+    
+    // Initialize regular editors (for longer content)
+    tinymce.init({
+      selector: '.tinymce-editor',
+      height: 300,
+      menubar: true,
+      plugins: [
+        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+        'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+        'insertdatetime', 'media', 'table', 'help', 'wordcount'
+      ],
+      toolbar: 'undo redo | formatselect | fontsizeselect | ' +
+        'bold italic backcolor forecolor | alignleft aligncenter ' +
+        'alignright alignjustify | bullist numlist outdent indent | ' +
+        'removeformat | link image | help',
+      content_style: 'body { font-family: "Lato", sans-serif; font-size: 16px; }',
+      font_size_formats: '8pt 10pt 12pt 14pt 16pt 18pt 20pt 24pt 36pt 48pt',
+      formats: {
+        alignleft: { selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li,table,img', classes: 'text-left' },
+        aligncenter: { selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li,table,img', classes: 'text-center' },
+        alignright: { selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li,table,img', classes: 'text-right' },
+        alignjustify: { selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li,table,img', classes: 'text-justify' }
+      },
+      setup: function(editor) {
+        editor.on('init', function() {
+          console.log('TinyMCE initialized for regular editor');
+        });
+        editor.on('change', function() {
+          state.isDirty = true;
         });
       }
-    };
+    });
+    
+    // Initialize for smaller title/subtitle fields
+    tinymce.init({
+      selector: '.tinymce-editor-small',
+      height: 100,
+      menubar: false,
+      inline: false,
+      plugins: [
+        'autolink', 'link', 'charmap', 'preview'
+      ],
+      toolbar: 'undo redo | fontsizeselect | ' +
+        'bold italic backcolor forecolor | alignleft aligncenter ' +
+        'alignright alignjustify',
+      content_style: 'body { font-family: "Lato", sans-serif; font-size: 16px; }',
+      font_size_formats: '10pt 12pt 14pt 16pt 18pt 20pt 24pt 36pt',
+      setup: function(editor) {
+        editor.on('init', function() {
+          console.log('TinyMCE initialized for small editor');
+        });
+        editor.on('change', function() {
+          state.isDirty = true;
+        });
+      }
+    });
+  }
+};
+
+// Add a helper function to convert between TinyMCE and regular text inputs
+function migrateToTinyMCE() {
+  // Get all title and subtitle fields that should be converted
+  const titleFields = document.querySelectorAll('input[id$="Title"], input[id$="Subtitle"]');
+  
+  // Convert each input to a textarea for TinyMCE
+  titleFields.forEach(input => {
+    // Create a new textarea
+    const textarea = document.createElement('textarea');
+    textarea.id = input.id;
+    textarea.className = 'tinymce-editor-small';
+    textarea.value = input.value;
+    
+    // Replace the input with the textarea
+    if (input.parentNode) {
+      input.parentNode.replaceChild(textarea, input);
+    }
+  });
+  
+  // Reinitialize TinyMCE to capture new fields
+  initTinyMCE();
+}
+
+// Call migrateToTinyMCE after initial content load
+document.addEventListener('DOMContentLoaded', function() {
+  // Wait for auth status and initial content load first
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      // Wait a moment for other initialization to complete
+      setTimeout(migrateToTinyMCE, 1500);
+    }
+  });
+});
 
     // Load content data with improved error handling
     const loadContentData = async (isDraft = true) => {
@@ -1093,4 +1150,95 @@ if (elements.previewWordCloudBtn) {
 
     // Call sortable initialization
     initSortable();
+}
+
+
+
+);
+
+// Enhanced preview functionality
+function refreshPreview() {
+  const previewFrame = document.getElementById('previewFrame');
+  if (!previewFrame) {
+    console.error("Preview frame not found");
+    return;
+  }
+  
+  // Get the preview type
+  const isDraft = Array.from(document.getElementsByName('previewType'))
+    .find(radio => radio.checked)?.value === 'draft';
+  
+  // Build the correct path with cache-busting parameter
+  const timestamp = Date.now(); // Cache busting
+  let previewPath = `./preview.html?draft=${isDraft ? 'true' : 'false'}&t=${timestamp}`;
+  
+  console.log(`Loading preview from: ${previewPath}`);
+  
+  // Update iframe source
+  previewFrame.src = previewPath;
+  
+  // Show loading indicator
+  const loadingIndicator = document.createElement('div');
+  loadingIndicator.id = 'preview-loading-indicator';
+  loadingIndicator.innerHTML = `
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+               background: rgba(255,255,255,0.9); padding: 20px; border-radius: 8px; 
+               box-shadow: 0 4px 8px rgba(0,0,0,0.1); z-index: 1000; text-align: center;">
+      <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #3498db;"></i>
+      <p>Loading preview...</p>
+    </div>
+  `;
+  
+  // Position the loading indicator over the iframe
+  const previewContainer = previewFrame.parentElement;
+  if (previewContainer) {
+    previewContainer.style.position = 'relative';
+    previewContainer.appendChild(loadingIndicator);
+    
+    // Remove loading indicator when iframe loads
+    previewFrame.onload = function() {
+      const indicator = document.getElementById('preview-loading-indicator');
+      if (indicator) {
+        indicator.remove();
+      }
+    };
+  }
+  
+  showStatus(`Preview refreshed (${isDraft ? 'Draft' : 'Live'} version)`);
+}
+
+// Set up preview controls
+function setupPreviewControls() {
+  // Preview refresh button
+  const refreshBtn = document.getElementById('refreshPreviewBtn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', refreshPreview);
+  }
+  
+  // Preview type radio buttons
+  const previewTypeRadios = document.getElementsByName('previewTypeRadios');
+  if (previewTypeRadios.length > 0) {
+    Array.from(previewTypeRadios).forEach(radio => {
+      radio.addEventListener('change', refreshPreview);
+    });
+  }
+  
+  // Ensure preview tab switch triggers refresh
+  const previewTabBtn = document.querySelector('.tab-btn[data-tab="preview"]');
+  if (previewTabBtn) {
+    previewTabBtn.addEventListener('click', function() {
+      // Wait a moment for the tab to become visible
+      setTimeout(refreshPreview, 300);
+    });
+  }
+}
+
+// Call setup on page load
+document.addEventListener('DOMContentLoaded', function() {
+  // Wait for auth status first
+  firebase.auth().onAuthStateChanged(user => {
+    if (user) {
+      setupPreviewControls();
+    }
+  });
 });
