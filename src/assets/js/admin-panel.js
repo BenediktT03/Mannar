@@ -1,4 +1,4 @@
-// admin-panel.js - Improved version with fixes for tab navigation, page editing and TinyMCE integration
+// admin-panel.js - Fixed version without duplicate variable declarations
 
 document.addEventListener('DOMContentLoaded', () => {
     // Firebase should already be initialized in the HTML
@@ -991,24 +991,6 @@ document.addEventListener('DOMContentLoaded', () => {
       // Add template preview CSS
       addTemplatePreviewCSS();
       
-      // DOM elements
-      const createPageBtn = document.getElementById('createPageBtn');
-      const newPageForm = document.getElementById('newPageForm');
-      const editPageForm = document.getElementById('editPageForm');
-      const pagesList = document.getElementById('pagesList');
-      const noPagesMessage = document.getElementById('noPagesMessage');
-      const pageName = document.getElementById('pageName');
-      const pageTitle = document.getElementById('pageTitle');
-      const pageTemplate = document.getElementById('pageTemplate');
-      const templatePreview = document.getElementById('templatePreview');
-      const cancelNewPageBtn = document.getElementById('cancelNewPageBtn');
-      const createNewPageBtn = document.getElementById('createNewPageBtn');
-      const templateFields = document.getElementById('templateFields');
-      const editPageTitle = document.getElementById('editPageTitle');
-      const backToListBtn = document.getElementById('backToListBtn');
-      const deletePageBtn = document.getElementById('deletePageBtn');
-      const savePageBtn = document.getElementById('savePageBtn');
-
       // Create a function to make sure the pages container is ready
       const ensurePageContainersExist = () => {
         const pagesTab = document.getElementById('pages-tab');
@@ -1033,9 +1015,6 @@ document.addEventListener('DOMContentLoaded', () => {
             </button>
           `;
           pagesListContainer.appendChild(createBtnContainer);
-          
-          // Update the reference
-          createPageBtn = document.getElementById('createPageBtn');
         }
         
         // Ensure the newPageForm exists
@@ -1079,15 +1058,6 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
           `;
           pagesTab.appendChild(pageFormContainer);
-          
-          // Update references
-          newPageForm = document.getElementById('newPageForm');
-          pageName = document.getElementById('pageName');
-          pageTitle = document.getElementById('pageTitle');
-          pageTemplate = document.getElementById('pageTemplate');
-          templatePreview = document.getElementById('templatePreview');
-          cancelNewPageBtn = document.getElementById('cancelNewPageBtn');
-          createNewPageBtn = document.getElementById('createNewPageBtn');
         }
         
         // Ensure the editPageForm exists
@@ -1115,14 +1085,6 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
           `;
           pagesTab.appendChild(editFormContainer);
-          
-          // Update references
-          editPageForm = document.getElementById('editPageForm');
-          editPageTitle = document.getElementById('editPageTitle');
-          templateFields = document.getElementById('templateFields');
-          backToListBtn = document.getElementById('backToListBtn');
-          deletePageBtn = document.getElementById('deletePageBtn');
-          savePageBtn = document.getElementById('savePageBtn');
         }
         
         // Ensure the pages list exists
@@ -1155,9 +1117,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       
-      // Re-get elements after ensuring they exist
-      const pagesTab = document.getElementById('pages-tab');
-      const pagesListContainer = document.getElementById('pagesListContainer');
+      // Add event listeners to buttons
       const createPageBtn = document.getElementById('createPageBtn');
       const newPageForm = document.getElementById('newPageForm');
       const editPageForm = document.getElementById('editPageForm');
@@ -1179,7 +1139,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (newPageForm) {
             newPageForm.style.display = 'block';
           }
-          if (pagesListContainer) {
+          if (document.getElementById('pagesListContainer')) {
             document.querySelectorAll('#pagesListContainer > div:not(#newPageForm):not(#editPageForm)').forEach(el => {
               el.style.display = 'none';
             });
@@ -1205,7 +1165,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (newPageForm) {
             newPageForm.style.display = 'none';
           }
-          if (pagesListContainer) {
+          if (document.getElementById('pagesListContainer')) {
             document.querySelectorAll('#pagesListContainer > div:not(#newPageForm):not(#editPageForm)').forEach(el => {
               el.style.display = 'block';
             });
