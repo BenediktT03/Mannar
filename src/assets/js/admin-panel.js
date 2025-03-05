@@ -763,7 +763,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Debug: Seiten neu laden geklickt");
         manualReloadPages();
       };
-      
+
       const pagesTab = document.getElementById('pages-tab');
       if (pagesTab) {
         pagesTab.insertBefore(debugButton, pagesTab.firstChild);
@@ -824,16 +824,37 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Manuelle Funktion zum Neuladen der Seiten
-    const manualReloadPages = () => {
-      showStatus("Lade Seiten neu...");
-      
-      const pagesList = document.getElementById('pagesList');
-      const noPagesMessage = document.getElementById('noPagesMessage');
-      
-      if (!pagesList) {
-        console.error("pagesList Element nicht gefunden!");
-        return;
-      }
+    // Code für die manualReloadPages-Funktion anpassen
+const manualReloadPages = () => {
+  showStatus("Lade Seiten neu...");
+  
+  const pagesList = document.getElementById('pagesList');
+  if (!pagesList) {
+    console.error("pagesList Element nicht gefunden!");
+    // Element erstellen, falls es nicht existiert
+    const container = document.getElementById('pagesListContainer');
+    if (container) {
+      const newPagesList = document.createElement('div');
+      newPagesList.id = 'pagesList';
+      newPagesList.className = 'w3-container';
+      container.appendChild(newPagesList);
+      pagesList = newPagesList;
+    } else {
+      return; // Kann nicht fortfahren ohne Container
+    }
+  }
+  
+  // Repariere fehlende Nachricht
+  let noPagesMessage = document.getElementById('noPagesMessage');
+  if (!noPagesMessage) {
+    noPagesMessage = document.createElement('p');
+    noPagesMessage.id = 'noPagesMessage';
+    noPagesMessage.className = 'w3-text-grey';
+    noPagesMessage.textContent = 'Noch keine Seiten erstellt.';
+    pagesList.appendChild(noPagesMessage);
+  }
+  
+  // Rest des Codes...
       
       // Liste leeren und Nachricht anzeigen
       pagesList.innerHTML = '<p class="w3-center"><i class="fas fa-spinner fa-spin"></i> Lade Seiten...</p>';
@@ -2012,3 +2033,64 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 });
+
+function forceShow(elementId) {
+  const element = document.getElementById(elementId);
+  if (element) {
+    // Altes Style-Element entfernen, falls vorhanden
+    const oldStyle = document.getElementById('force-show-style');
+    if (oldStyle) oldStyle.remove();
+    
+    // Neues Style-Element erstellen
+    const style = document.createElement('style');
+    style.id = 'force-show-style';
+    style.innerHTML = `
+      #${elementId} {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: static !important;
+        height: auto !important;
+        width: auto !important;
+        overflow: visible !important;
+        margin: 20px !important;
+        border: 3px solid red !important;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Zusätzlich direkte Stiländerungen
+    element.style.display = 'block';
+    element.style.visibility = 'visible';
+    
+    console.log(`Elemente mit ID ${elementId} sollte jetzt sichtbar sein`);
+  } else {
+    console.error(`Element mit ID ${elementId} nicht gefunden`);
+  }
+}
+
+// Beide Container erzwingen
+forceShow('pagesListContainer');
+forceShow('pagesList');
+
+// Überprüfen, ob das Tab aktiv ist
+const pagesTab = document.getElementById('pages-tab');
+if (pagesTab) {
+  // Alle Tabs deaktivieren
+  document.querySelectorAll('.tab-content').forEach(tab => {
+    tab.style.display = 'none';
+    tab.classList.remove('active');
+  });
+  
+  // Seiten-Tab aktivieren
+  pagesTab.style.display = 'block';
+  pagesTab.classList.add('active');
+  
+  // Tab-Buttons aktualisieren
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  document.querySelector('.tab-btn[data-tab="pages"]').classList.add('active');
+  
+  console.log("Pages-Tab wurde aktiviert");
+}
