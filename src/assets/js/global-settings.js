@@ -468,20 +468,20 @@ const GlobalSettings = (function() {
   }
 
   // Open settings preview in a new tab
-  function openSettingsPreview() {
-    // Generate a style tag with the current settings
-    const css = generateCSS();
-    
-    // Create a temporary element to hold our style tag
-    const temp = document.createElement('div');
-    temp.innerHTML = css;
-    
-    // Store the CSS in local storage (limited to current session)
-    sessionStorage.setItem('previewCSS', css);
-    
-    // Open preview page in a new tab
-    window.open('preview.html?css=preview', '_blank');
-  }
+ function openSettingsPreview() {
+  // Generate a style tag with the current settings
+  const css = generateCSS();
+  
+  // Create a temporary element to hold our style tag
+  const temp = document.createElement('div');
+  temp.innerHTML = css;
+  
+  // Store the CSS in local storage (limited to current session)
+  sessionStorage.setItem('previewCSS', css);
+  
+  // Open preview page in a new tab - explicitly use draft mode
+  window.open('preview.html?draft=true', '_blank');
+}
 
   // Generate CSS from current settings
   function generateCSS() {

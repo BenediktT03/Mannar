@@ -12,13 +12,15 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Clearly indicate if we are viewing draft or live content
   if (isDraft) {
-    previewMode.textContent = 'Entwurf - Nicht veröffentlicht';
+    previewMode.textContent = 'ENTWURF - Aktuelle Bearbeitung (Nicht veröffentlicht)';
+    previewMode.style.fontWeight = 'bold';
     previewIndicator.classList.remove('live');
-    previewIndicator.classList.add('draft');
+    previewIndicator.style.backgroundColor = '#ff9800';
   } else {
-    previewMode.textContent = 'Live-Website';
-    previewIndicator.classList.remove('draft');
+    previewMode.textContent = 'LIVE-Website (Veröffentlichte Version)';
+    previewMode.style.fontWeight = 'bold';
     previewIndicator.classList.add('live');
+    previewIndicator.style.backgroundColor = '#4CAF50';
   }
   
   // DOM-Elemente
@@ -133,13 +135,6 @@ document.addEventListener('DOMContentLoaded', function() {
             img.alt = data.contact_image.alt || 'Kontakt';
           }
         }
-        
-        // Apply custom styles if present
-        if (data.customCSS) {
-          const styleEl = document.createElement('style');
-          styleEl.textContent = data.customCSS;
-          document.head.appendChild(styleEl);
-        }
       } else {
         console.log("Keine Inhalte gefunden");
         
@@ -154,10 +149,10 @@ document.addEventListener('DOMContentLoaded', function() {
         contentContainer.prepend(errorElement);
       }
       
-      // Handle WordCloud (disabled as per requirements)
+      // Word Cloud preview is completely disabled as per requirements
       const wordCloudList = document.getElementById('wordCloudList');
       if (wordCloudList) {
-        // Adding placeholder for word cloud instead of actual content
+        // Add disabled message
         wordCloudList.innerHTML = `
           <div class="w3-panel w3-pale-blue">
             <p><i class="fas fa-info-circle"></i> Die Word Cloud Vorschau ist deaktiviert. 

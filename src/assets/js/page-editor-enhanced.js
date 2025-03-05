@@ -2724,7 +2724,543 @@ const PageEditor = (function() {
         showStatus('Error deleting page: ' + error.message, true);
       });
   }
+// Add homepage handling functionality
+let isEditingHomepage = false;
 
+// Special function to handle editing of index.php content
+function openHomepageEditor() {
+  if (!db) {
+    showStatus('Firebase not available', true);
+    return;
+  }
+
+  isEditingHomepage = true;
+  
+  // Show loading status
+  showStatus('Loading homepage content...', false, 0);
+  
+  // Load content from the "main" document in the "content" collection
+  db.collection('content').doc(isDraft ? 'draft' : 'main').get()
+    .then(doc => {
+      if (!doc.exists) {
+        showStatus('Homepage content not found', true);
+        return;
+      }
+      
+      // Get content data
+      const contentData = doc.data();
+      
+      // Set current editing page to a special value
+      currentEditingPage = 'homepage';
+      
+      // Hide welcome message and show editor
+      if (elements.pageWelcomeContainer) elements.pageWelcomeContainer.style.display = 'none';
+      if (elements.pageEditorContainer) elements.pageEditorContainer.style.display = 'block';
+      
+      // Set editor title
+      if (elements.editorPageTitle) {
+        elements.editorPageTitle.textContent = 'Editing: Homepage (index.php)';
+      }
+      
+      // Set form values
+      if (elements.pageId) elements.pageId.value = 'homepage';
+      if (elements.pageTitle) elements.pageTitle.value = 'Homepage';
+      if (elements.templateSelector) {
+        // Disable template selector for homepage
+        elements.templateSelector.value = 'homepage';
+        elements.templateSelector.disabled = true;
+      }
+      
+      // Generate homepage fields
+      generateHomepageFields(contentData);
+      
+      // Reset dirty flag
+      isDirty = false;
+      
+      showStatus('Homepage content loaded', false, 2000);
+    })
+    .catch(error => {
+      console.error('Error loading homepage content:', error);
+      showStatus('Error loading homepage content: ' + error.message, true);
+    });
+}
+
+// Generate fields for homepage content
+function generateHomepageFields(contentData) {
+  if (!elements.templateFields) return;
+  
+  // Clear template fields
+  elements.templateFields.innerHTML = '';
+  
+  // Create sections container
+  const sectionsContainer = document.createElement('div');
+  sectionsContainer.className = 'homepage-sections';
+  
+  // About Section
+  const aboutSection = document.createElement('div');
+  aboutSection.className = 'section-card w3-margin-bottom';
+  aboutSection.innerHTML = `
+    <div class="w3-container w3-blue">
+      <h4>About Section</h4>
+    </div>
+    <div class="w3-container w3-padding">
+      <div class="w3-margin-bottom">
+        <label><strong>Title:</strong></label>
+        <input id="homepage_aboutTitle" class="w3-input w3-border" type="text" value="${contentData.aboutTitle || ''}">
+      </div>
+      <div class="w3-margin-bottom">
+        <label><strong>Subtitle:</strong></label>
+        <input id="homepage_aboutSubtitle" class="w3-input w3-border" type="text" value="${contentData.aboutSubtitle || ''}">
+      </div>
+      <div class="w3-margin-bottom">
+        <label><strong>Content:</strong></label>
+        <textarea id="homepage_aboutText" class="tinymce-editor">${contentData.aboutText || ''}</textarea>
+      </div>
+    </div>
+  `;
+  
+  // Offerings Section
+  const offeringsSection = document.createElement('div');
+  offeringsSection.className = 'section-card w3-margin-bottom';
+  offeringsSection.innerHTML = `
+    <div class="w3-container w3-blue">
+      <h4>Offerings Section</h4>
+    </div>
+    <div class="w3-container w3-padding">
+      <div class="w3-margin-bottom">
+        <label><strong>Section Title:</strong></label>
+        <input id="homepage_offeringsTitle" class="w3-input w3-border" type="text" value="${contentData.offeringsTitle || ''}">
+      </div>
+      <div class="w3-margin-bottom">
+        <label><strong>Section Subtitle:</strong></label>
+        <input id="homepage_offeringsSubtitle" class="w3-input w3-border" type="text" value="${contentData.offeringsSubtitle || ''}">
+      </div>
+    </div>
+  `;
+  
+  // Offering 1
+  const offering1Section = document.createElement('div');
+  offering1Section.className = 'section-card w3-margin-bottom';
+  offering1Section.innerHTML = `
+    <div class="w3-container w3-green">
+      <h4>Offering 1</h4>
+    </div>
+    <div class="w3-container w3-padding">
+      <div class="w3-margin-bottom">
+        <label><strong>Title:</strong></label>
+        <input id="homepage_offer1Title" class="w3-input w3-border" type="text" value="${contentData.offer1Title || ''}">
+      </div>
+      <div class="w3-margin-bottom">
+        <label><strong>Description:</strong></label>
+        <textarea id="homepage_offer1Desc" class="tinymce-editor">${contentData.offer1Desc || ''}</textarea>
+      </div>
+      <div class="w3-margin-bottom">
+        <label><strong>Image:</strong></label>
+        <div class="w3-row">
+          <div class="w3-col m9">
+            <div class="image-preview">
+              <img id="homepage_offer1Img" src="${contentData.offer1_image?.url || '/api/placeholder/400/300'}" style="max-width: 100%; ${contentData.offer1_image?.url ? '' : 'display:none;'}">
+            </div>
+          </div>
+          <div class="w3-col m3 w3-padding-small">
+            <button id="homepage_offer1UploadBtn" class="w3-button w3-blue w3-block">
+              <i class="fas fa-upload"></i> Choose Image
+            </button>
+            <input type="hidden" id="homepage_offer1_image_data" value='${JSON.stringify(contentData.offer1_image || { url: "", public_id: "" })}'>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Offering 2
+  const offering2Section = document.createElement('div');
+  offering2Section.className = 'section-card w3-margin-bottom';
+  offering2Section.innerHTML = `
+    <div class="w3-container w3-green">
+      <h4>Offering 2</h4>
+    </div>
+    <div class="w3-container w3-padding">
+      <div class="w3-margin-bottom">
+        <label><strong>Title:</strong></label>
+        <input id="homepage_offer2Title" class="w3-input w3-border" type="text" value="${contentData.offer2Title || ''}">
+      </div>
+      <div class="w3-margin-bottom">
+        <label><strong>Description:</strong></label>
+        <textarea id="homepage_offer2Desc" class="tinymce-editor">${contentData.offer2Desc || ''}</textarea>
+      </div>
+      <div class="w3-margin-bottom">
+        <label><strong>Image:</strong></label>
+        <div class="w3-row">
+          <div class="w3-col m9">
+            <div class="image-preview">
+              <img id="homepage_offer2Img" src="${contentData.offer2_image?.url || '/api/placeholder/400/300'}" style="max-width: 100%; ${contentData.offer2_image?.url ? '' : 'display:none;'}">
+            </div>
+          </div>
+          <div class="w3-col m3 w3-padding-small">
+            <button id="homepage_offer2UploadBtn" class="w3-button w3-blue w3-block">
+              <i class="fas fa-upload"></i> Choose Image
+            </button>
+            <input type="hidden" id="homepage_offer2_image_data" value='${JSON.stringify(contentData.offer2_image || { url: "", public_id: "" })}'>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Offering 3
+  const offering3Section = document.createElement('div');
+  offering3Section.className = 'section-card w3-margin-bottom';
+  offering3Section.innerHTML = `
+    <div class="w3-container w3-green">
+      <h4>Offering 3</h4>
+    </div>
+    <div class="w3-container w3-padding">
+      <div class="w3-margin-bottom">
+        <label><strong>Title:</strong></label>
+        <input id="homepage_offer3Title" class="w3-input w3-border" type="text" value="${contentData.offer3Title || ''}">
+      </div>
+      <div class="w3-margin-bottom">
+        <label><strong>Description:</strong></label>
+        <textarea id="homepage_offer3Desc" class="tinymce-editor">${contentData.offer3Desc || ''}</textarea>
+      </div>
+      <div class="w3-margin-bottom">
+        <label><strong>Image:</strong></label>
+        <div class="w3-row">
+          <div class="w3-col m9">
+            <div class="image-preview">
+              <img id="homepage_offer3Img" src="${contentData.offer3_image?.url || '/api/placeholder/400/300'}" style="max-width: 100%; ${contentData.offer3_image?.url ? '' : 'display:none;'}">
+            </div>
+          </div>
+          <div class="w3-col m3 w3-padding-small">
+            <button id="homepage_offer3UploadBtn" class="w3-button w3-blue w3-block">
+              <i class="fas fa-upload"></i> Choose Image
+            </button>
+            <input type="hidden" id="homepage_offer3_image_data" value='${JSON.stringify(contentData.offer3_image || { url: "", public_id: "" })}'>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Contact Section
+  const contactSection = document.createElement('div');
+  contactSection.className = 'section-card w3-margin-bottom';
+  contactSection.innerHTML = `
+    <div class="w3-container w3-blue">
+      <h4>Contact Section</h4>
+    </div>
+    <div class="w3-container w3-padding">
+      <div class="w3-margin-bottom">
+        <label><strong>Title:</strong></label>
+        <input id="homepage_contactTitle" class="w3-input w3-border" type="text" value="${contentData.contactTitle || ''}">
+      </div>
+      <div class="w3-margin-bottom">
+        <label><strong>Subtitle:</strong></label>
+        <input id="homepage_contactSubtitle" class="w3-input w3-border" type="text" value="${contentData.contactSubtitle || ''}">
+      </div>
+      <div class="w3-margin-bottom">
+        <label><strong>Image:</strong></label>
+        <div class="w3-row">
+          <div class="w3-col m9">
+            <div class="image-preview">
+              <img id="homepage_contactImg" src="${contentData.contact_image?.url || '/api/placeholder/400/300'}" style="max-width: 100%; ${contentData.contact_image?.url ? '' : 'display:none;'}">
+            </div>
+          </div>
+          <div class="w3-col m3 w3-padding-small">
+            <button id="homepage_contactUploadBtn" class="w3-button w3-blue w3-block">
+              <i class="fas fa-upload"></i> Choose Image
+            </button>
+            <input type="hidden" id="homepage_contact_image_data" value='${JSON.stringify(contentData.contact_image || { url: "", public_id: "" })}'>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Add all sections to container
+  sectionsContainer.appendChild(aboutSection);
+  sectionsContainer.appendChild(offeringsSection);
+  sectionsContainer.appendChild(offering1Section);
+  sectionsContainer.appendChild(offering2Section);
+  sectionsContainer.appendChild(offering3Section);
+  sectionsContainer.appendChild(contactSection);
+  
+  elements.templateFields.appendChild(sectionsContainer);
+  
+  // Set up image upload handlers
+  setupHomepageImageUploads();
+  
+  // Initialize TinyMCE
+  initializeTinyMCE();
+}
+
+// Setup image upload handlers for homepage fields
+function setupHomepageImageUploads() {
+  setupHomepageImageUpload('offer1');
+  setupHomepageImageUpload('offer2');
+  setupHomepageImageUpload('offer3');
+  setupHomepageImageUpload('contact');
+}
+
+// Setup individual image upload
+function setupHomepageImageUpload(section) {
+  const uploadBtn = document.getElementById(`homepage_${section}UploadBtn`);
+  if (!uploadBtn) return;
+  
+  uploadBtn.addEventListener('click', function() {
+    // Create file input
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.style.display = 'none';
+    document.body.appendChild(fileInput);
+    
+    fileInput.addEventListener('change', async function() {
+      if (fileInput.files && fileInput.files.length > 0) {
+        // Show loading state
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+        uploadBtn.disabled = true;
+        
+        // Create form data
+        const formData = new FormData();
+        formData.append('image', fileInput.files[0]);
+        
+        try {
+          // Upload image
+          const response = await fetch('./api/upload.php', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const data = await response.json();
+          
+          if (data.success) {
+            // Update hidden input
+            const hiddenInput = document.getElementById(`homepage_${section}_image_data`);
+            if (hiddenInput) {
+              hiddenInput.value = JSON.stringify({
+                url: data.url,
+                public_id: data.filename
+              });
+            }
+            
+            // Update preview
+            const previewImg = document.getElementById(`homepage_${section}Img`);
+            if (previewImg) {
+              previewImg.src = data.url;
+              previewImg.style.display = 'block';
+            }
+            
+            // Reset button
+            uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Choose Image';
+            uploadBtn.disabled = false;
+            
+            // Mark as dirty
+            isDirty = true;
+            
+            showStatus('Image uploaded successfully');
+          } else {
+            console.error('Upload error:', data.error);
+            showStatus('Error uploading image: ' + data.error, true);
+            
+            // Reset button
+            uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Choose Image';
+            uploadBtn.disabled = false;
+          }
+        } catch (error) {
+          console.error('Upload error:', error);
+          showStatus('Error uploading image', true);
+          
+          // Reset button
+          uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Choose Image';
+          uploadBtn.disabled = false;
+        }
+        
+        // Remove file input
+        document.body.removeChild(fileInput);
+      }
+    });
+    
+    // Open file dialog
+    fileInput.click();
+  });
+}
+
+// Override the original savePage function to handle homepage content
+const originalSavePage = savePage;
+savePage = function() {
+  // If we're editing the homepage
+  if (isEditingHomepage) {
+    saveHomepageContent();
+    return;
+  }
+  
+  // Otherwise use the original function
+  originalSavePage();
+};
+
+// Save homepage content
+function saveHomepageContent(isPublish = false) {
+  if (!db) {
+    showStatus('Firebase not available', true);
+    return;
+  }
+  
+  // Show loading status
+  showStatus('Saving homepage content...', false, 0);
+  
+  // Collect data
+  const contentData = {};
+  
+  // About section
+  contentData.aboutTitle = document.getElementById('homepage_aboutTitle')?.value || '';
+  contentData.aboutSubtitle = document.getElementById('homepage_aboutSubtitle')?.value || '';
+  
+  // Offerings section
+  contentData.offeringsTitle = document.getElementById('homepage_offeringsTitle')?.value || '';
+  contentData.offeringsSubtitle = document.getElementById('homepage_offeringsSubtitle')?.value || '';
+  
+  // Offering 1
+  contentData.offer1Title = document.getElementById('homepage_offer1Title')?.value || '';
+  contentData.offer1_image = getHomepageImageData('offer1');
+  
+  // Offering 2
+  contentData.offer2Title = document.getElementById('homepage_offer2Title')?.value || '';
+  contentData.offer2_image = getHomepageImageData('offer2');
+  
+  // Offering 3
+  contentData.offer3Title = document.getElementById('homepage_offer3Title')?.value || '';
+  contentData.offer3_image = getHomepageImageData('offer3');
+  
+  // Contact section
+  contentData.contactTitle = document.getElementById('homepage_contactTitle')?.value || '';
+  contentData.contactSubtitle = document.getElementById('homepage_contactSubtitle')?.value || '';
+  contentData.contact_image = getHomepageImageData('contact');
+  
+  // Get TinyMCE content
+  if (typeof tinymce !== 'undefined') {
+    // About text
+    if (tinymce.get('homepage_aboutText')) {
+      contentData.aboutText = tinymce.get('homepage_aboutText').getContent();
+    }
+    
+    // Offering descriptions
+    if (tinymce.get('homepage_offer1Desc')) {
+      contentData.offer1Desc = tinymce.get('homepage_offer1Desc').getContent();
+    }
+    
+    if (tinymce.get('homepage_offer2Desc')) {
+      contentData.offer2Desc = tinymce.get('homepage_offer2Desc').getContent();
+    }
+    
+    if (tinymce.get('homepage_offer3Desc')) {
+      contentData.offer3Desc = tinymce.get('homepage_offer3Desc').getContent();
+    }
+  }
+  
+  // Add timestamp
+  contentData.lastUpdated = firebase.firestore.FieldValue.serverTimestamp();
+  
+  // Determine target document (draft or published)
+  const docRef = db.collection('content').doc(isPublish ? 'main' : 'draft');
+  
+  // Save to Firestore
+  docRef.set(contentData)
+    .then(() => {
+      // If publishing, update both draft and main
+      if (isPublish) {
+        // Also update the draft to match
+        return db.collection('content').doc('draft').set(contentData);
+      }
+    })
+    .then(() => {
+      showStatus(`Homepage content ${isPublish ? 'published' : 'saved as draft'} successfully!`);
+      
+      // Reset dirty flag
+      isDirty = false;
+    })
+    .catch(error => {
+      console.error('Error saving homepage:', error);
+      showStatus('Error saving homepage: ' + error.message, true);
+    });
+}
+
+// Helper to get homepage image data
+function getHomepageImageData(section) {
+  const dataInput = document.getElementById(`homepage_${section}_image_data`);
+  if (!dataInput) return { url: '', public_id: '' };
+  
+  try {
+    return JSON.parse(dataInput.value);
+  } catch (e) {
+    console.error(`Error parsing ${section} image data:`, e);
+    return { url: '', public_id: '' };
+  }
+}
+
+// Original loadPages function
+const originalLoadPages = loadPages;
+
+// Override loadPages to add homepage to the list
+loadPages = function() {
+  // Call original function first
+  originalLoadPages();
+  
+  // Add homepage to the list with a slight delay
+  setTimeout(() => {
+    addHomepageToPagesList();
+  }, 300);
+};
+
+// Add homepage to the pages list
+function addHomepageToPagesList() {
+  const pagesList = document.getElementById('pagesList');
+  if (!pagesList) return;
+  
+  // Create homepage item
+  const homepageItem = document.createElement('div');
+  homepageItem.className = 'page-item w3-bar w3-hover-light-grey w3-margin-bottom';
+  homepageItem.style.borderLeft = '4px solid #2196F3';
+  homepageItem.style.fontWeight = 'bold';
+  homepageItem.innerHTML = `
+    <div class="w3-bar-item">
+      <span class="w3-large">Homepage (index.php)</span><br>
+      <span class="w3-small">Main website content</span>
+    </div>
+    <div class="w3-bar-item w3-right page-actions">
+      <a href="index.php" target="_blank" class="w3-button w3-blue">
+        <i class="fas fa-eye"></i> View
+      </a>
+      <button class="w3-button w3-green homepage-edit-btn">
+        <i class="fas fa-edit"></i> Edit
+      </button>
+    </div>
+  `;
+  
+  // Add event listener to edit button
+  const editBtn = homepageItem.querySelector('.homepage-edit-btn');
+  if (editBtn) {
+    editBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      openHomepageEditor();
+    });
+  }
+  
+  // Add event listener to the item itself
+  homepageItem.addEventListener('click', function(e) {
+    if (!e.target.closest('.w3-button')) {
+      openHomepageEditor();
+    }
+  });
+  
+  // Add to top of the list
+  if (pagesList.firstChild) {
+    pagesList.insertBefore(homepageItem, pagesList.firstChild);
+  } else {
+    pagesList.appendChild(homepageItem);
+  }
+}
   // Public API
   return {
     init,

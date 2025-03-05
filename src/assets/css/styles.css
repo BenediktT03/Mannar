@@ -162,12 +162,7 @@ body, html {
 }
 
 .word-cloud a {
-  --size: 4;
-  --color: #000;
-  --hover-color: var(--hover-accent);
-  color: var(--color);
-  font-size: calc(var(--size) * 0.25rem + 0.5rem);
-  display: inline-block;
+  color: var(--color, #000);
   padding: 0.125rem 0.25rem;
   position: relative;
   text-decoration: none;
@@ -175,7 +170,7 @@ body, html {
               text-shadow var(--transition-standard),
               color var(--transition-standard);
   will-change: transform, text-shadow, color;
-  border-radius:45px;
+  border-radius: 45px;
 }
 
 .word-cloud a::before {
