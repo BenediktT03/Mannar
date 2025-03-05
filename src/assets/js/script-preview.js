@@ -1,4 +1,4 @@
-// script-preview.js - Skript für die Vorschauseite
+// script-preview.js - Optimized script for the preview page
 
 document.addEventListener('DOMContentLoaded', function() {
   // Firestore verwenden (Firebase sollte bereits im HTML initialisiert sein)
@@ -10,18 +10,20 @@ document.addEventListener('DOMContentLoaded', function() {
   const previewMode = document.getElementById('previewMode');
   const previewIndicator = document.getElementById('previewIndicator');
   
+  // Clearly indicate if we are viewing draft or live content
   if (isDraft) {
-    previewMode.textContent = 'Entwurf';
+    previewMode.textContent = 'Entwurf - Nicht veröffentlicht';
     previewIndicator.classList.remove('live');
+    previewIndicator.classList.add('draft');
   } else {
     previewMode.textContent = 'Live-Website';
+    previewIndicator.classList.remove('draft');
     previewIndicator.classList.add('live');
   }
   
   // DOM-Elemente
   const navbar = document.getElementById('myNavbar');
   const logo = document.getElementById('mainLogo');
-  const wordCloudContainer = document.querySelector('.textbubble');
 
   // Daten aus Firestore laden
   loadPreviewContent();
@@ -61,6 +63,19 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Inhalte aus Firestore laden
   function loadPreviewContent() {
+    // Show loading indicator
+    const loadingElement = document.createElement('div');
+    loadingElement.id = 'preview-loading';
+    loadingElement.innerHTML = `
+      <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                 background: rgba(255,255,255,0.9); padding: 20px; border-radius: 8px; 
+                 box-shadow: 0 4px 8px rgba(0,0,0,0.1); z-index: 1000; text-align: center;">
+        <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #3498db;"></i>
+        <p>Vorschau wird geladen...</p>
+      </div>
+    `;
+    document.body.appendChild(loadingElement);
+    
     // Hauptinhalte laden
     db.collection("content").doc(isDraft ? "draft" : "main").get().then(doc => {
       if (doc.exists) {
@@ -78,71 +93,96 @@ document.addEventListener('DOMContentLoaded', function() {
         // Angebot 1
         if (data.offer1Title) document.getElementById('offer1TitleDisplay').innerText = data.offer1Title;
         if (data.offer1Desc) document.getElementById('offer1DescDisplay').innerHTML = data.offer1Desc;
-        if (data.offer1_image && data.offer1_image.url) document.getElementById('offer1ImageDisplay').src = data.offer1_image.url;
+        if (data.offer1_image && data.offer1_image.url) {
+          const img = document.getElementById('offer1ImageDisplay');
+          if (img) {
+            img.src = data.offer1_image.url;
+            img.alt = data.offer1_image.alt || data.offer1Title || 'Angebot 1';
+          }
+        }
         
         // Angebot 2
         if (data.offer2Title) document.getElementById('offer2TitleDisplay').innerText = data.offer2Title;
         if (data.offer2Desc) document.getElementById('offer2DescDisplay').innerHTML = data.offer2Desc;
-        if (data.offer2_image && data.offer2_image.url) document.getElementById('offer2ImageDisplay').src = data.offer2_image.url;
+        if (data.offer2_image && data.offer2_image.url) {
+          const img = document.getElementById('offer2ImageDisplay');
+          if (img) {
+            img.src = data.offer2_image.url;
+            img.alt = data.offer2_image.alt || data.offer2Title || 'Angebot 2';
+          }
+        }
         
         // Angebot 3
         if (data.offer3Title) document.getElementById('offer3TitleDisplay').innerText = data.offer3Title;
         if (data.offer3Desc) document.getElementById('offer3DescDisplay').innerHTML = data.offer3Desc;
-        if (data.offer3_image && data.offer3_image.url) document.getElementById('offer3ImageDisplay').src = data.offer3_image.url;
+        if (data.offer3_image && data.offer3_image.url) {
+          const img = document.getElementById('offer3ImageDisplay');
+          if (img) {
+            img.src = data.offer3_image.url;
+            img.alt = data.offer3_image.alt || data.offer3Title || 'Angebot 3';
+          }
+        }
         
         // Kontakt
         if (data.contactTitle) document.getElementById('contactTitleDisplay').innerText = data.contactTitle;
         if (data.contactSubtitle) document.getElementById('contactSubtitleDisplay').innerText = data.contactSubtitle;
-        if (data.contact_image && data.contact_image.url) document.getElementById('contactImageDisplay').src = data.contact_image.url;
+        if (data.contact_image && data.contact_image.url) {
+          const img = document.getElementById('contactImageDisplay');
+          if (img) {
+            img.src = data.contact_image.url;
+            img.alt = data.contact_image.alt || 'Kontakt';
+          }
+        }
+        
+        // Apply custom styles if present
+        if (data.customCSS) {
+          const styleEl = document.createElement('style');
+          styleEl.textContent = data.customCSS;
+          document.head.appendChild(styleEl);
+        }
       } else {
         console.log("Keine Inhalte gefunden");
+        
+        // Show error message
+        const contentContainer = document.getElementById('pageContent') || document.body;
+        const errorElement = document.createElement('div');
+        errorElement.className = 'w3-panel w3-pale-red w3-card';
+        errorElement.innerHTML = `
+          <h3>Keine Inhalte gefunden</h3>
+          <p>Es konnten keine Vorschau-Inhalte gefunden werden. Bitte speichern Sie zuerst Ihre Änderungen.</p>
+        `;
+        contentContainer.prepend(errorElement);
+      }
+      
+      // Handle WordCloud (disabled as per requirements)
+      const wordCloudList = document.getElementById('wordCloudList');
+      if (wordCloudList) {
+        // Adding placeholder for word cloud instead of actual content
+        wordCloudList.innerHTML = `
+          <div class="w3-panel w3-pale-blue">
+            <p><i class="fas fa-info-circle"></i> Die Word Cloud Vorschau ist deaktiviert. 
+            Änderungen an der Word Cloud werden nur in der veröffentlichten Seite sichtbar.</p>
+          </div>
+        `;
       }
     }).catch(error => {
       console.error("Fehler beim Laden der Inhalte:", error);
-    });
-    
-    // Wortwolke laden
-    db.collection("content").doc("wordCloud").get().then(doc => {
-      if (doc.exists && doc.data().words) {
-        const wordCloudList = document.getElementById('wordCloudList');
-        wordCloudList.innerHTML = '';
-        
-        doc.data().words.forEach(word => {
-          if (word && word.text) {
-            const li = document.createElement('li');
-            const a = document.createElement('a');
-            
-            a.href = word.link || "#";
-            a.setAttribute('data-weight', word.weight || "5");
-            a.textContent = word.text;
-            a.style.opacity = '0';
-            a.style.transform = 'translateY(20px)';
-            
-            li.appendChild(a);
-            wordCloudList.appendChild(li);
-          }
-        });
-        
-        // Wortwolken-Animation starten
-        animateWordCloud();
+      
+      // Show error message
+      const contentContainer = document.getElementById('pageContent') || document.body;
+      const errorElement = document.createElement('div');
+      errorElement.className = 'w3-panel w3-pale-red w3-card';
+      errorElement.innerHTML = `
+        <h3>Fehler beim Laden</h3>
+        <p>Es ist ein Fehler beim Laden der Vorschau aufgetreten: ${error.message}</p>
+      `;
+      contentContainer.prepend(errorElement);
+    }).finally(() => {
+      // Remove loading indicator
+      const loadingElement = document.getElementById('preview-loading');
+      if (loadingElement) {
+        loadingElement.remove();
       }
-    }).catch(error => {
-      console.error("Fehler beim Laden der Wortwolke:", error);
-    });
-  }
-  
-  // Wortwolken-Animation
-  function animateWordCloud() {
-    if (!wordCloudContainer) return;
-    
-    const wordCloudLinks = document.querySelectorAll('.word-cloud li a');
-    
-    // Sofort animieren in der Vorschau
-    wordCloudLinks.forEach((word, index) => {
-      setTimeout(() => {
-        word.style.opacity = '1';
-        word.style.transform = 'translateY(0)';
-      }, 50 * index);
     });
   }
 });

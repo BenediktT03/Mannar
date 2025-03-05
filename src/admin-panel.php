@@ -12,9 +12,13 @@
   
   <!-- Enhanced Admin Panel CSS -->
   <link rel="stylesheet" href="./assets/css/admin-enhanced.css" />
+  <link rel="stylesheet" href="./assets/css/dashboard.css" />
   
   <!-- TinyMCE -->
   <script src="https://cdn.tiny.cloud/1/5pxzy8guun55o6z5mi0r8c4j8gk5hqeq3hpsotx123ak212k/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+  
+  <!-- Chart.js for Dashboard -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-app-compat.js"></script>
@@ -56,6 +60,9 @@
     
     <!-- Tabs for different sections -->
     <div class="tabs">
+      <button class="tab-btn" data-tab="dashboard">
+        <i class="fas fa-tachometer-alt"></i> Dashboard
+      </button>
       <button class="tab-btn active" data-tab="content">
         <i class="fas fa-edit"></i> Content
       </button>
@@ -71,6 +78,178 @@
       <button class="tab-btn" data-tab="settings">
         <i class="fas fa-cog"></i> Global Settings
       </button>
+    </div>
+    
+    <!-- Tab: Dashboard -->
+    <div id="dashboard-tab" class="tab-content">
+      <div class="w3-bar w3-padding">
+        <h3 class="w3-bar-item"><i class="fas fa-chart-line"></i> Website Statistics Dashboard</h3>
+        <div class="w3-right w3-padding-16">
+          <span>Last updated: <span id="lastUpdatedTime">-</span></span>
+          <button id="refreshStatsBtn" class="w3-button w3-blue w3-margin-left">
+            <i class="fas fa-sync-alt"></i> Refresh
+          </button>
+        </div>
+      </div>
+      
+      <!-- Date Range Selector -->
+      <div class="w3-row w3-padding-16">
+        <div class="w3-col l3 m5 s12">
+          <label for="dateRangeSelector"><strong>Date Range:</strong></label>
+          <select id="dateRangeSelector" class="w3-select w3-border">
+            <option value="today">Today</option>
+            <option value="yesterday">Yesterday</option>
+            <option value="last7days">Last 7 Days</option>
+            <option value="last30days" selected>Last 30 Days</option>
+            <option value="thisMonth">This Month</option>
+            <option value="lastMonth">Last Month</option>
+            <option value="custom">Custom Range</option>
+          </select>
+        </div>
+        <div id="customDateContainer" class="w3-col l9 m7 s12" style="display: none;">
+          <div class="w3-row">
+            <div class="w3-col s6 m6 w3-padding">
+              <label for="customStartDate"><strong>Start Date:</strong></label>
+              <input type="date" id="customStartDate" class="w3-input w3-border">
+            </div>
+            <div class="w3-col s6 m6 w3-padding">
+              <label for="customEndDate"><strong>End Date:</strong></label>
+              <input type="date" id="customEndDate" class="w3-input w3-border">
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Quick Stats -->
+      <div class="w3-row-padding">
+        <!-- Page Views -->
+        <div class="w3-col l3 m6 s12">
+          <div class="dashboard-stat-card w3-card w3-padding w3-round w3-margin-bottom">
+            <div class="w3-center">
+              <div class="stat-icon"><i class="fas fa-eye"></i></div>
+              <h4>Total Page Views</h4>
+              <div class="stat-value" id="totalPageViews">-</div>
+              <div class="stat-label">in selected period</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- User Sessions -->
+        <div class="w3-col l3 m6 s12">
+          <div class="dashboard-stat-card w3-card w3-padding w3-round w3-margin-bottom">
+            <div class="w3-center">
+              <div class="stat-icon"><i class="fas fa-users"></i></div>
+              <h4>User Sessions</h4>
+              <div class="stat-value" id="totalSessions">-</div>
+              <div class="stat-label">in selected period</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Edits Made -->
+        <div class="w3-col l3 m6 s12">
+          <div class="dashboard-stat-card w3-card w3-padding w3-round w3-margin-bottom">
+            <div class="w3-center">
+              <div class="stat-icon"><i class="fas fa-edit"></i></div>
+              <h4>Edits Made</h4>
+              <div class="stat-value" id="totalEdits">-</div>
+              <div class="stat-label">in selected period</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Logins -->
+        <div class="w3-col l3 m6 s12">
+          <div class="dashboard-stat-card w3-card w3-padding w3-round w3-margin-bottom">
+            <div class="w3-center">
+              <div class="stat-icon"><i class="fas fa-sign-in-alt"></i></div>
+              <h4>User Logins</h4>
+              <div class="stat-value" id="totalLogins">-</div>
+              <div class="stat-label">in selected period</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Charts Section -->
+      <div class="w3-row-padding">
+        <!-- Page Views Chart -->
+        <div class="w3-col m6 s12">
+          <div class="w3-card w3-white w3-round w3-margin-bottom">
+            <div class="w3-container w3-padding">
+              <h4><i class="fas fa-chart-line"></i> Page Views Trend</h4>
+              <div class="chart-container" style="position: relative; height: 300px;">
+                <canvas id="pageViewsChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- User Activity Chart -->
+        <div class="w3-col m6 s12">
+          <div class="w3-card w3-white w3-round w3-margin-bottom">
+            <div class="w3-container w3-padding">
+              <h4><i class="fas fa-chart-bar"></i> User Activity</h4>
+              <div class="chart-container" style="position: relative; height: 300px;">
+                <canvas id="userActivityChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Popular Pages -->
+      <div class="w3-card w3-white w3-round w3-margin-bottom">
+        <div class="w3-container w3-padding">
+          <h4><i class="fas fa-fire"></i> Most Popular Pages</h4>
+          <div id="popularPagesContainer">
+            <div class="w3-center w3-padding">
+              <i class="fas fa-spinner fa-spin"></i> Loading popular pages...
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Change Log -->
+      <div class="w3-card w3-white w3-round w3-margin-bottom">
+        <div class="w3-container w3-padding">
+          <div class="w3-bar">
+            <h4 class="w3-bar-item"><i class="fas fa-history"></i> Recent Changes</h4>
+            <button id="viewAllChangesBtn" class="w3-bar-item w3-button w3-blue w3-right">View All</button>
+          </div>
+          <div id="recentChangesContainer">
+            <div class="w3-center w3-padding">
+              <i class="fas fa-spinner fa-spin"></i> Loading recent changes...
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Export Options -->
+      <div class="w3-card w3-white w3-round w3-margin-bottom">
+        <div class="w3-container w3-padding">
+          <h4><i class="fas fa-file-export"></i> Export Data</h4>
+          <p>Export statistics data for further analysis or reporting.</p>
+          <div class="w3-section">
+            <button id="exportCSVBtn" class="w3-button w3-blue w3-margin-right">
+              <i class="fas fa-file-csv"></i> Export as CSV
+            </button>
+            <button id="exportExcelBtn" class="w3-button w3-green">
+              <i class="fas fa-file-excel"></i> Export as Excel
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Loading Indicator -->
+      <div id="statsLoadingIndicator" class="w3-modal" style="display: none;">
+        <div class="w3-modal-content w3-card-4 w3-animate-zoom" style="max-width: 300px;">
+          <div class="w3-center w3-padding-64">
+            <i class="fas fa-spinner fa-spin" style="font-size: 48px;"></i>
+            <p>Loading statistics...</p>
+          </div>
+        </div>
+      </div>
     </div>
     
     <!-- Tab: Content -->
@@ -233,6 +412,15 @@
         </div>
       </div>
 
+      <!-- Change Log Entry -->
+      <div class="w3-card w3-padding w3-margin-bottom content-card">
+        <div class="w3-panel w3-pale-blue">
+          <h4><i class="fas fa-history"></i> Change Log</h4>
+          <p>Enter a brief description of the changes you're making (optional):</p>
+          <textarea id="changeLogNotes" class="w3-input w3-border" placeholder="e.g., Updated about section, added new images, fixed typos"></textarea>
+        </div>
+      </div>
+
       <!-- Save Button - Sticky at the bottom -->
       <div class="action-buttons">
         <button id="saveDraftBtn" class="w3-button w3-yellow w3-margin-right">
@@ -268,14 +456,11 @@
         </button>
         
         <div class="w3-panel w3-pale-blue w3-leftbar w3-border-blue w3-margin-top">
-          <p><i class="fas fa-info-circle"></i> <strong>Tip:</strong> Use the drag handles to rearrange words. Higher weight values make words appear larger.</p>
+          <p><i class="fas fa-info-circle"></i> <strong>Note:</strong> Word Cloud preview is disabled. Changes will only be visible on the published website.</p>
         </div>
       </div>
       
       <div class="action-buttons">
-        <button id="previewWordCloudBtn" class="w3-button w3-amber w3-margin-right">
-          <i class="fas fa-eye"></i> Preview
-        </button>
         <button id="saveWordCloudBtn" class="w3-button w3-green">
           <i class="fas fa-save"></i> Save Word Cloud
         </button>
@@ -289,7 +474,7 @@
         <div class="w3-margin-bottom">
           <label class="w3-margin-right">
             <input type="radio" name="previewType" value="draft" checked> 
-            <span class="w3-badge w3-yellow">Draft</span>
+            <span class="w3-badge w3-yellow">Draft - Currently Editing</span>
           </label>
           <label>
             <input type="radio" name="previewType" value="live"> 
@@ -519,6 +704,7 @@
   <!-- Scripts -->
   <script src="./assets/js/navbar.js"></script>
   <script src="./assets/js/admin-panel.js"></script>
+  <script src="./assets/js/dashboard.js"></script>
   <script src="./assets/js/page-editor-enhanced.js"></script>
   <script src="./assets/js/global-settings.js"></script>
 </body>
