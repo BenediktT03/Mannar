@@ -828,7 +828,7 @@ document.addEventListener('DOMContentLoaded', () => {
 const manualReloadPages = () => {
   showStatus("Lade Seiten neu...");
   
-  const pagesList = document.getElementById('pagesList');
+  let pagesList = document.getElementById('pagesList');
   if (!pagesList) {
     console.error("pagesList Element nicht gefunden!");
     // Element erstellen, falls es nicht existiert
@@ -2094,3 +2094,50 @@ if (pagesTab) {
   
   console.log("Pages-Tab wurde aktiviert");
 }
+
+// Am Ende der admin-panel.js hinzufügen
+document.addEventListener('DOMContentLoaded', function() {
+  // Force-Anzeige der Seiten
+  const pagesTab = document.getElementById('pages-tab');
+  if (pagesTab) {
+    // Alle Tabs ausblenden
+    document.querySelectorAll('.tab-content').forEach(tab => {
+      tab.style.display = 'none';
+      tab.classList.remove('active');
+    });
+    
+    // Seiten-Tab anzeigen
+    pagesTab.style.display = 'block';
+    pagesTab.classList.add('active');
+    
+    // Tab-Buttons aktualisieren
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    document.querySelector('.tab-btn[data-tab="pages"]').classList.add('active');
+    
+    // Seiten neu laden
+    setTimeout(function() {
+      if (typeof manualReloadPages === 'function') {
+        manualReloadPages();
+      }
+    }, 1000);
+  }
+});
+
+// Hilfsfunktion, um Elemente sichtbar zu machen
+function forceShow(elementId) {
+  const element = document.getElementById(elementId);
+  if (element) {
+    element.style.display = 'block !important';
+    element.style.visibility = 'visible';
+    element.style.opacity = '1';
+    console.log(`Element ${elementId} sollte jetzt sichtbar sein`);
+  }
+}
+
+// Diese Funktionen ausführen
+setTimeout(function() {
+  forceShow('pagesListContainer');
+  forceShow('pagesList');
+}, 1500);

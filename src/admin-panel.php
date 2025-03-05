@@ -22,7 +22,25 @@
   <!-- Cloudinary -->
   <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
   
+
+
   <style>
+  /* Temporäres Debug-CSS */
+  #pagesListContainer, #pagesList {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  
+  /* Hervorhebung für Debug */
+  #pagesList {
+    border: 2px solid red !important;
+    padding: 10px !important;
+    margin: 10px !important;
+  }
+
     .tox-tinymce {
       border-radius: 4px;
       margin-bottom: 16px;
@@ -285,7 +303,99 @@
     <!-- Tab: Seiten -->
     <div id="pages-tab" class="tab-content">
       <h3>Seiten verwalten</h3>
+      <div class="w3-panel w3-pale-yellow">
+  <p>
+    <i class="fas fa-wrench"></i> 
+    <strong>Admin-Panel-Funktionalität:</strong>
+    Wenn Seiten nicht korrekt angezeigt werden, klicke auf
+    <button onclick="window.fixAdminPanel()" class="w3-button w3-yellow">Admin-Panel reparieren</button>
+  </p>
+</div>
+      <script>
+// DOM-Struktur erzwingen
+document.addEventListener('DOMContentLoaded', function() {
+  const pagesTab = document.getElementById('pages-tab');
+  if (pagesTab) {
+    // Prüfen, ob der Container existiert
+    let pagesListContainer = document.getElementById('pagesListContainer');
+    if (!pagesListContainer) {
+      console.log("pagesListContainer nicht gefunden, erstelle ihn");
+      pagesListContainer = document.createElement('div');
+      pagesListContainer.id = 'pagesListContainer';
+      pagesListContainer.className = 'w3-margin-bottom';
+      pagesTab.appendChild(pagesListContainer);
+    }
+    
+    // Prüfen, ob die Liste existiert
+    let pagesList = document.getElementById('pagesList');
+    if (!pagesList) {
+      console.log("pagesList nicht gefunden, erstelle ihn");
+      pagesList = document.createElement('div');
+      pagesList.id = 'pagesList';
+      pagesList.className = 'w3-container';
+      pagesListContainer.appendChild(pagesList);
       
+      // Nachricht hinzufügen
+      const noPages = document.createElement('p');
+      noPages.id = 'noPagesMessage';
+      noPages.className = 'w3-text-grey';
+      noPages.textContent = 'Noch keine Seiten erstellt.';
+      pagesList.appendChild(noPages);
+    }
+    
+    console.log("DOM-Struktur überprüft und repariert");
+  }
+});
+</script>
+        <!-- Füge direkt NACH dieser Zeile ein: -->
+  <button onclick="forceShowPages()" style="background-color: red; color: white; padding: 10px; margin: 10px;">
+    Seiten direkt anzeigen
+  </button>
+
+  <script>
+  function forceShowPages() {
+    const db = firebase.firestore();
+    const pagesList = document.getElementById('pagesList');
+    
+    // Ladeanimation anzeigen
+    pagesList.innerHTML = '<p class="w3-center"><i class="fas fa-spinner fa-spin"></i> Lade Seiten direkt...</p>';
+    
+    // Direkt aus Firebase laden
+    db.collection('pages').get().then(snapshot => {
+      pagesList.innerHTML = '';
+      
+      if (snapshot.empty) {
+        pagesList.innerHTML = '<p>Keine Seiten gefunden</p>';
+        return;
+      }
+      
+      snapshot.forEach(doc => {
+        const pageData = doc.data();
+        const pageId = doc.id;
+        
+        // Einfaches Listenelement erstellen
+        const item = document.createElement('div');
+        item.style.border = '1px solid #ddd';
+        item.style.padding = '10px';
+        item.style.margin = '10px 0';
+        item.innerHTML = `
+          <strong>${pageData.title}</strong>
+          <p>ID: ${pageId}</p>
+          <a href="page.php?id=${pageId}" target="_blank" class="w3-button w3-blue">Ansehen</a>
+        `;
+        
+        pagesList.appendChild(item);
+      });
+      
+      console.log(`${snapshot.size} Seiten direkt angezeigt`);
+    }).catch(error => {
+      console.error("Fehler beim Laden der Seiten:", error);
+      pagesList.innerHTML = `<p style="color:red">Fehler: ${error.message}</p>`;
+    });
+  }
+  </script>
+
+  <div id="pagesListContainer" class="w3-margin-bottom">
       <div class="w3-margin-bottom">
         <button id="createPageBtn" class="w3-button w3-blue">
           <i class="fas fa-plus"></i> Neue Seite erstellen
@@ -414,10 +524,232 @@
         measurementId: "G-NXBLYJ5CXL"
       });
     }
+    window.fixAdminPanel = function() {
+  console.log("Repariere Admin-Panel...");
+  
+  // Die ursprüngliche loadPages-Funktion überschreiben
+  window.originalLoadPages = loadPages; // Original-Funktion sichern
+  
+  // Mit der funktionierenden Version ersetzen
+  loadPages = function() {
+    console.log("Verwende verbesserte loadPages-Funktion");
+    
+    // Tab aktivieren
+    const pagesTab = document.getElementById('pages-tab');
+    const pagesButton = document.querySelector('.tab-btn[data-tab="pages"]');
+    
+    if (pagesTab && pagesButton) {
+      // Alle Tabs deaktivieren
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.style.display = 'none';
+        tab.classList.remove('active');
+      });
+      
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      // Seiten-Tab aktivieren
+      pagesTab.style.display = 'block';
+      pagesTab.classList.add('active');
+      pagesButton.classList.add('active');
+    }
+    
+    // Showtime - Gleiche Logik wie der erfolgreiche Notfallbutton
+    const db = firebase.firestore();
+    
+    // Container und Liste sicherstellen
+    let pagesListContainer = document.getElementById('pagesListContainer');
+    if (!pagesListContainer) {
+      pagesListContainer = document.createElement('div');
+      pagesListContainer.id = 'pagesListContainer';
+      pagesListContainer.className = 'w3-margin-bottom';
+      pagesTab.appendChild(pagesListContainer);
+    }
+    
+    let pagesList = document.getElementById('pagesList');
+    if (!pagesList) {
+      pagesList = document.createElement('div');
+      pagesList.id = 'pagesList';
+      pagesList.className = 'w3-container';
+      pagesListContainer.appendChild(pagesList);
+    }
+    
+    // UI-Feedback zeigen
+    pagesList.innerHTML = '<p class="w3-center"><i class="fas fa-spinner fa-spin"></i> Lade Seiten aus Firebase...</p>';
+    
+    // Seiten aus Firestore laden
+    db.collection('pages').get().then(snapshot => {
+      console.log("Firebase-Antwort erhalten:", snapshot.size, "Dokumente");
+      pagesList.innerHTML = ''; // Liste leeren
+      
+      if (snapshot.empty) {
+        pagesList.innerHTML = '<p class="w3-text-grey" id="noPagesMessage">Noch keine Seiten erstellt.</p>';
+        return;
+      }
+      
+      // Zurücksetzen der Seiten-Liste
+      currentPages = {};
+      
+      // Seiten zum Objekt hinzufügen und anzeigen
+      snapshot.forEach(doc => {
+        const pageData = doc.data();
+        const pageId = doc.id;
+        
+        currentPages[pageId] = pageData;
+        
+        const pageItem = document.createElement('div');
+        pageItem.className = 'w3-bar w3-hover-light-grey w3-margin-bottom';
+        pageItem.style.border = '1px solid #ddd';
+        pageItem.innerHTML = `
+          <div class="w3-bar-item">
+            <span class="w3-large">${pageData.title}</span><br>
+            <span>ID: ${pageId} | Template: ${pageData.template}</span>
+          </div>
+          <a href="page.php?id=${pageId}" class="w3-bar-item w3-button w3-blue w3-right" style="margin-left: 5px" target="_blank">
+            <i class="fas fa-eye"></i> Ansehen
+          </a>
+          <button class="w3-bar-item w3-button w3-green w3-right direct-edit-btn">
+            <i class="fas fa-edit"></i> Bearbeiten
+          </button>
+        `;
+        
+        pagesList.appendChild(pageItem);
+        
+        // Event-Listener für den Bearbeiten-Button
+        const editBtn = pageItem.querySelector('.direct-edit-btn');
+        if (editBtn) {
+          editBtn.addEventListener('click', function() {
+            console.log("Bearbeiten-Button geklickt für:", pageId);
+            if (typeof editPage === 'function') {
+              editPage(pageId);
+            } else {
+              alert("Bearbeiten-Funktion nicht gefunden!");
+            }
+          });
+        }
+      });
+      
+      console.log("Seiten wurden erfolgreich geladen und angezeigt");
+      
+    }).catch(error => {
+      console.error("Fehler beim Laden der Seiten:", error);
+      pagesList.innerHTML = `<p class="w3-text-red w3-center">Fehler beim Laden: ${error.message}</p>`;
+    });
+  };
+  
+  // Aktualisiere die Seiten, wenn eine aktive Anmeldung vorliegt
+  firebase.auth().onAuthStateChanged(function(user) {
+    if (user) {
+      // Lade Seiten nach einer kurzen Verzögerung
+      setTimeout(loadPages, 500);
+    }
+  });
+  
+  console.log("Admin-Panel-Reparatur abgeschlossen");
+  
+  // Status-Meldung anzeigen
+  if (typeof showStatus === 'function') {
+    showStatus("Admin-Panel-Funktionen wurden aktualisiert");
+  }
+  
+  return "Admin-Panel-Funktionen wurden erfolgreich aktualisiert!";
+};
+
+// Automatisch die Reparatur ausführen
+setTimeout(function() {
+  window.fixAdminPanel();
+}, 1000);
   </script>
   
   <!-- Skripte am Ende des Body-Tags -->
   <script src="./assets/js/navbar.js"></script>
   <script src="./assets/js/admin-panel.js"></script>
+  <script>
+// Einfache und robuste Funktion zum Anzeigen von Seiten
+function showAllPages() {
+  const db = firebase.firestore();
+  
+  // Container erstellen falls nicht vorhanden
+  let container = document.getElementById('pagesListContainer');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'pagesListContainer';
+    container.style.margin = '20px';
+    container.style.padding = '20px';
+    container.style.border = '3px solid blue';
+    document.body.appendChild(container);
+  }
+  
+  // Liste erstellen falls nicht vorhanden
+  let list = document.getElementById('pagesList');
+  if (!list) {
+    list = document.createElement('div');
+    list.id = 'pagesList';
+    list.style.border = '3px solid green';
+    list.style.padding = '10px';
+    container.appendChild(list);
+  }
+  
+  // Ladeinfo zeigen
+  list.innerHTML = '<p style="text-align:center;"><i class="fas fa-spinner fa-spin"></i> Seiten werden geladen...</p>';
+  
+  // Seiten aus Firebase laden
+  db.collection('pages').get().then(snapshot => {
+    if (snapshot.empty) {
+      list.innerHTML = '<p>Keine Seiten gefunden</p>';
+      return;
+    }
+    
+    list.innerHTML = ''; // Liste leeren
+    snapshot.docs.forEach(doc => {
+      const pageData = doc.data();
+      const pageId = doc.id;
+      
+      const item = document.createElement('div');
+      item.style.border = '1px solid #ddd';
+      item.style.padding = '10px';
+      item.style.margin = '10px 0';
+      item.style.backgroundColor = '#f9f9f9';
+      item.innerHTML = `
+        <h4>${pageData.title}</h4>
+        <p>ID: ${pageId} | Template: ${pageData.template}</p>
+        <div>
+          <a href="page.php?id=${pageId}" target="_blank" class="w3-button w3-blue w3-margin-right">Ansehen</a>
+          <button class="w3-button w3-green edit-btn">Bearbeiten</button>
+        </div>
+      `;
+      
+      list.appendChild(item);
+      
+      // Event-Listener direkt hinzufügen
+      const editBtn = item.querySelector('.edit-btn');
+      editBtn.addEventListener('click', function() {
+        alert('Seite bearbeiten: ' + pageId);
+      });
+    });
+    
+    console.log(`${snapshot.size} Seiten erfolgreich angezeigt!`);
+  }).catch(error => {
+    list.innerHTML = `<p style="color:red;font-weight:bold;">Fehler: ${error.message}</p>`;
+    console.error('Fehler beim Laden der Seiten:', error);
+  });
+}
+
+// "Notfall"-Button hinzufügen
+const emergencyBtn = document.createElement('button');
+emergencyBtn.innerHTML = 'NOTFALL: Seiten direkt anzeigen';
+emergencyBtn.style.position = 'fixed';
+emergencyBtn.style.bottom = '20px';
+emergencyBtn.style.right = '20px';
+emergencyBtn.style.zIndex = '9999';
+emergencyBtn.style.backgroundColor = '#ff0000';
+emergencyBtn.style.color = '#ffffff';
+emergencyBtn.style.padding = '15px';
+emergencyBtn.style.borderRadius = '5px';
+emergencyBtn.style.fontWeight = 'bold';
+emergencyBtn.onclick = showAllPages;
+document.body.appendChild(emergencyBtn);
+</script>
 </body>
 </html>
