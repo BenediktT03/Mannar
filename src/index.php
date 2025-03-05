@@ -5,35 +5,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Mannar - Peer, Genesungsbegeleiter">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./assets/css/styles.css">
   <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700&display=swap">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-  <script type="module" src="https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js"></script>
-  <script type="module" src="https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js"></script>
-  <script type="module" src="https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js"></script>
-  <script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js';
-  import { getAuth } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js';
-  import { getFirestore } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore.js';
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyAQszUApKHZ3lPrpc7HOINpdOWW3SgvUBM",
-    authDomain: "mannar-129a5.firebaseapp.com",
-    projectId: "mannar-129a5",
-    storageBucket: "mannar-129a5.appspot.com",
-    messagingSenderId: "687710492532",
-    appId: "1:687710492532:web:c7b675da541271f8d83e21"
-  };
-
-  // Firebase initialisieren
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-</script>
-
-
-
+  
+  <!-- Nur eine Version von Firebase laden - Compat Version -->
+  <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-auth-compat.js"></script>
 </head>
 <body>
 
@@ -47,8 +27,6 @@
     <a href="#about" class="w3-bar-item w3-button w3-hide-small"><i class="fas fa-user"></i> ABOUT</a>
     <a href="#portfolio" class="w3-bar-item w3-button w3-hide-small"><i class="fas fa-th"></i> PORTFOLIO</a>
     <a href="#contact" class="w3-bar-item w3-button w3-hide-small"><i class="fas fa-envelope"></i> KONTAKT</a>
-    <a href="#" class="w3-bar-item w3-button w3-hide-small w3-right w3-hover-red">
-      <i class="fas fa-search"></i>
     </a>
   </div>
 
@@ -64,95 +42,63 @@
 <!-- First section with Logo -->
 <div class="bgimg-1 w3-display-container" id="home">
   <div class="w3-display-middle" style="white-space:nowrap;">
-    <img src="./uploads/IMG_4781.svg" alt="Mannar Logo" id="mainLogo">
+    <img src="./assets/img/IMG_4781.svg" alt="Mannar Logo" id="mainLogo">
   </div>
 </div>
 
 <!-- About section with Word Cloud -->
 <div class="w3-content w3-container w3-padding-64" id="about">
-  <h2 class="w3-center">ÜBER MICH</h2>
-  <p class="w3-center"><em>Peer und Genesungsbegleiter</em></p>
-  <p>Willkommen auf meiner Website. Ich bin als Peer und Genesungsbegleiter tätig und unterstütze Menschen auf ihrem Weg zu psychischer Gesundheit und persönlichem Wachstum. Meine eigenen Erfahrungen haben mich gelehrt, wie wichtig Achtsamkeit, Bewusstsein und Selbstreflexion für den Heilungsprozess sind.</p>
+  <h2 id="aboutTitle" class="w3-center">ÜBER MICH</h2>
+  <p id="aboutSubtitle" class="w3-center"><em>Peer und Genesungsbegleiter</em></p>
+  <div id="aboutText">
+    <p>Willkommen auf meiner Website. Ich bin als Peer und Genesungsbegleiter tätig und unterstütze Menschen auf ihrem Weg zu psychischer Gesundheit und persönlichem Wachstum. Meine eigenen Erfahrungen haben mich gelehrt, wie wichtig Achtsamkeit, Bewusstsein und Selbstreflexion für den Heilungsprozess sind.</p>
+  </div>
   
   <div class="textbubble"> 
-    <ul class="word-cloud" role="navigation" aria-label="Psychologie & Spiritualität Word Cloud">
-<li><a href="#" data-weight="5">Achtsamkeit</a></li>
-<li><a href="#" data-weight="8">Meditation</a></li>
-<li><a href="#" data-weight="7">Selbstreflexion</a></li>
-<li><a href="#" data-weight="9">Bewusstsein</a></li>
-<li><a href="#" data-weight="4">Karma</a></li>
-<li><a href="#" data-weight="6">Empathie</a></li>
-<li><a href="#" data-weight="3">Resilienz</a></li>
-<li><a href="#" data-weight="5">Loslassen</a></li>
-<li><a href="#" data-weight="7">Ego</a></li>
-<li><a href="#" data-weight="2">Intuition</a></li>
-<li><a href="#" data-weight="6">Traumarbeit</a></li>
-<li><a href="#" data-weight="4">Chakren</a></li>
-<li><a href="#" data-weight="8">Seelenheil</a></li>
-<li><a href="#" data-weight="5">Schwingung</a></li>
-<li><a href="#" data-weight="9">Energiefluss</a></li>
-<li><a href="#" data-weight="3">Erleuchtung</a></li>
-<li><a href="#" data-weight="4">Schattenarbeit</a></li>
-<li><a href="#" data-weight="7">Manifestation</a></li>
-<li><a href="#" data-weight="2">Synchronicität</a></li>
-<li><a href="#" data-weight="6">Innere Ruhe</a></li>
-<li><a href="#" data-weight="3">Seelenreise</a></li>
-<li><a href="#" data-weight="5">Selbstliebe</a></li>
-<li><a href="#" data-weight="9">Spiritualität</a></li>
-<li><a href="#" data-weight="4">Transzendenz</a></li>
-<li><a href="#" data-weight="6">Metaphysik</a></li>
-<li><a href="#" data-weight="8">Unterbewusstsein</a></li>
-<li><a href="#" data-weight="2">Glaubenssätze</a></li>
-<li><a href="#" data-weight="7">Inneres Kind</a></li>
-<li><a href="#" data-weight="3">Dankbarkeit</a></li>
-<li><a href="#" data-weight="5">Selbsterkenntnis</a></li>
-<li><a href="#" data-weight="4">Harmonie</a></li>
-<li><a href="#" data-weight="6">Lichtarbeit</a></li>
-<li><a href="#" data-weight="8">Seelenverwandte</a></li>
-<li><a href="#" data-weight="3">Vergebung</a></li>
-<li><a href="#" data-weight="7">Transformation</a></li>
-<li><a href="#" data-weight="9">Seinszustand</a></li>
-<li><a href="#" data-weight="4">Frequenz</a></li>
-<li><a href="#" data-weight="5">Universum</a></li>
-<li><a href="#" data-weight="2">Luzides Träumen</a></li>
-
-</ul>
+    <ul class="word-cloud" id="wordCloudList" role="navigation" aria-label="Psychologie & Spiritualität Word Cloud">
+      <!-- Wird dynamisch aus Firebase geladen -->
+    </ul>
   </div>
 </div>
 
-
-<!-- Portfolio section (placeholder) -->
+<!-- Portfolio section -->
 <div class="w3-content w3-container w3-padding-64" id="portfolio">
-  <h2 class="w3-center">MEINE ANGEBOTE</h2>
-  <p class="w3-center"><em>Hier sind einige meiner Leistungen und Angebote</em></p>
+  <h2 id="offeringsTitle" class="w3-center">MEINE ANGEBOTE</h2>
+  <p id="offeringsSubtitle" class="w3-center"><em>Hier sind einige meiner Leistungen und Angebote</em></p>
   
   <div class="w3-row-padding">
     <div class="w3-col m4 portfolio-item">
       <div class="w3-card w3-round">
-        <img src="/api/placeholder/400/300" alt="Einzelgespräche" style="width:100%">
+        <img id="offer1Image" src="/api/placeholder/400/300" alt="Angebot 1" style="width:100%">
         <div class="w3-container">
-          <h3>Einzelgespräche</h3>
-          <p>Persönliche Begleitung auf Ihrem Weg zu mehr Bewusstsein und Selbsterkenntnis.</p>
+          <h3 id="offer1Title">Einzelgespräche</h3>
+          <div id="offer1Desc">
+            <p>Persönliche Begleitung auf Ihrem Weg zu mehr Bewusstsein und Selbsterkenntnis.</p>
+          </div>
         </div>
       </div>
     </div>
     
     <div class="w3-col m4 portfolio-item">
       <div class="w3-card w3-round">
-        <img src="/api/placeholder/400/300" alt="Gruppenworkshops" style="width:100%">
+        <img id="offer2Image" src="/api/placeholder/400/300" alt="Gruppenworkshops" style="width:100%">
         <div class="w3-container">
-          <h3>Gruppenworkshops</h3>
-          <p>Gemeinsame Erfahrungsräume für Austausch und Wachstum in der Gemeinschaft.</p>
+          <h3 id="offer2Title">Gruppenworkshops</h3>
+          <div id="offer2Desc">
+            <p>Gemeinsame Erfahrungsräume für Austausch und Wachstum in der Gemeinschaft.</p>
+          </div>
         </div>
       </div>
     </div>
     
     <div class="w3-col m4 portfolio-item">
       <div class="w3-card w3-round">
-        <img src="/api/placeholder/400/300" alt="Meditation" style="width:100%">
+        <img id="offer3Image" src="/api/placeholder/400/300" alt="Meditation" style="width:100%">
         <div class="w3-container">
-          <h3>Meditation</h3>
-          <p>Anleitungen und Übungen zur Stärkung von Achtsamkeit und innerem Frieden.</p>
+          <h3 id="offer3Title">Meditation</h3>
+          <div id="offer3Desc">
+            <p>Anleitungen und Übungen zur Stärkung von Achtsamkeit und innerem Frieden.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -170,12 +116,12 @@
 
 <!-- Contact section -->
 <div class="w3-content w3-container w3-padding-64" id="contact">
-  <h2 class="w3-center">KONTAKT</h2>
-  <p class="w3-center"><em>Ich freue mich auf Ihre Nachricht!</em></p>
+  <h2 id="contactTitle" class="w3-center">KONTAKT</h2>
+  <p id="contactSubtitle" class="w3-center"><em>Ich freue mich auf Ihre Nachricht!</em></p>
 
   <div class="w3-row w3-padding-32 w3-section">
     <div class="w3-col m4 w3-container">
-      <img src="/api/placeholder/400/300" class="w3-image w3-round" style="width:100%" alt="Karte zu meinem Standort">
+      <img id="contactImage" src="/api/placeholder/400/300" class="w3-image w3-round" style="width:100%" alt="Karte zu meinem Standort">
     </div>
     <div class="w3-col m8 w3-panel">
       <div class="w3-large w3-margin-bottom">
@@ -184,7 +130,7 @@
         <i class="fas fa-envelope fa-fw w3-hover-text-black w3-xlarge w3-margin-right"></i> E-Mail: kontakt@beispiel.de<br>
       </div>
       <p>Schauen Sie auf einen Kaffee vorbei <i class="fas fa-coffee"></i>, oder hinterlassen Sie mir eine Nachricht:</p>
-      <form action="/action_page.php" target="_blank" class="contact-form">
+      <form action="./api/contact.php" target="_blank" class="contact-form">
         <div class="w3-row-padding" style="margin:0 -16px 8px -16px">
           <div class="w3-half">
             <input class="w3-input w3-border" type="text" placeholder="Name" required name="Name">
@@ -221,6 +167,24 @@
   <p>&copy; 2025 Mannar | Peer und Genesungsbegleiter</p>
 </footer>
 
-  <script type="module" src="script.js"></script>
+<!-- Firebase Initialisierung -->
+<script>
+  // Einmalige Initialisierung von Firebase
+  if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+    firebase.initializeApp({
+      apiKey: "AIzaSyAQszUApKHZ3lPrpc7HOINpdOWW3SgvUBM",
+      authDomain: "mannar-129a5.firebaseapp.com",
+      projectId: "mannar-129a5",
+      storageBucket: "mannar-129a5.firebasestorage.app",
+      messagingSenderId: "687710492532",
+      appId: "1:687710492532:web:c7b675da541271f8d83e21",
+      measurementId: "G-NXBLYJ5CXL"
+    });
+  }
+</script>
+
+<!-- Skripte einbinden -->
+<script src="./assets/js/navbar.js"></script>
+<script src="./assets/js/script.js"></script>
 </body>
 </html>
