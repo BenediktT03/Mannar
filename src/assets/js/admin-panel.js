@@ -1,27 +1,17 @@
-// admin-panel.js
+// admin-panel.js - Optimized and fixed version
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Versteckten Admin-Link zum Footer in index.php hinzufügen
-    if (window.self === window.top) { // Nur auf der Hauptseite, nicht in iframes (Preview)
-        const footerCopyright = document.querySelector('footer p');
-        if (footerCopyright) {
-            const adminSpan = document.createElement('span');
-            adminSpan.innerHTML = ' | <a href="admin-panel.php" style="opacity: 0.3; font-size: 0.8em; text-decoration: none;">Admin</a>';
-            footerCopyright.appendChild(adminSpan);
-        }
-    }
-
-    // Firebase sollte bereits im HTML initialisiert sein
+    // Firebase should already be initialized in the HTML
     const db = firebase.firestore();
     const auth = firebase.auth();
     
-    // Initialisiere Cloudinary
+    // Initialize Cloudinary
     let cloudinaryWidget;
     if (window.cloudinary) {
-        // Konfiguration für Cloudinary
+        // Cloudinary configuration
         cloudinaryWidget = window.cloudinary.createUploadWidget({
             cloudName: 'dlegnsmho',
-            uploadPreset: 'ml_default', // WICHTIG: Upload Preset muss angegeben werden!
+            uploadPreset: 'ml_default',
             sources: ['local', 'url', 'camera'],
             multiple: false,
             maxFileSize: 5000000, // 5MB
@@ -48,105 +38,106 @@ document.addEventListener('DOMContentLoaded', () => {
         }, (error, result) => {
             if (error) {
                 console.error('Cloudinary Upload Error:', error);
-                showStatus('Fehler beim Hochladen: ' + (error.message || error.statusText || 'Unbekannter Fehler'), true);
+                showStatus('Upload error: ' + (error.message || error.statusText || 'Unknown error'), true);
                 return;
             }
             
             if (result && result.event === "success") {
-                console.log('Erfolgreich zu Cloudinary hochgeladen:', result.info);
+                console.log('Successfully uploaded to Cloudinary:', result.info);
                 
                 const imageUrl = result.info.secure_url;
                 const publicId = result.info.public_id;
                 
-                // Das aktuelle Upload-Element mit den Bilddaten aktualisieren
+                // Update the current upload element with image data
                 if (currentUploadElement) {
-                    // Setze die Bildvorschau
+                    // Set the image preview
                     const previewContainer = currentUploadElement.querySelector('[id$="ImagePreview"]');
-                    const imgElement = previewContainer.querySelector('img');
+                    const imgElement = previewContainer?.querySelector('img');
                     
                     if (imgElement) {
                         imgElement.src = imageUrl;
                         imgElement.style.display = 'block';
                     }
                     
-                    // Speichere die Bild-URL und Public ID
+                    // Save the image URL and Public ID
                     const imageKey = getImageKeyFromElement(currentUploadElement);
                     if (imageKey) {
                         imageData[imageKey] = { url: imageUrl, public_id: publicId };
                     }
                     
-                    // Zeige Erfolgsanzeige
-                    showStatus('Bild erfolgreich hochgeladen');
+                    // Show success message
+                    showStatus('Image successfully uploaded');
                 }
             }
         });
     }
     
-    // Helper-Funktion um den Bildschlüssel zu bestimmen
+    // Helper function to determine the image key
     function getImageKeyFromElement(element) {
-        if (element.id && element.id.includes('offer1') || element.querySelector('[id*="offer1"]')) return 'offer1_image';
-        if (element.id && element.id.includes('offer2') || element.querySelector('[id*="offer2"]')) return 'offer2_image';
-        if (element.id && element.id.includes('offer3') || element.querySelector('[id*="offer3"]')) return 'offer3_image';
-        if (element.id && element.id.includes('contact') || element.querySelector('[id*="contact"]')) return 'contact_image';
+        if (!element) return null;
+        if (element.id?.includes('offer1') || element.querySelector('[id*="offer1"]')) return 'offer1_image';
+        if (element.id?.includes('offer2') || element.querySelector('[id*="offer2"]')) return 'offer2_image';
+        if (element.id?.includes('offer3') || element.querySelector('[id*="offer3"]')) return 'offer3_image';
+        if (element.id?.includes('contact') || element.querySelector('[id*="contact"]')) return 'contact_image';
         return null;
     }
     
-    // Globale Variable für das aktuelle Upload-Element
+    // Global variable for the current upload element
     let currentUploadElement = null;
     
-    // Element-Referenzen
-    const loginDiv     = document.getElementById('loginDiv');
-    const adminDiv     = document.getElementById('adminDiv');
-    const emailField   = document.getElementById('emailField');
-    const passField    = document.getElementById('passField');
-    const loginBtn     = document.getElementById('loginBtn');
-    const loginError   = document.getElementById('loginError');
-    const logoutBtn    = document.getElementById('logoutBtn');
-    const statusMsg    = document.getElementById('statusMsg');
+    // Element references
+    const loginDiv = document.getElementById('loginDiv');
+    const adminDiv = document.getElementById('adminDiv');
+    const emailField = document.getElementById('emailField');
+    const passField = document.getElementById('passField');
+    const loginBtn = document.getElementById('loginBtn');
+    const loginError = document.getElementById('loginError');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const statusMsg = document.getElementById('statusMsg');
     
     // Tabs
     const tabButtons = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
     
-    // Form-Felder
-    const aboutTitle        = document.getElementById('aboutTitle');
-    const aboutSubtitle     = document.getElementById('aboutSubtitle');
-    const aboutText         = document.getElementById('aboutText');
-    const offeringsTitle    = document.getElementById('offeringsTitle');
+    // Form fields
+    const aboutTitle = document.getElementById('aboutTitle');
+    const aboutSubtitle = document.getElementById('aboutSubtitle');
+    const aboutText = document.getElementById('aboutText');
+    const offeringsTitle = document.getElementById('offeringsTitle');
     const offeringsSubtitle = document.getElementById('offeringsSubtitle');
-    const offer1Title       = document.getElementById('offer1Title');
-    const offer2Title       = document.getElementById('offer2Title');
-    const offer3Title       = document.getElementById('offer3Title');
-    const contactTitle      = document.getElementById('contactTitle');
-    const contactSubtitle   = document.getElementById('contactSubtitle');
+    const offer1Title = document.getElementById('offer1Title');
+    const offer2Title = document.getElementById('offer2Title');
+    const offer3Title = document.getElementById('offer3Title');
+    const contactTitle = document.getElementById('contactTitle');
+    const contactSubtitle = document.getElementById('contactSubtitle');
     
-    // Bild-Elemente
-    const offer1Img         = document.getElementById('offer1Img');
-    const offer2Img         = document.getElementById('offer2Img');
-    const offer3Img         = document.getElementById('offer3Img');
-    const contactImg        = document.getElementById('contactImg');
+    // Image elements
+    const offer1Img = document.getElementById('offer1Img');
+    const offer2Img = document.getElementById('offer2Img');
+    const offer3Img = document.getElementById('offer3Img');
+    const contactImg = document.getElementById('contactImg');
     
-    // Upload-Buttons
-    const offer1UploadBtn   = document.getElementById('offer1UploadBtn');
-    const offer2UploadBtn   = document.getElementById('offer2UploadBtn');
-    const offer3UploadBtn   = document.getElementById('offer3UploadBtn');
-    const contactUploadBtn  = document.getElementById('contactUploadBtn');
+    // Upload buttons
+    const offer1UploadBtn = document.getElementById('offer1UploadBtn');
+    const offer2UploadBtn = document.getElementById('offer2UploadBtn');
+    const offer3UploadBtn = document.getElementById('offer3UploadBtn');
+    const contactUploadBtn = document.getElementById('contactUploadBtn');
     
-    // Speichern-Buttons
-    const saveDraftBtn      = document.getElementById('saveDraftBtn');
-    const publishBtn        = document.getElementById('publishBtn');
-    const saveWordCloudBtn  = document.getElementById('saveWordCloudBtn');
-    const addWordBtn        = document.getElementById('addWordBtn');
+    // Save buttons
+    const saveDraftBtn = document.getElementById('saveDraftBtn');
+    const publishBtn = document.getElementById('publishBtn');
+    const saveWordCloudBtn = document.getElementById('saveWordCloudBtn');
+    const addWordBtn = document.getElementById('addWordBtn');
     
-    // Vorschau
-    const previewFrame      = document.getElementById('previewFrame');
+    // Preview
+    const previewFrame = document.getElementById('previewFrame');
     const refreshPreviewBtn = document.getElementById('refreshPreviewBtn');
     const previewTypeRadios = document.getElementsByName('previewType');
     
     // Wordcloud
     const wordCloudContainer = document.getElementById('wordCloudContainer');
 
-    // Bild-URLs speichern
+    // Image URLs storage
     let imageData = {
       offer1_image: { url: "", public_id: "" },
       offer2_image: { url: "", public_id: "" },
@@ -154,10 +145,10 @@ document.addEventListener('DOMContentLoaded', () => {
       contact_image: { url: "", public_id: "" }
     };
     
-    // Wortwolken-Daten
+    // Wordcloud data
     let wordCloudData = [];
 
-    // Statusmeldung anzeigen
+    // Show status message
     const showStatus = (message, isError = false) => {
       if (!statusMsg) return;
       
@@ -165,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
       statusMsg.style.display = 'block';
       statusMsg.className = isError ? 'status-msg error show' : 'status-msg success show';
       
-      // Nach 5 Sekunden ausblenden
+      // Hide after 5 seconds
       setTimeout(() => {
         statusMsg.classList.remove('show');
         setTimeout(() => {
@@ -174,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 5000);
     };
 
-    // Standard-Datei-Upload (fallback zu PHP Upload Skript)
+    // Standard file upload (fallback to PHP upload script)
     const uploadFile = async (file, callback) => {
         const formData = new FormData();
         formData.append('image', file);
@@ -187,23 +178,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
 
             if (data.success) {
-                console.log('Upload erfolgreich:', data);
+                console.log('Upload successful:', data);
                 if (callback) callback(data.url, data.filename);
-                showStatus(`Bild erfolgreich hochgeladen`);
+                showStatus(`Image successfully uploaded`);
                 return data;
             } else {
-                console.error('Fehler beim Upload:', data.error);
-                showStatus(`Fehler: ${data.error}`, true);
+                console.error('Upload error:', data.error);
+                showStatus(`Error: ${data.error}`, true);
                 throw new Error(data.error);
             }
         } catch (error) {
-            console.error('Fehler beim Hochladen:', error);
-            showStatus('Fehler beim Upload.', true);
+            console.error('Upload error:', error);
+            showStatus('Upload error.', true);
             throw error;
         }
     };
 
-    // Vorschau aktualisieren
+    // Refresh preview
     const refreshPreview = () => {
       if (!previewFrame) return;
       
@@ -211,27 +202,32 @@ document.addEventListener('DOMContentLoaded', () => {
       previewFrame.src = `preview.html?draft=${isDraft}&t=${Date.now()}`; // Cache-Busting
     };
 
-    // Tab-Wechsel
+    // Fixed Tab-Switching
     tabButtons.forEach(button => {
       button.addEventListener('click', () => {
         const tabName = button.getAttribute('data-tab');
         
-        // Alle Tabs deaktivieren
+        // Deactivate all tabs
         tabButtons.forEach(btn => btn.classList.remove('active'));
         tabContents.forEach(content => content.classList.remove('active'));
         
-        // Aktuellen Tab aktivieren
+        // Activate current tab
         button.classList.add('active');
-        document.getElementById(`${tabName}-tab`).classList.add('active');
+        const targetTab = document.getElementById(`${tabName}-tab`);
+        if (targetTab) {
+          targetTab.classList.add('active');
+        } else {
+          console.error(`Tab content with ID "${tabName}-tab" not found`);
+        }
         
-        // Wenn Vorschau-Tab, Frame aktualisieren
+        // If preview tab, refresh frame
         if (tabName === 'preview') {
           refreshPreview();
         }
       });
     });
 
-    // TinyMCE Initialisierung
+    // TinyMCE Initialization
     const initTinyMCE = () => {
       tinymce.init({
         selector: '.tinymce-editor',
@@ -264,16 +260,18 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     };
 
-    // Daten laden
+    // Load content data
     const loadContentData = async (isDraft = true) => {
       try {
         const docSnap = await db.collection("content").doc(isDraft ? "draft" : "main").get();
         if (docSnap.exists) {
           const data = docSnap.data();
           
-          // Textfelder füllen
+          // Fill text fields
           if (aboutTitle) aboutTitle.value = data.aboutTitle || "";
           if (aboutSubtitle) aboutSubtitle.value = data.aboutSubtitle || "";
+          
+          // For TinyMCE editor content we need a slight delay
           setTimeout(() => {
             if (tinymce.get('aboutText')) {
               tinymce.get('aboutText').setContent(data.aboutText || "");
@@ -307,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (contactTitle) contactTitle.value = data.contactTitle || "";
           if (contactSubtitle) contactSubtitle.value = data.contactSubtitle || "";
           
-          // Bild-URLs
+          // Image URLs
           if (data.offer1_image && offer1Img) {
             imageData.offer1_image = data.offer1_image;
             if (typeof data.offer1_image === 'object' && data.offer1_image.url) {
@@ -349,12 +347,12 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
       } catch (err) {
-        console.error("Fehler beim Laden der Daten:", err);
-        showStatus("Fehler beim Laden der Daten: " + err.message, true);
+        console.error("Error loading data:", err);
+        showStatus("Error loading data: " + err.message, true);
       }
     };
 
-    // Wortwolken-Daten laden
+    // Load wordcloud data
     const loadWordCloudData = async () => {
       if (!wordCloudContainer) return;
       
@@ -363,24 +361,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (docSnap.exists) {
           wordCloudData = docSnap.data().words || [];
         } else {
-          // Standardwerte laden, falls noch nicht vorhanden
+          // Load default values if not found
           wordCloudData = [
-            { text: "Achtsamkeit", weight: 5, link: "#" },
+            { text: "Mindfulness", weight: 5, link: "#" },
             { text: "Meditation", weight: 8, link: "#" },
-            { text: "Selbstreflexion", weight: 7, link: "#" },
-            { text: "Bewusstsein", weight: 9, link: "#" },
-            { text: "Spiritualität", weight: 6, link: "#" }
+            { text: "Self-reflection", weight: 7, link: "#" },
+            { text: "Consciousness", weight: 9, link: "#" },
+            { text: "Spirituality", weight: 6, link: "#" }
           ];
         }
         
         renderWordCloudItems();
       } catch (err) {
-        console.error("Fehler beim Laden der Wortwolke:", err);
-        showStatus("Fehler beim Laden der Wortwolke: " + err.message, true);
+        console.error("Error loading wordcloud:", err);
+        showStatus("Error loading wordcloud: " + err.message, true);
       }
     };
 
-    // Wortwolken-Items rendern
+    // Render wordcloud items
     const renderWordCloudItems = () => {
       if (!wordCloudContainer) return;
       
@@ -391,15 +389,15 @@ document.addEventListener('DOMContentLoaded', () => {
         wordItem.className = 'word-item';
         wordItem.innerHTML = `
           <span class="draggable-handle"><i class="fas fa-grip-lines"></i></span>
-          <input type="text" class="w3-input" value="${word.text}" data-field="text" placeholder="Wort" />
-          <input type="number" class="w3-input word-weight" value="${word.weight}" data-field="weight" min="1" max="9" placeholder="Gewicht (1-9)" />
+          <input type="text" class="w3-input" value="${word.text}" data-field="text" placeholder="Word" />
+          <input type="number" class="w3-input word-weight" value="${word.weight}" data-field="weight" min="1" max="9" placeholder="Weight (1-9)" />
           <input type="text" class="w3-input" value="${word.link}" data-field="link" placeholder="Link (optional)" />
           <button class="w3-button w3-red w3-margin-left delete-word-btn">
             <i class="fas fa-trash"></i>
           </button>
         `;
         
-        // Event-Listener für Input-Änderungen
+        // Event listeners for input changes
         wordItem.querySelectorAll('input').forEach(input => {
           input.addEventListener('change', () => {
             const field = input.getAttribute('data-field');
@@ -408,7 +406,7 @@ document.addEventListener('DOMContentLoaded', () => {
           });
         });
         
-        // Event-Listener für Delete-Button
+        // Event listener for delete button
         wordItem.querySelector('.delete-word-btn').addEventListener('click', () => {
           wordCloudData.splice(index, 1);
           renderWordCloudItems();
@@ -418,7 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     };
 
-    // Neues Wort hinzufügen
+    // Add new word
     if (addWordBtn) {
       addWordBtn.addEventListener('click', () => {
         wordCloudData.push({ text: "", weight: 5, link: "#" });
@@ -426,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Wortwolke speichern
+    // Save wordcloud
     if (saveWordCloudBtn) {
       saveWordCloudBtn.addEventListener('click', async () => {
         try {
@@ -435,27 +433,27 @@ document.addEventListener('DOMContentLoaded', () => {
             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
           });
           
-          showStatus("Wortwolke erfolgreich gespeichert!");
+          showStatus("Wordcloud successfully saved!");
         } catch (err) {
-          console.error("Fehler beim Speichern der Wortwolke:", err);
-          showStatus("Fehler beim Speichern der Wortwolke: " + err.message, true);
+          console.error("Error saving wordcloud:", err);
+          showStatus("Error saving wordcloud: " + err.message, true);
         }
       });
     }
 
-    // Inhalt speichern
+    // Save content
     const saveContent = async (isPublish = false) => {
       try {
-        // TinyMCE-Inhalte abrufen
+        // Get TinyMCE content
         const aboutTextContent = tinymce.get('aboutText')?.getContent() || "";
         const offer1DescContent = tinymce.get('offer1Desc')?.getContent() || "";
         const offer2DescContent = tinymce.get('offer2Desc')?.getContent() || "";
         const offer3DescContent = tinymce.get('offer3Desc')?.getContent() || "";
         
-        // Bildpfad-Überprüfung und -Vereinfachung
-        console.log("Aktuelle Bilddaten vor dem Speichern:", JSON.stringify(imageData));
+        // Image path check and simplification
+        console.log("Current image data before saving:", JSON.stringify(imageData));
         
-        // Daten zusammenstellen
+        // Compile data
         const contentData = {
           aboutTitle: aboutTitle.value,
           aboutSubtitle: aboutSubtitle.value,
@@ -466,7 +464,7 @@ document.addEventListener('DOMContentLoaded', () => {
           
           offer1Title: offer1Title.value,
           offer1Desc: offer1DescContent,
-          // Bildpfad-Überprüfung
+          // Image path check
           offer1_image: imageData.offer1_image && imageData.offer1_image.url ? imageData.offer1_image : null,
           
           offer2Title: offer2Title.value,
@@ -484,49 +482,49 @@ document.addEventListener('DOMContentLoaded', () => {
           lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
         };
         
-        console.log("Speichere folgende Daten:", contentData);
+        console.log("Saving the following data:", contentData);
         
-        // Als Entwurf speichern
+        // Save as draft
         await db.collection("content").doc("draft").set(contentData);
         
         if (isPublish) {
-          // Veröffentlichen (auf "main" kopieren)
+          // Publish (copy to "main")
           await db.collection("content").doc("main").set(contentData);
-          showStatus("Änderungen wurden erfolgreich veröffentlicht! 🚀");
+          showStatus("Changes successfully published! 🚀");
         } else {
-          showStatus("Entwurf wurde erfolgreich gespeichert! 💾");
+          showStatus("Draft successfully saved! 💾");
         }
         
-        // Vorschau aktualisieren
+        // Refresh preview
         refreshPreview();
       } catch (err) {
-        console.error("Fehler beim Speichern:", err);
-        showStatus(`Fehler beim ${isPublish ? 'Veröffentlichen' : 'Speichern'}: ${err.message}`, true);
+        console.error("Error saving:", err);
+        showStatus(`Error ${isPublish ? 'publishing' : 'saving'}: ${err.message}`, true);
       }
     };
     
-    // Bild-Upload-Handler mit verbesserter Fehlerbehandlung und Rückgabeformat
+    // Image upload handler with improved error handling and return format
     const setupImageUpload = (buttonId, imageKey, imgElement) => {
       const button = document.getElementById(buttonId);
       if (!button) return;
       
       button.addEventListener('click', () => {
-        // Das aktuelle Upload-Element für Referenz speichern
+        // Save the current upload element for reference
         currentUploadElement = button.closest('.w3-card') || button.closest('.w3-row');
         
         if (cloudinaryWidget) {
           try {
-            // Cloudinary-Widget öffnen
+            // Open Cloudinary widget
             cloudinaryWidget.open();
           } catch (error) {
-            console.error("Fehler beim Öffnen des Cloudinary-Widgets:", error);
-            showStatus("Fehler beim Öffnen des Upload-Dialogs. Verwende stattdessen lokalen Upload.", true);
+            console.error("Error opening Cloudinary widget:", error);
+            showStatus("Error opening upload dialog. Using local upload instead.", true);
             
-            // Fallback zum lokalen Upload
+            // Fallback to local upload
             useLocalUpload();
           }
         } else {
-          // Fallback auf normalen Dateiupload
+          // Fallback to normal file upload
           useLocalUpload();
         }
         
@@ -540,23 +538,23 @@ document.addEventListener('DOMContentLoaded', () => {
           fileInput.addEventListener('change', async () => {
             if (fileInput.files.length > 0) {
               try {
-                // Bild hochladen
+                // Upload image
                 await uploadFile(fileInput.files[0], (url, filename) => {
-                  // Bild-URL speichern in standardisiertem Format
+                  // Save image URL in standardized format
                   imageData[imageKey] = { 
                     url: url, 
                     filename: filename,
-                    public_id: filename // Lokales Fallback-Format
+                    public_id: filename // Local fallback format
                   };
                   
-                  console.log(`Bild für ${imageKey} gesetzt:`, imageData[imageKey]);
+                  console.log(`Image for ${imageKey} set:`, imageData[imageKey]);
                   
-                  // Vorschaubild aktualisieren
+                  // Update preview image
                   imgElement.src = url;
                   imgElement.style.display = 'block';
                 });
               } catch (error) {
-                console.error('Fehler beim Hochladen:', error);
+                console.error('Upload error:', error);
               }
               
               document.body.removeChild(fileInput);
@@ -568,19 +566,19 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     };
 
-    // Vorschau-Aktualisierung
+    // Preview refresh
     if (refreshPreviewBtn) {
       refreshPreviewBtn.addEventListener('click', refreshPreview);
     }
     
-    // Vorschautyp wechseln
+    // Change preview type
     if (previewTypeRadios.length > 0) {
       previewTypeRadios.forEach(radio => {
         radio.addEventListener('change', refreshPreview);
       });
     }
 
-    // Event-Listener für Buttons
+    // Event listeners for buttons
     if (saveDraftBtn) {
       saveDraftBtn.addEventListener('click', () => saveContent(false));
     }
@@ -589,69 +587,69 @@ document.addEventListener('DOMContentLoaded', () => {
       publishBtn.addEventListener('click', () => saveContent(true));
     }
 
-    // ========== SEITENVERWALTUNG ==========
+    // ========== PAGE MANAGEMENT ==========
     
-    // Neue globale Variablen für Seitenverwaltung
+    // New global variables for page management
     let currentPages = {};
     let currentEditingPage = null;
 
-    // Template Definitionen
+    // Template definitions
     const pageTemplates = {
       'basic': {
-        name: 'Basis-Template',
-        description: 'Einfache Seite mit Überschrift und Text',
+        name: 'Basic Template',
+        description: 'Simple page with heading and text',
         preview: '<div class="template-preview"><div class="tp-header"></div><div class="tp-content"></div></div>',
         fields: [
-          { type: 'text', name: 'header', label: 'Überschrift' },
-          { type: 'textarea', name: 'content', label: 'Inhalt', editor: true }
+          { type: 'text', name: 'header', label: 'Heading' },
+          { type: 'textarea', name: 'content', label: 'Content', editor: true }
         ]
       },
       'text-image': {
-        name: 'Text mit Bild',
-        description: 'Text links, Bild rechts',
+        name: 'Text with Image',
+        description: 'Text on the left, image on the right',
         preview: '<div class="template-preview"><div class="tp-text-col"></div><div class="tp-image-col"></div></div>',
         fields: [
-          { type: 'text', name: 'header', label: 'Überschrift' },
-          { type: 'textarea', name: 'content', label: 'Inhalt', editor: true },
-          { type: 'image', name: 'image', label: 'Bild' }
+          { type: 'text', name: 'header', label: 'Heading' },
+          { type: 'textarea', name: 'content', label: 'Content', editor: true },
+          { type: 'image', name: 'image', label: 'Image' }
         ]
       },
       'image-text': {
-        name: 'Bild mit Text',
-        description: 'Bild links, Text rechts',
+        name: 'Image with Text',
+        description: 'Image on the left, text on the right',
         preview: '<div class="template-preview"><div class="tp-image-col"></div><div class="tp-text-col"></div></div>',
         fields: [
-          { type: 'text', name: 'header', label: 'Überschrift' },
-          { type: 'image', name: 'image', label: 'Bild' },
-          { type: 'textarea', name: 'content', label: 'Inhalt', editor: true }
+          { type: 'text', name: 'header', label: 'Heading' },
+          { type: 'image', name: 'image', label: 'Image' },
+          { type: 'textarea', name: 'content', label: 'Content', editor: true }
         ]
       },
       'gallery': {
-        name: 'Galerie',
-        description: 'Bildergalerie mit Titel',
+        name: 'Gallery',
+        description: 'Image gallery with title',
         preview: '<div class="template-preview"><div class="tp-header"></div><div class="tp-gallery"></div></div>',
         fields: [
-          { type: 'text', name: 'header', label: 'Überschrift' },
-          { type: 'textarea', name: 'description', label: 'Beschreibung', editor: true },
-          { type: 'gallery', name: 'images', label: 'Bilder' }
+          { type: 'text', name: 'header', label: 'Heading' },
+          { type: 'textarea', name: 'description', label: 'Description', editor: true },
+          { type: 'gallery', name: 'images', label: 'Images' }
         ]
       },
       'contact': {
-        name: 'Kontakt',
-        description: 'Kontaktformular mit Text',
+        name: 'Contact',
+        description: 'Contact form with text',
         preview: '<div class="template-preview"><div class="tp-header"></div><div class="tp-text-col"></div><div class="tp-form-col"></div></div>',
         fields: [
-          { type: 'text', name: 'header', label: 'Überschrift' },
-          { type: 'textarea', name: 'content', label: 'Einleitungstext', editor: true },
-          { type: 'checkbox', name: 'showMap', label: 'Karte anzeigen' },
-          { type: 'text', name: 'address', label: 'Adresse' },
-          { type: 'text', name: 'email', label: 'E-Mail-Adresse' },
-          { type: 'text', name: 'phone', label: 'Telefonnummer' }
+          { type: 'text', name: 'header', label: 'Heading' },
+          { type: 'textarea', name: 'content', label: 'Introductory text', editor: true },
+          { type: 'checkbox', name: 'showMap', label: 'Show map' },
+          { type: 'text', name: 'address', label: 'Address' },
+          { type: 'text', name: 'email', label: 'Email address' },
+          { type: 'text', name: 'phone', label: 'Phone number' }
         ]
       }
     };
 
-    // CSS für Template-Vorschau hinzufügen
+    // Add CSS for template preview
     const addTemplatePreviewCSS = () => {
       if (document.getElementById('template-preview-css')) return;
       
@@ -732,11 +730,11 @@ document.addEventListener('DOMContentLoaded', () => {
       document.head.appendChild(style);
     };
 
-    // Seitenverwaltungslogik initialisieren
+    // Initialize page management logic
     const initPageManagement = () => {
-      console.log("Initialisiere Seitenverwaltung...");
+      console.log("Initializing page management...");
       
-      // DOM-Elemente
+      // DOM elements
       const createPageBtn = document.getElementById('createPageBtn');
       const newPageForm = document.getElementById('newPageForm');
       const editPageForm = document.getElementById('editPageForm');
@@ -754,29 +752,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const deletePageBtn = document.getElementById('deletePageBtn');
       const savePageBtn = document.getElementById('savePageBtn');
 
-      // Debug-Button hinzufügen
-      const debugButton = document.createElement('button');
-      debugButton.id = 'debugReloadBtn';
-      debugButton.className = 'w3-button w3-orange w3-margin-bottom';
-      debugButton.innerHTML = '<i class="fas fa-sync"></i> Seiten neu laden';
-      debugButton.onclick = function() {
-        console.log("Debug: Seiten neu laden geklickt");
-        manualReloadPages();
-      };
-
-      const pagesTab = document.getElementById('pages-tab');
-      if (pagesTab) {
-        pagesTab.insertBefore(debugButton, pagesTab.firstChild);
-      }
-
-      // Events für die Buttons
+      // Events for buttons
       if (createPageBtn) {
         createPageBtn.addEventListener('click', () => {
           newPageForm.style.display = 'block';
           const pagesListContainer = document.getElementById('pagesListContainer');
           if (pagesListContainer) pagesListContainer.style.display = 'none';
           createPageBtn.style.display = 'none';
-          document.getElementById('debugReloadBtn').style.display = 'none';
         });
       }
 
@@ -786,7 +768,6 @@ document.addEventListener('DOMContentLoaded', () => {
           const pagesListContainer = document.getElementById('pagesListContainer');
           if (pagesListContainer) pagesListContainer.style.display = 'block';
           createPageBtn.style.display = 'block';
-          document.getElementById('debugReloadBtn').style.display = 'block';
           pageName.value = '';
           pageTitle.value = '';
           pageTemplate.selectedIndex = 0;
@@ -809,73 +790,70 @@ document.addEventListener('DOMContentLoaded', () => {
         savePageBtn.addEventListener('click', savePage);
       }
 
-      // Template-Vorschau aktualisieren bei Änderung
+      // Update template preview on change
       if (pageTemplate) {
         pageTemplate.addEventListener('change', () => {
           updateTemplatePreview(pageTemplate.value);
         });
         
-        // Initial die Vorschau für das erste Template anzeigen
+        // Initially show the preview for the first template
         updateTemplatePreview(pageTemplate.value);
       }
 
-      // Alle Seiten laden
+      // Load all pages
       loadPages();
     };
 
-    // Manuelle Funktion zum Neuladen der Seiten
-    // Code für die manualReloadPages-Funktion anpassen
-const manualReloadPages = () => {
-  showStatus("Lade Seiten neu...");
-  
-  let pagesList = document.getElementById('pagesList');
-  if (!pagesList) {
-    console.error("pagesList Element nicht gefunden!");
-    // Element erstellen, falls es nicht existiert
-    const container = document.getElementById('pagesListContainer');
-    if (container) {
-      const newPagesList = document.createElement('div');
-      newPagesList.id = 'pagesList';
-      newPagesList.className = 'w3-container';
-      container.appendChild(newPagesList);
-      pagesList = newPagesList;
-    } else {
-      return; // Kann nicht fortfahren ohne Container
-    }
-  }
-  
-  // Repariere fehlende Nachricht
-  let noPagesMessage = document.getElementById('noPagesMessage');
-  if (!noPagesMessage) {
-    noPagesMessage = document.createElement('p');
-    noPagesMessage.id = 'noPagesMessage';
-    noPagesMessage.className = 'w3-text-grey';
-    noPagesMessage.textContent = 'Noch keine Seiten erstellt.';
-    pagesList.appendChild(noPagesMessage);
-  }
-  
-  // Rest des Codes...
+    // Function to reload pages manually
+    const loadPages = () => {
+      showStatus("Loading pages...");
       
-      // Liste leeren und Nachricht anzeigen
-      pagesList.innerHTML = '<p class="w3-center"><i class="fas fa-spinner fa-spin"></i> Lade Seiten...</p>';
+      let pagesList = document.getElementById('pagesList');
+      if (!pagesList) {
+        console.error("pagesList element not found!");
+        // Create element if it doesn't exist
+        const container = document.getElementById('pagesListContainer');
+        if (container) {
+          const newPagesList = document.createElement('div');
+          newPagesList.id = 'pagesList';
+          newPagesList.className = 'w3-container';
+          container.appendChild(newPagesList);
+          pagesList = newPagesList;
+        } else {
+          return; // Cannot continue without container
+        }
+      }
       
-      // Alle Seiten direkt aus Firebase laden
+      // Fix missing message
+      let noPagesMessage = document.getElementById('noPagesMessage');
+      if (!noPagesMessage) {
+        noPagesMessage = document.createElement('p');
+        noPagesMessage.id = 'noPagesMessage';
+        noPagesMessage.className = 'w3-text-grey';
+        noPagesMessage.textContent = 'No pages created yet.';
+        pagesList.appendChild(noPagesMessage);
+      }
+      
+      // Empty list and show loading message
+      pagesList.innerHTML = '<p class="w3-center"><i class="fas fa-spinner fa-spin"></i> Loading pages...</p>';
+      
+      // Load all pages directly from Firebase
       db.collection('pages').get().then(snapshot => {
-        pagesList.innerHTML = ''; // Liste leeren
+        pagesList.innerHTML = ''; // Empty list
         
         if (snapshot.empty) {
-          console.log("Keine Seiten gefunden");
+          console.log("No pages found");
           if (noPagesMessage) noPagesMessage.style.display = 'block';
           return;
         }
         
-        console.log(`${snapshot.size} Seiten gefunden, füge zur Liste hinzu`);
+        console.log(`${snapshot.size} pages found, adding to list`);
         if (noPagesMessage) noPagesMessage.style.display = 'none';
         
-        // Zurücksetzen der Seiten-Liste
+        // Reset page list
         currentPages = {};
         
-        // Seiten zum Objekt hinzufügen und anzeigen
+        // Add pages to object and display
         snapshot.docs.forEach(doc => {
           const pageData = doc.data();
           const pageId = doc.id;
@@ -891,35 +869,35 @@ const manualReloadPages = () => {
               <span>ID: ${pageId} | Template: ${pageTemplates[pageData.template]?.name || pageData.template}</span>
             </div>
             <a href="page.php?id=${pageId}" class="w3-bar-item w3-button w3-blue w3-right" style="margin-left: 5px" target="_blank">
-              <i class="fas fa-eye"></i> Ansehen
+              <i class="fas fa-eye"></i> View
             </a>
-            <button class="w3-bar-item w3-button w3-green w3-right direct-edit-btn">
-              <i class="fas fa-edit"></i> Bearbeiten
+            <button class="w3-bar-item w3-button w3-green w3-right edit-page-btn" data-page-id="${pageId}">
+              <i class="fas fa-edit"></i> Edit
             </button>
           `;
           
           pagesList.appendChild(pageItem);
           
-          // Event-Listener für den Bearbeiten-Button
-          const editBtn = pageItem.querySelector('.direct-edit-btn');
+          // Event listener for edit button
+          const editBtn = pageItem.querySelector('.edit-page-btn');
           if (editBtn) {
             editBtn.addEventListener('click', function() {
-              console.log("Bearbeiten-Button geklickt für:", pageId);
+              console.log("Edit button clicked for:", pageId);
               editPage(pageId);
             });
           }
         });
         
-        showStatus(`${snapshot.size} Seiten geladen`);
+        showStatus(`${snapshot.size} pages loaded`);
         
       }).catch(error => {
-        console.error("Fehler beim Laden der Seiten:", error);
-        pagesList.innerHTML = `<p class="w3-text-red w3-center">Fehler beim Laden: ${error.message}</p>`;
-        showStatus('Fehler beim Laden der Seiten: ' + error.message, true);
+        console.error("Error loading pages:", error);
+        pagesList.innerHTML = `<p class="w3-text-red w3-center">Error loading: ${error.message}</p>`;
+        showStatus('Error loading pages: ' + error.message, true);
       });
     };
 
-    // Template-Vorschau aktualisieren
+    // Update template preview
     const updateTemplatePreview = (templateId) => {
       const templatePreview = document.getElementById('templatePreview');
       if (!templatePreview || !pageTemplates[templateId]) return;
@@ -934,81 +912,7 @@ const manualReloadPages = () => {
       `;
     };
 
-    // Alle Seiten aus Firestore laden
-    const loadPages = async () => {
-      try {
-        console.log("Versuche Seiten zu laden...");
-        const pagesCollection = await db.collection('pages').get();
-        console.log("Ergebnis erhalten:", pagesCollection.size, "Dokumente");
-        
-        const pagesList = document.getElementById('pagesList');
-        const noPagesMessage = document.getElementById('noPagesMessage');
-        
-        if (!pagesList) {
-          console.error("pagesList Element nicht gefunden!");
-          return;
-        }
-        
-        // Zurücksetzen der Seiten-Liste
-        currentPages = {};
-        pagesList.innerHTML = '';
-        
-        if (pagesCollection.empty) {
-          console.log("Keine Seiten in der Datenbank gefunden");
-          if (noPagesMessage) noPagesMessage.style.display = 'block';
-          return;
-        }
-        
-        console.log("Seiten gefunden, verstecke noPagesMessage");
-        if (noPagesMessage) noPagesMessage.style.display = 'none';
-        
-        // Seiten zum Objekt hinzufügen und anzeigen
-        pagesCollection.forEach(doc => {
-          const pageData = doc.data();
-          const pageId = doc.id;
-          
-          console.log("Verarbeite Seite:", pageId, pageData.title);
-          
-          currentPages[pageId] = pageData;
-          
-          const pageItem = document.createElement('div');
-          pageItem.className = 'w3-bar w3-hover-light-grey w3-margin-bottom';
-          pageItem.style.border = '1px solid #ddd';
-          pageItem.innerHTML = `
-            <div class="w3-bar-item">
-              <span class="w3-large">${pageData.title}</span><br>
-              <span>Template: ${pageTemplates[pageData.template]?.name || pageData.template}</span>
-            </div>
-            <a href="page.php?id=${pageId}" class="w3-bar-item w3-button w3-blue w3-right" style="margin-left: 5px" target="_blank">
-              <i class="fas fa-eye"></i> Ansehen
-            </a>
-            <button class="w3-bar-item w3-button w3-green w3-right edit-page-btn" data-page-id="${pageId}">
-              <i class="fas fa-edit"></i> Bearbeiten
-            </button>
-          `;
-          
-          pagesList.appendChild(pageItem);
-          
-          // Event-Listener für den Bearbeiten-Button
-          const editBtn = pageItem.querySelector('.edit-page-btn');
-          if (editBtn) {
-            console.log("Edit-Button erstellt für Seite:", pageId);
-            editBtn.addEventListener('click', function() {
-              console.log("Edit-Button geklickt für Seite:", pageId);
-              editPage(pageId);
-            });
-          }
-        });
-        
-        console.log("Seiten wurden geladen und angezeigt");
-        
-      } catch (err) {
-        console.error('Fehler beim Laden der Seiten:', err);
-        showStatus('Fehler beim Laden der Seiten: ' + err.message, true);
-      }
-    };
-
-    // Neue Seite erstellen
+    // Create new page
     const createNewPage = async () => {
       const pageName = document.getElementById('pageName');
       const pageTitle = document.getElementById('pageTitle');
@@ -1016,37 +920,37 @@ const manualReloadPages = () => {
       
       if (!pageName || !pageTitle || !pageTemplate) return;
       
-      // Validierung
+      // Validation
       if (!pageName.value || !pageTitle.value) {
-        showStatus('Bitte füllen Sie alle Felder aus.', true);
+        showStatus('Please fill in all fields.', true);
         return;
       }
       
-      // URL-freundlichen Namen erstellen
+      // Create URL-friendly name
       const urlName = pageName.value.trim()
         .toLowerCase()
-        .replace(/[^\w\s-]/g, '')  // Sonderzeichen entfernen
-        .replace(/\s+/g, '-')      // Leerzeichen durch Bindestrich ersetzen
-        .replace(/-+/g, '-');      // Mehrfache Bindestriche durch einen ersetzen
+        .replace(/[^\w\s-]/g, '')  // Remove special characters
+        .replace(/\s+/g, '-')      // Replace spaces with hyphens
+        .replace(/-+/g, '-');      // Replace multiple hyphens with a single one
       
       try {
-        // Prüfen, ob es bereits eine Seite mit diesem Namen gibt
+        // Check if a page with this name already exists
         const existingPage = await db.collection('pages').doc(urlName).get();
         if (existingPage.exists) {
-          showStatus(`Eine Seite mit dem Namen "${urlName}" existiert bereits.`, true);
+          showStatus(`A page with the name "${urlName}" already exists.`, true);
           return;
         }
         
-        // Neue Seite erstellen
+        // Create new page
         const selectedTemplate = pageTemplate.value;
         const template = pageTemplates[selectedTemplate];
         
         if (!template) {
-          showStatus('Ungültiges Template ausgewählt.', true);
+          showStatus('Invalid template selected.', true);
           return;
         }
         
-        // Leere Daten für das Template erstellen
+        // Create empty data for the template
         const templateData = {};
         template.fields.forEach(field => {
           switch (field.type) {
@@ -1066,7 +970,7 @@ const manualReloadPages = () => {
           }
         });
         
-        // Seitenobjekt erstellen
+        // Create page object
         const pageData = {
           title: pageTitle.value.trim(),
           template: selectedTemplate,
@@ -1075,39 +979,39 @@ const manualReloadPages = () => {
           updated: firebase.firestore.FieldValue.serverTimestamp()
         };
         
-        // In Firestore speichern
+        // Save in Firestore
         await db.collection('pages').doc(urlName).set(pageData);
         
-        showStatus(`Seite "${pageTitle.value}" wurde erfolgreich erstellt.`);
+        showStatus(`Page "${pageTitle.value}" was created successfully.`);
         
-        // Formular zurücksetzen und Seiten neu laden
+        // Reset form and reload pages
         pageName.value = '';
         pageTitle.value = '';
         pageTemplate.selectedIndex = 0;
         
-        // Zurück zur Seitenliste
+        // Back to page list
         showPagesList();
         
-        // Seiten neu laden
-        manualReloadPages();
+        // Reload pages
+        loadPages();
         
       } catch (err) {
-        console.error('Fehler beim Erstellen der Seite:', err);
-        showStatus('Fehler beim Erstellen der Seite: ' + err.message, true);
+        console.error('Error creating page:', err);
+        showStatus('Error creating page: ' + err.message, true);
       }
     };
 
-    // Seite bearbeiten
+    // Edit page
     const editPage = async (pageId) => {
       try {
-        console.log("Starte Bearbeitung für Seite:", pageId);
+        console.log("Starting edit for page:", pageId);
         
-        // Seitenobjekt abrufen
+        // Get page object
         if (!currentPages[pageId]) {
-          // Wenn die Seite nicht im Cache ist, dann von Firestore laden
+          // If the page is not in cache, load from Firestore
           const pageDoc = await db.collection('pages').doc(pageId).get();
           if (!pageDoc.exists) {
-            showStatus('Die Seite wurde nicht gefunden.', true);
+            showStatus('The page was not found.', true);
             return;
           }
           currentPages[pageId] = pageDoc.data();
@@ -1116,28 +1020,27 @@ const manualReloadPages = () => {
         const pageData = currentPages[pageId];
         currentEditingPage = pageId;
         
-        console.log("Seite geladen:", pageData);
+        console.log("Page loaded:", pageData);
         
-        // Formular-Elemente anzeigen/verstecken
+        // Show/hide form elements
         document.getElementById('createPageBtn').style.display = 'none';
         document.getElementById('pagesListContainer').style.display = 'none';
         document.getElementById('newPageForm').style.display = 'none';
         document.getElementById('editPageForm').style.display = 'block';
-        document.getElementById('debugReloadBtn').style.display = 'none';
         
-        // Seitentitel anzeigen
+        // Show page title
         document.getElementById('editPageTitle').textContent = pageData.title;
         
-        // Template-Felder generieren
+        // Generate template fields
         generateTemplateFields(pageData.template, pageData.data);
         
       } catch (err) {
-        console.error('Fehler beim Laden der Seite:', err);
-        showStatus('Fehler beim Laden der Seite: ' + err.message, true);
+        console.error('Error loading page:', err);
+        showStatus('Error loading page: ' + err.message, true);
       }
     };
 
-    // Template-Felder für die Bearbeitung generieren
+    // Generate template fields for editing
     const generateTemplateFields = (templateId, data) => {
       const templateFields = document.getElementById('templateFields');
       if (!templateFields || !pageTemplates[templateId]) return;
@@ -1145,7 +1048,7 @@ const manualReloadPages = () => {
       const template = pageTemplates[templateId];
       templateFields.innerHTML = '';
       
-      // Felder basierend auf dem Template erstellen
+      // Create fields based on template
       template.fields.forEach(field => {
         const fieldContainer = document.createElement('div');
         fieldContainer.className = 'w3-margin-bottom';
@@ -1155,7 +1058,7 @@ const manualReloadPages = () => {
         fieldLabel.textContent = field.label;
         fieldContainer.appendChild(fieldLabel);
         
-        // Je nach Feldtyp unterschiedliche Eingabeelemente erstellen
+        // Create different input elements depending on field type
         switch (field.type) {
           case 'text':
             const textInput = document.createElement('input');
@@ -1168,7 +1071,7 @@ const manualReloadPages = () => {
             
           case 'textarea':
             if (field.editor) {
-              // TinyMCE-Editor
+              // TinyMCE editor
               const editorContainer = document.createElement('div');
               editorContainer.id = `field_${field.name}_container`;
               
@@ -1181,7 +1084,7 @@ const manualReloadPages = () => {
               editorContainer.appendChild(textareaField);
               fieldContainer.appendChild(editorContainer);
               
-              // TinyMCE initialisieren
+              // Initialize TinyMCE
               setTimeout(() => {
                 tinymce.init({
                   selector: `#field_${field.name}`,
@@ -1201,7 +1104,7 @@ const manualReloadPages = () => {
                 });
               }, 100);
             } else {
-              // Standard-Textarea
+              // Standard textarea
               const textarea = document.createElement('textarea');
               textarea.id = `field_${field.name}`;
               textarea.className = 'w3-input w3-margin-bottom';
@@ -1232,7 +1135,7 @@ const manualReloadPages = () => {
             const imageContainer = document.createElement('div');
             imageContainer.className = 'w3-row w3-margin-bottom';
             
-            // Bildvorschau
+            // Image preview
             const previewCol = document.createElement('div');
             previewCol.className = 'w3-col m9';
             
@@ -1251,22 +1154,22 @@ const manualReloadPages = () => {
             imagePreview.appendChild(previewImg);
             previewCol.appendChild(imagePreview);
             
-            // Upload-Button
+            // Upload button
             const buttonCol = document.createElement('div');
             buttonCol.className = 'w3-col m3 w3-padding-small';
             
             const uploadBtn = document.createElement('button');
             uploadBtn.id = `field_${field.name}_upload`;
             uploadBtn.className = 'w3-button w3-blue w3-block';
-            uploadBtn.textContent = 'Bild auswählen';
+            uploadBtn.textContent = 'Select image';
             uploadBtn.addEventListener('click', () => {
-              // Bild-Upload-Handler aufrufen
+              // Call image upload handler
               uploadImage(uploadBtn, `field_${field.name}`);
             });
             
             buttonCol.appendChild(uploadBtn);
             
-            // Bild-URL (versteckt, wird für die Datenbank benötigt)
+            // Image URL (hidden, needed for database)
             const imageUrlInput = document.createElement('input');
             imageUrlInput.type = 'hidden';
             imageUrlInput.id = `field_${field.name}`;
@@ -1283,12 +1186,12 @@ const manualReloadPages = () => {
             const galleryContainer = document.createElement('div');
             galleryContainer.className = 'w3-margin-bottom';
             
-            // Galerie-Vorschau
+            // Gallery preview
             const galleryPreview = document.createElement('div');
             galleryPreview.id = `field_${field.name}_preview`;
             galleryPreview.className = 'w3-row w3-margin-bottom';
             
-            // Vorhandene Bilder anzeigen
+            // Show existing images
             const galleryImages = data[field.name] || [];
             galleryImages.forEach((image, index) => {
               const imageCol = document.createElement('div');
@@ -1313,7 +1216,7 @@ const manualReloadPages = () => {
               removeBtn.style.height = '30px';
               removeBtn.innerHTML = '<i class="fas fa-times"></i>';
               removeBtn.addEventListener('click', () => {
-                // Bild aus der Galerie entfernen
+                // Remove image from gallery
                 removeGalleryImage(field.name, index);
               });
               
@@ -1323,17 +1226,17 @@ const manualReloadPages = () => {
               galleryPreview.appendChild(imageCol);
             });
             
-            // Button zum Hinzufügen von Bildern
+            // Button to add images
             const addImageBtn = document.createElement('button');
             addImageBtn.id = `field_${field.name}_add`;
             addImageBtn.className = 'w3-button w3-blue w3-margin-bottom';
-            addImageBtn.innerHTML = '<i class="fas fa-plus"></i> Bild hinzufügen';
+            addImageBtn.innerHTML = '<i class="fas fa-plus"></i> Add image';
             addImageBtn.addEventListener('click', () => {
-              // Bild zur Galerie hinzufügen
+              // Add image to gallery
               addGalleryImage(field.name);
             });
             
-            // Verstecktes Feld für Galerie-Daten
+            // Hidden field for gallery data
             const galleryDataInput = document.createElement('input');
             galleryDataInput.type = 'hidden';
             galleryDataInput.id = `field_${field.name}`;
@@ -1351,17 +1254,17 @@ const manualReloadPages = () => {
       });
     };
 
-    // Bild-Upload-Handler für Seitenfelder
+    // Image upload handler for page fields
     const uploadImage = (buttonElement, fieldId) => {
-      // Das aktuelle Upload-Element für Referenz speichern
+      // Save the current upload element for reference
       currentUploadElement = buttonElement.closest('.w3-row');
       
       if (cloudinaryWidget) {
         try {
-          // Cloudinary-Widget öffnen
+          // Open Cloudinary widget
           cloudinaryWidget.open();
           
-          // Event-Handler für erfolgreichen Upload
+          // Event handler for successful upload
           const originalCallback = cloudinaryWidget.options.callbacks;
           cloudinaryWidget.options.callbacks = {
             ...originalCallback,
@@ -1374,32 +1277,32 @@ const manualReloadPages = () => {
                 const imageUrl = result.info.secure_url;
                 const publicId = result.info.public_id;
                 
-                // Bild-URL und Public ID in das versteckte Feld speichern
+                // Save image URL and Public ID in hidden field
                 const hiddenInput = document.getElementById(fieldId);
                 if (hiddenInput) {
                   hiddenInput.value = JSON.stringify({ url: imageUrl, public_id: publicId });
                 }
                 
-                // Bildvorschau aktualisieren
+                // Update image preview
                 const imgElement = document.getElementById(`${fieldId}_img`);
                 if (imgElement) {
                   imgElement.src = imageUrl;
                   imgElement.style.display = 'block';
                 }
                 
-                showStatus('Bild erfolgreich hochgeladen');
+                showStatus('Image successfully uploaded');
               }
             }
           };
         } catch (error) {
-          console.error("Fehler beim Öffnen des Cloudinary-Widgets:", error);
-          showStatus("Fehler beim Öffnen des Upload-Dialogs. Verwende stattdessen lokalen Upload.", true);
+          console.error("Error opening Cloudinary widget:", error);
+          showStatus("Error opening upload dialog. Using local upload instead.", true);
           
-          // Fallback zum lokalen Upload
+          // Fallback to local upload
           useLocalUpload(fieldId);
         }
       } else {
-        // Fallback auf normalen Dateiupload
+        // Fallback to normal file upload
         useLocalUpload(fieldId);
       }
       
@@ -1413,30 +1316,30 @@ const manualReloadPages = () => {
         fileInput.addEventListener('change', async () => {
           if (fileInput.files.length > 0) {
             try {
-              // Bild hochladen
+              // Upload image
               await uploadFile(fileInput.files[0], (url, filename) => {
-                // Bild-URL und Public ID in das versteckte Feld speichern
+                // Save image URL and Public ID in hidden field
                 const hiddenInput = document.getElementById(fieldId);
                 if (hiddenInput) {
                   hiddenInput.value = JSON.stringify({ 
                     url: url, 
                     filename: filename,
-                    public_id: filename // Lokales Fallback-Format
+                    public_id: filename // Local fallback format
                   });
                 }
                 
-                // Bildvorschau aktualisieren
+                // Update image preview
                 const imgElement = document.getElementById(`${fieldId}_img`);
                 if (imgElement) {
                   imgElement.src = url;
                   imgElement.style.display = 'block';
                 }
                 
-                showStatus('Bild erfolgreich hochgeladen');
+                showStatus('Image successfully uploaded');
               });
             } catch (error) {
-              console.error('Fehler beim Hochladen:', error);
-              showStatus('Fehler beim Hochladen: ' + error.message, true);
+              console.error('Upload error:', error);
+              showStatus('Upload error: ' + error.message, true);
             }
             
             document.body.removeChild(fileInput);
@@ -1447,18 +1350,18 @@ const manualReloadPages = () => {
       }
     };
 
-    // Bild zur Galerie hinzufügen
+    // Add image to gallery
     const addGalleryImage = (fieldName) => {
       if (!currentEditingPage) return;
-      // Das aktuelle Upload-Element für Referenz speichern
+      // Save the current upload element for reference
       currentUploadElement = document.getElementById(`field_${fieldName}_add`);
       
       if (cloudinaryWidget) {
         try {
-          // Cloudinary-Widget öffnen
+          // Open Cloudinary widget
           cloudinaryWidget.open();
           
-          // Event-Handler für erfolgreichen Upload
+          // Event handler for successful upload
           const originalCallback = cloudinaryWidget.options.callbacks;
           cloudinaryWidget.options.callbacks = {
             ...originalCallback,
@@ -1471,20 +1374,20 @@ const manualReloadPages = () => {
                 const imageUrl = result.info.secure_url;
                 const publicId = result.info.public_id;
                 
-                // Bild zur Galerie hinzufügen
+                // Add image to gallery
                 addImageToGallery(fieldName, { url: imageUrl, public_id: publicId });
               }
             }
           };
         } catch (error) {
-          console.error("Fehler beim Öffnen des Cloudinary-Widgets:", error);
-          showStatus("Fehler beim Öffnen des Upload-Dialogs. Verwende stattdessen lokalen Upload.", true);
+          console.error("Error opening Cloudinary widget:", error);
+          showStatus("Error opening upload dialog. Using local upload instead.", true);
           
-          // Fallback zum lokalen Upload
+          // Fallback to local upload
           useLocalGalleryUpload(fieldName);
         }
       } else {
-        // Fallback auf normalen Dateiupload
+        // Fallback to normal file upload
         useLocalGalleryUpload(fieldName);
       }
       
@@ -1498,18 +1401,18 @@ const manualReloadPages = () => {
         fileInput.addEventListener('change', async () => {
           if (fileInput.files.length > 0) {
             try {
-              // Bild hochladen
+              // Upload image
               await uploadFile(fileInput.files[0], (url, filename) => {
-                // Bild zur Galerie hinzufügen
+                // Add image to gallery
                 addImageToGallery(fieldName, { 
                   url: url, 
                   filename: filename,
-                  public_id: filename // Lokales Fallback-Format
+                  public_id: filename // Local fallback format
                 });
               });
             } catch (error) {
-              console.error('Fehler beim Hochladen:', error);
-              showStatus('Fehler beim Hochladen: ' + error.message, true);
+              console.error('Upload error:', error);
+              showStatus('Upload error: ' + error.message, true);
             }
             
             document.body.removeChild(fileInput);
@@ -1520,30 +1423,30 @@ const manualReloadPages = () => {
       }
     };
 
-    // Bild zur Galerie hinzufügen
+    // Add image to gallery
     const addImageToGallery = (fieldName, imageData) => {
-      // Aktuelles Galerie-Feld abrufen
+      // Get current gallery field
       const galleryInput = document.getElementById(`field_${fieldName}`);
       const galleryPreview = document.getElementById(`field_${fieldName}_preview`);
       
       if (!galleryInput || !galleryPreview) return;
       
-      // Galerie-Daten abrufen
+      // Get gallery data
       let galleryImages = [];
       try {
         galleryImages = JSON.parse(galleryInput.value) || [];
       } catch (error) {
-        console.error('Fehler beim Parsen der Galerie-Daten:', error);
+        console.error('Error parsing gallery data:', error);
         galleryImages = [];
       }
       
-      // Bild hinzufügen
+      // Add image
       galleryImages.push(imageData);
       
-      // Galerie-Input aktualisieren
+      // Update gallery input
       galleryInput.value = JSON.stringify(galleryImages);
       
-      // Neues Bild zur Vorschau hinzufügen
+      // Add new image to preview
       const imageCol = document.createElement('div');
       imageCol.className = 'w3-col m3 w3-padding';
       
@@ -1568,7 +1471,7 @@ const manualReloadPages = () => {
       
       const index = galleryImages.length - 1;
       removeBtn.addEventListener('click', () => {
-        // Bild aus der Galerie entfernen
+        // Remove image from gallery
         removeGalleryImage(fieldName, index);
       });
       
@@ -1577,34 +1480,34 @@ const manualReloadPages = () => {
       imageCol.appendChild(imageWrapper);
       galleryPreview.appendChild(imageCol);
       
-      showStatus('Bild zur Galerie hinzugefügt');
+      showStatus('Image added to gallery');
     };
 
-    // Bild aus der Galerie entfernen
+    // Remove image from gallery
     const removeGalleryImage = (fieldName, index) => {
-      // Aktuelles Galerie-Feld abrufen
+      // Get current gallery field
       const galleryInput = document.getElementById(`field_${fieldName}`);
       const galleryPreview = document.getElementById(`field_${fieldName}_preview`);
       
       if (!galleryInput || !galleryPreview) return;
       
-      // Galerie-Daten abrufen
+      // Get gallery data
       let galleryImages = [];
       try {
         galleryImages = JSON.parse(galleryInput.value) || [];
       } catch (error) {
-        console.error('Fehler beim Parsen der Galerie-Daten:', error);
+        console.error('Error parsing gallery data:', error);
         return;
       }
       
-      // Bild entfernen
+      // Remove image
       if (index >= 0 && index < galleryImages.length) {
         galleryImages.splice(index, 1);
         
-        // Galerie-Input aktualisieren
+        // Update gallery input
         galleryInput.value = JSON.stringify(galleryImages);
         
-        // Vorschau aktualisieren (neu rendern)
+        // Update preview (re-render)
         galleryPreview.innerHTML = '';
         
         galleryImages.forEach((image, idx) => {
@@ -1631,7 +1534,7 @@ const manualReloadPages = () => {
           removeBtn.innerHTML = '<i class="fas fa-times"></i>';
           
           removeBtn.addEventListener('click', () => {
-            // Bild aus der Galerie entfernen
+            // Remove image from gallery
             removeGalleryImage(fieldName, idx);
           });
           
@@ -1641,28 +1544,28 @@ const manualReloadPages = () => {
           galleryPreview.appendChild(imageCol);
         });
         
-        showStatus('Bild aus der Galerie entfernt');
+        showStatus('Image removed from gallery');
       }
     };
 
-    // Seite speichern
+    // Save page
     const savePage = async () => {
       if (!currentEditingPage) return;
       
       try {
         const pageData = currentPages[currentEditingPage];
         if (!pageData) {
-          showStatus('Fehler: Keine Seitendaten gefunden.', true);
+          showStatus('Error: No page data found.', true);
           return;
         }
         
         const template = pageTemplates[pageData.template];
         if (!template) {
-          showStatus('Fehler: Ungültiges Template.', true);
+          showStatus('Error: Invalid template.', true);
           return;
         }
         
-        // Daten aus den Formularfeldern sammeln
+        // Collect data from form fields
         const updatedData = {};
         
         for (const field of template.fields) {
@@ -1676,10 +1579,10 @@ const manualReloadPages = () => {
               
             case 'textarea':
               if (field.editor && tinymce.get(`field_${field.name}`)) {
-                // TinyMCE-Editor
+                // TinyMCE editor
                 updatedData[field.name] = tinymce.get(`field_${field.name}`).getContent();
               } else {
-                // Standard-Textarea
+                // Standard textarea
                 updatedData[field.name] = fieldElement.value;
               }
               break;
@@ -1692,7 +1595,7 @@ const manualReloadPages = () => {
               try {
                 updatedData[field.name] = JSON.parse(fieldElement.value);
               } catch (error) {
-                console.error('Fehler beim Parsen der Bild-Daten:', error);
+                console.error('Error parsing image data:', error);
                 updatedData[field.name] = { url: '', public_id: '' };
               }
               break;
@@ -1701,115 +1604,114 @@ const manualReloadPages = () => {
               try {
                 updatedData[field.name] = JSON.parse(fieldElement.value);
               } catch (error) {
-                console.error('Fehler beim Parsen der Galerie-Daten:', error);
+                console.error('Error parsing gallery data:', error);
                 updatedData[field.name] = [];
               }
               break;
           }
         }
         
-        // Daten aktualisieren
+        // Update data
         const updatedPage = {
           ...pageData,
           data: updatedData,
           updated: firebase.firestore.FieldValue.serverTimestamp()
         };
         
-        // In Firestore speichern
+        // Save in Firestore
         await db.collection('pages').doc(currentEditingPage).update(updatedPage);
         
-        // Im lokalen Cache aktualisieren
+        // Update in local cache
         currentPages[currentEditingPage] = updatedPage;
         
-        showStatus(`Seite "${pageData.title}" wurde erfolgreich gespeichert.`);
+        showStatus(`Page "${pageData.title}" was saved successfully.`);
         
       } catch (err) {
-        console.error('Fehler beim Speichern der Seite:', err);
-        showStatus('Fehler beim Speichern der Seite: ' + err.message, true);
+        console.error('Error saving page:', err);
+        showStatus('Error saving page: ' + err.message, true);
       }
     };
 
-    // Seite löschen
+    // Delete page
     const deletePage = async () => {
       if (!currentEditingPage) return;
       
-      // Bestätigung vom Benutzer einholen
-      if (!confirm(`Möchten Sie die Seite "${currentPages[currentEditingPage]?.title}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`)) {
+      // Get confirmation from user
+      if (!confirm(`Do you really want to delete the page "${currentPages[currentEditingPage]?.title}"? This action cannot be undone.`)) {
         return;
       }
       
       try {
-        // Aus Firestore löschen
+        // Delete from Firestore
         await db.collection('pages').doc(currentEditingPage).delete();
         
-        // Aus lokalem Cache entfernen
+        // Remove from local cache
         delete currentPages[currentEditingPage];
         
-        showStatus('Seite wurde erfolgreich gelöscht.');
+        showStatus('Page was deleted successfully.');
         
-        // Zurück zur Seitenliste
+        // Back to page list
         showPagesList();
         
-        // Seiten neu laden
-        manualReloadPages();
+        // Reload pages
+        loadPages();
         
       } catch (err) {
-        console.error('Fehler beim Löschen der Seite:', err);
-        showStatus('Fehler beim Löschen der Seite: ' + err.message, true);
+        console.error('Error deleting page:', err);
+        showStatus('Error deleting page: ' + err.message, true);
       }
     };
 
-    // Zurück zur Seitenliste
+    // Back to page list
     const showPagesList = () => {
-      // Formular-Elemente anzeigen/verstecken
+      // Show/hide form elements
       document.getElementById('createPageBtn').style.display = 'block';
       document.getElementById('pagesListContainer').style.display = 'block';
       document.getElementById('newPageForm').style.display = 'none';
       document.getElementById('editPageForm').style.display = 'none';
-      document.getElementById('debugReloadBtn').style.display = 'block';
       
-      // TinyMCE-Editoren entfernen
+      // Remove TinyMCE editors
       tinymce.remove();
       
-      // Aktuell bearbeitete Seite zurücksetzen
+      // Reset currently edited page
       currentEditingPage = null;
     };
 
-    // Auth-Zustand überwachen
+    // Monitor auth state
     auth.onAuthStateChanged(user => {
       if (user) {
-        // Eingeloggt
+        // Logged in
         loginDiv.style.display = 'none';
         adminDiv.style.display = 'block';
         
-        // TinyMCE initialisieren
+        // Initialize TinyMCE
         initTinyMCE();
         
-        // Daten laden nach TinyMCE Initialisierung
+        // Load data after TinyMCE initialization
         setTimeout(() => {
           loadContentData();
           loadWordCloudData();
           
-          // Seitenverwaltung initialisieren, wenn der Tab existiert
+          // Initialize page management if tab exists
           if (document.getElementById('pages-tab')) {
             addTemplatePreviewCSS();
             initPageManagement();
           }
         }, 1000);
         
-        // Bild-Upload-Handler einrichten
+        // Set up image upload handlers
         setupImageUpload('offer1UploadBtn', 'offer1_image', offer1Img);
         setupImageUpload('offer2UploadBtn', 'offer2_image', offer2Img);
         setupImageUpload('offer3UploadBtn', 'offer3_image', offer3Img);
         setupImageUpload('contactUploadBtn', 'contact_image', contactImg);
       } else {
-        // Nicht eingeloggt
+        // Not logged in
         adminDiv.style.display = 'none';
         loginDiv.style.display = 'block';
       }
     });
 
-    // Login-Button Event
+    // Login button event
     loginBtn.addEventListener('click', () => {
       const email = emailField.value;
       const pass = passField.value;
@@ -1817,327 +1719,13 @@ const manualReloadPages = () => {
       
       auth.signInWithEmailAndPassword(email, pass)
         .catch(err => {
-          console.error("Login-Fehler:", err);
-          loginError.textContent = "Login fehlgeschlagen: " + err.message;
+          console.error("Login error:", err);
+          loginError.textContent = "Login failed: " + err.message;
         });
     });
 
-    // Logout-Button Event
+    // Logout button event
     logoutBtn.addEventListener('click', () => {
       auth.signOut();
     });
 });
-
-// Globale Hilfsfunktionen für die Seitenverwaltung (hilfreich für Debugging)
-window.debugPages = {
-  listPages: function() {
-    const db = firebase.firestore();
-    db.collection('pages').get().then(snapshot => {
-      console.log("Seiten gefunden:", snapshot.size);
-      snapshot.forEach(doc => {
-        console.log("Seite:", doc.id, doc.data().title);
-      });
-    }).catch(error => {
-      console.error("Fehler beim Laden der Seiten:", error);
-    });
-  },
-  
-  reloadPages: function() {
-    const pagesList = document.getElementById('pagesList');
-    if (pagesList) {
-      pagesList.innerHTML = '<p class="w3-center"><i class="fas fa-spinner fa-spin"></i> Lade Seiten...</p>';
-      
-      const db = firebase.firestore();
-      db.collection('pages').get().then(snapshot => {
-        pagesList.innerHTML = '';
-        
-        console.log(`${snapshot.size} Seiten gefunden`);
-        document.getElementById('noPagesMessage').style.display = snapshot.empty ? 'block' : 'none';
-        
-        snapshot.forEach(doc => {
-          const pageData = doc.data();
-          const pageId = doc.id;
-          
-          const pageItem = document.createElement('div');
-          pageItem.className = 'w3-bar w3-hover-light-grey w3-margin-bottom';
-          pageItem.style.border = '1px solid #ddd';
-          pageItem.innerHTML = `
-            <div class="w3-bar-item">
-              <span class="w3-large">${pageData.title}</span><br>
-              <span>ID: ${pageId} | Template: ${pageData.template}</span>
-            </div>
-            <a href="page.php?id=${pageId}" class="w3-bar-item w3-button w3-blue w3-right" style="margin-left: 5px" target="_blank">
-              <i class="fas fa-eye"></i> Ansehen
-            </a>
-            <button class="w3-bar-item w3-button w3-green w3-right direct-edit-btn-${pageId}">
-              <i class="fas fa-edit"></i> Bearbeiten
-            </button>
-          `;
-          
-          pagesList.appendChild(pageItem);
-          
-          setTimeout(() => {
-            const editBtn = document.querySelector(`.direct-edit-btn-${pageId}`);
-            if (editBtn) {
-              editBtn.addEventListener('click', function() {
-                alert(`Seite bearbeiten: ${pageId}`);
-              });
-            }
-          }, 100);
-        });
-      }).catch(error => {
-        console.error("Fehler beim Laden der Seiten:", error);
-      });
-      
-    }
-  }
-};
-
-// Globale Hilfsfunktion zum direkten Anzeigen von Seiten
-window.forceShowPages = function() {
-  const db = firebase.firestore();
-  const pagesList = document.getElementById('pagesList');
-  
-  if (!pagesList) {
-    console.error("pagesList Element nicht gefunden!");
-    return;
-  }
-  
-  // Liste leeren
-  pagesList.innerHTML = '<p class="w3-center"><i class="fas fa-spinner fa-spin"></i> Lade Seiten...</p>';
-  
-  // Verstecke "Keine Seiten"-Nachricht
-  const noPagesMessage = document.getElementById('noPagesMessage');
-  if (noPagesMessage) noPagesMessage.style.display = 'none';
-  
-  // Direkt aus Firebase laden
-  db.collection('pages').get().then(snapshot => {
-    // Liste leeren
-    pagesList.innerHTML = '';
-    
-    if (snapshot.empty) {
-      console.log("Keine Seiten gefunden");
-      if (noPagesMessage) noPagesMessage.style.display = 'block';
-      return;
-    }
-    
-    // Seiten anzeigen
-    snapshot.forEach(doc => {
-      const pageData = doc.data();
-      const pageId = doc.id;
-      
-      // Einfaches Listenelement erstellen
-      const item = document.createElement('div');
-      item.className = 'w3-bar w3-hover-light-grey w3-margin-bottom';
-      item.style.border = '2px solid #4CAF50';  // Auffälliger grüner Rand
-      item.style.borderRadius = '4px';
-      item.style.padding = '10px';
-      item.innerHTML = `
-        <div class="w3-bar-item" style="flex-grow: 1;">
-          <h4 style="margin: 0;">${pageData.title}</h4>
-          <p style="margin: 5px 0;">ID: ${pageId} | Template: ${pageData.template}</p>
-        </div>
-        <div class="w3-bar-item">
-          <a href="page.php?id=${pageId}" class="w3-button w3-blue" target="_blank" style="margin-right: 5px;">
-            <i class="fas fa-eye"></i> Ansehen
-          </a>
-          <button class="w3-button w3-green edit-simple-btn" data-page-id="${pageId}">
-            <i class="fas fa-edit"></i> Bearbeiten
-          </button>
-        </div>
-      `;
-      
-      pagesList.appendChild(item);
-      
-      // Event-Listener direkt hinzufügen
-      const editBtn = item.querySelector('.edit-simple-btn');
-      if (editBtn) {
-        editBtn.onclick = function() {
-          console.log("Edit geklickt für:", pageId);
-          window.editPageDirect(pageId);
-        };
-      }
-    });
-    
-    console.log(`${snapshot.size} Seiten angezeigt`);
-  }).catch(error => {
-    console.error("Fehler beim Laden der Seiten:", error);
-    pagesList.innerHTML = `<p class="w3-text-red w3-center">Fehler: ${error.message}</p>`;
-  });
-};
-
-// Direkter Aufruf zum Bearbeiten einer Seite
-window.editPageDirect = async function(pageId) {
-  const db = firebase.firestore();
-  console.log("Bearbeite Seite direkt:", pageId);
-  
-  try {
-    const doc = await db.collection('pages').doc(pageId).get();
-    if (!doc.exists) {
-      alert("Seite nicht gefunden!");
-      return;
-    }
-    
-    // Formular-Elemente anzeigen/verstecken
-    document.getElementById('createPageBtn').style.display = 'none';
-    document.getElementById('pagesListContainer').style.display = 'none';
-    document.getElementById('newPageForm').style.display = 'none';
-    document.getElementById('editPageForm').style.display = 'block';
-    if (document.getElementById('debugReloadBtn')) {
-      document.getElementById('debugReloadBtn').style.display = 'none';
-    }
-    
-    const pageData = doc.data();
-    
-    // Seitentitel anzeigen
-    document.getElementById('editPageTitle').textContent = pageData.title;
-    
-    // Global speichern für editPage-Funktion
-    window.currentEditingPage = pageId;
-    window.currentPages = window.currentPages || {};
-    window.currentPages[pageId] = pageData;
-    
-    // Template-Felder generieren
-    if (typeof generateTemplateFields === 'function') {
-      generateTemplateFields(pageData.template, pageData.data);
-    } else {
-      alert("generateTemplateFields-Funktion nicht gefunden!");
-    }
-  } catch (error) {
-    console.error("Fehler beim Laden der Seite:", error);
-    alert("Fehler beim Laden der Seite: " + error.message);
-  }
-};
-
-// DOM geladenes Event hinzufügen
-document.addEventListener('DOMContentLoaded', function() {
-  // Stellen Sie sicher, dass es nur einmal hinzugefügt wird
-  if (!document.getElementById('force-show-btn')) {
-    // Button zum Tab hinzufügen
-    const pagesTab = document.getElementById('pages-tab');
-    if (pagesTab) {
-      const forceBtn = document.createElement('button');
-      forceBtn.id = 'force-show-btn';
-      forceBtn.className = 'w3-button w3-red w3-margin-bottom';
-      forceBtn.style.marginLeft = '10px';
-      forceBtn.innerHTML = 'Seiten direkt anzeigen';
-      forceBtn.onclick = window.forceShowPages;
-      
-      // Nach dem Debug-Button einfügen oder am Anfang des Tabs
-      const debugBtn = document.getElementById('debugReloadBtn');
-      if (debugBtn) {
-        pagesTab.insertBefore(forceBtn, debugBtn.nextSibling);
-      } else {
-        pagesTab.insertBefore(forceBtn, pagesTab.firstChild);
-      }
-    }
-  }
-});
-
-function forceShow(elementId) {
-  const element = document.getElementById(elementId);
-  if (element) {
-    // Altes Style-Element entfernen, falls vorhanden
-    const oldStyle = document.getElementById('force-show-style');
-    if (oldStyle) oldStyle.remove();
-    
-    // Neues Style-Element erstellen
-    const style = document.createElement('style');
-    style.id = 'force-show-style';
-    style.innerHTML = `
-      #${elementId} {
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        position: static !important;
-        height: auto !important;
-        width: auto !important;
-        overflow: visible !important;
-        margin: 20px !important;
-        border: 3px solid red !important;
-      }
-    `;
-    document.head.appendChild(style);
-    
-    // Zusätzlich direkte Stiländerungen
-    element.style.display = 'block';
-    element.style.visibility = 'visible';
-    
-    console.log(`Elemente mit ID ${elementId} sollte jetzt sichtbar sein`);
-  } else {
-    console.error(`Element mit ID ${elementId} nicht gefunden`);
-  }
-}
-
-// Beide Container erzwingen
-forceShow('pagesListContainer');
-forceShow('pagesList');
-
-// Überprüfen, ob das Tab aktiv ist
-const pagesTab = document.getElementById('pages-tab');
-if (pagesTab) {
-  // Alle Tabs deaktivieren
-  document.querySelectorAll('.tab-content').forEach(tab => {
-    tab.style.display = 'none';
-    tab.classList.remove('active');
-  });
-  
-  // Seiten-Tab aktivieren
-  pagesTab.style.display = 'block';
-  pagesTab.classList.add('active');
-  
-  // Tab-Buttons aktualisieren
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.classList.remove('active');
-  });
-  document.querySelector('.tab-btn[data-tab="pages"]').classList.add('active');
-  
-  console.log("Pages-Tab wurde aktiviert");
-}
-
-// Am Ende der admin-panel.js hinzufügen
-document.addEventListener('DOMContentLoaded', function() {
-  // Force-Anzeige der Seiten
-  const pagesTab = document.getElementById('pages-tab');
-  if (pagesTab) {
-    // Alle Tabs ausblenden
-    document.querySelectorAll('.tab-content').forEach(tab => {
-      tab.style.display = 'none';
-      tab.classList.remove('active');
-    });
-    
-    // Seiten-Tab anzeigen
-    pagesTab.style.display = 'block';
-    pagesTab.classList.add('active');
-    
-    // Tab-Buttons aktualisieren
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.classList.remove('active');
-    });
-    document.querySelector('.tab-btn[data-tab="pages"]').classList.add('active');
-    
-    // Seiten neu laden
-    setTimeout(function() {
-      if (typeof manualReloadPages === 'function') {
-        manualReloadPages();
-      }
-    }, 1000);
-  }
-});
-
-// Hilfsfunktion, um Elemente sichtbar zu machen
-function forceShow(elementId) {
-  const element = document.getElementById(elementId);
-  if (element) {
-    element.style.display = 'block !important';
-    element.style.visibility = 'visible';
-    element.style.opacity = '1';
-    console.log(`Element ${elementId} sollte jetzt sichtbar sein`);
-  }
-}
-
-// Diese Funktionen ausführen
-setTimeout(function() {
-  forceShow('pagesListContainer');
-  forceShow('pagesList');
-}, 1500);
