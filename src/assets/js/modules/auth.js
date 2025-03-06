@@ -1,60 +1,98 @@
- /**
+/**
  * auth.js
- * Handles all authentication-related functionality
+ * Verbessertes Authentifizierungsmanagement mit Sicherheitsverbesserungen
  */
 
 import { getAuth } from '../core/firebase.js';
 import { showStatus } from '../core/utils.js';
+import { API_ENDPOINTS, SECURITY_CONFIG } from '../core/config.js';
 
-// State
+// Status
 let currentUser = null;
 let authListeners = [];
+let tokenRefreshTimer = null;
+let sessionTimeout = null;
+let lastActivityTime = Date.now();
 
 /**
- * Initialize authentication module
- * @returns {Object} Auth methods
+ * Authentifizierungsmodul initialisieren
+ * @returns {Object} Auth-Methoden
  */
 export function initAuth() {
   const auth = getAuth();
   if (!auth) return null;
   
-  // Set up auth state listener
+  // Auth-State-Listener einrichten
   auth.onAuthStateChanged(handleAuthStateChange);
+  
+  // Token-Aktualisierungstimer einrichten
+  setupTokenRefresh();
+  
+  // Sitzungs-Timeout-Prüfung einrichten
+  setupSessionTimeoutCheck();
+  
+  // Aktivitäts-Tracking einrichten
+  setupActivityTracking();
+  
+  // Gegebenenfalls gespeicherte Anmeldeinformationen wiederherstellen
+  restoreSession();
   
   return {
     login,
     logout,
     getCurrentUser,
     addAuthStateListener,
-    removeAuthStateListener
+    removeAuthStateListener,
+    refreshToken,
+    validateToken,
+    isAuthenticated
   };
 }
 
 /**
- * Handle authentication state changes
- * @param {Object} user - Firebase user object or null when signed out
+ * Auth-Status-Änderungen behandeln
+ * @param {Object} user - Firebase-Benutzerobjekt oder null, wenn abgemeldet
  */
 function handleAuthStateChange(user) {
   currentUser = user;
   
-  // Update UI elements
+  // UI-Elemente aktualisieren
   updateAuthUI(user);
   
-  // Notify all listeners
+  // Alle Listener benachrichtigen
   authListeners.forEach(listener => {
     try {
       listener(user);
     } catch (error) {
-      console.error('Error in auth state listener:', error);
+      console.error('Fehler im Auth-State-Listener:', error);
     }
   });
   
-  console.log(user ? `User logged in: ${user.email}` : 'User logged out');
+  // Bei Anmeldung Benutzerinformationen lokal speichern
+  if (user) {
+    // Token aktualisieren und im localStorage speichern
+    user.getIdToken().then(token => {
+      localStorage.setItem('auth_token', token);
+      
+      // Die sensiblen Benutzerinformationen werden nur temporär gespeichert
+      sessionStorage.setItem('user_email', user.email);
+      
+      console.log(`Benutzer angemeldet: ${user.email}`);
+      
+      // Aktivitätszeit zurücksetzen
+      updateLastActivityTime();
+    });
+  } else {
+    // Bei Abmeldung localStorage und sessionStorage bereinigen
+    localStorage.removeItem('auth_token');
+    sessionStorage.removeItem('user_email');
+    console.log('Benutzer abgemeldet');
+  }
 }
 
 /**
- * Update UI elements based on authentication state
- * @param {Object} user - Firebase user object or null
+ * UI-Elemente basierend auf Authentifizierungsstatus aktualisieren
+ * @param {Object} user - Firebase-Benutzerobjekt oder null
  */
 function updateAuthUI(user) {
   const loginDiv = document.getElementById('loginDiv');
@@ -68,7 +106,7 @@ function updateAuthUI(user) {
     adminDiv.style.display = user ? 'block' : 'none';
   }
   
-  // Reset login form
+  // Anmeldeformular zurücksetzen
   if (!user) {
     const emailField = document.getElementById('emailField');
     const passField = document.getElementById('passField');
@@ -76,26 +114,44 @@ function updateAuthUI(user) {
     
     if (emailField) emailField.value = '';
     if (passField) passField.value = '';
-    if (loginError) loginError.textContent = '';
+    if (loginError) {
+      loginError.textContent = '';
+      loginError.style.display = 'none';
+    }
+  }
+  
+  // Benutzername anzeigen, wenn vorhanden
+  const userInfoSpan = document.getElementById('userInfoSpan');
+  if (userInfoSpan && user) {
+    userInfoSpan.textContent = user.email || 'Admin';
   }
 }
 
 /**
- * Add a listener for auth state changes
- * @param {Function} listener - Function to call when auth state changes
+ * Einen Listener für Auth-Status-Änderungen hinzufügen
+ * @param {Function} listener - Bei Auth-Status-Änderungen aufzurufende Funktion
  */
 export function addAuthStateListener(listener) {
   if (typeof listener !== 'function') return;
   
-  // Don't add the same listener twice
+  // Denselben Listener nicht zweimal hinzufügen
   if (!authListeners.includes(listener)) {
     authListeners.push(listener);
+    
+    // Sofort mit aktuellem Status aufrufen, falls bereits authentifiziert
+    if (currentUser) {
+      try {
+        listener(currentUser);
+      } catch (error) {
+        console.error('Fehler beim Ausführen des Auth-Listeners:', error);
+      }
+    }
   }
 }
 
 /**
- * Remove an auth state listener
- * @param {Function} listener - Listener to remove
+ * Einen Auth-Status-Listener entfernen
+ * @param {Function} listener - Zu entfernender Listener
  */
 export function removeAuthStateListener(listener) {
   const index = authListeners.indexOf(listener);
@@ -105,109 +161,358 @@ export function removeAuthStateListener(listener) {
 }
 
 /**
- * Get the current authenticated user
- * @returns {Object} User object or null
+ * Den aktuellen authentifizierten Benutzer abrufen
+ * @returns {Object} Benutzerobjekt oder null
  */
 export function getCurrentUser() {
   return currentUser;
 }
 
 /**
- * Login with email and password
- * @param {string} email - User email
- * @param {string} password - User password
- * @returns {Promise} Login result
+ * Prüfen, ob ein Benutzer authentifiziert ist
+ * @returns {boolean} Ob authentifiziert
+ */
+export function isAuthenticated() {
+  return currentUser !== null;
+}
+
+/**
+ * Token-Aktualisierungstimer einrichten
+ */
+function setupTokenRefresh() {
+  // Bestehenden Timer löschen
+  if (tokenRefreshTimer) {
+    clearInterval(tokenRefreshTimer);
+  }
+  
+  // Neuen Timer einrichten (alle 30 Minuten)
+  tokenRefreshTimer = setInterval(() => {
+    if (isAuthenticated()) {
+      refreshToken().catch(error => {
+        console.error('Fehler bei der Token-Aktualisierung:', error);
+        
+        // Bei einem kritischen Fehler abmelden
+        if (error.code === 'auth/network-request-failed' || 
+            error.code === 'auth/user-token-expired' ||
+            error.code === 'auth/invalid-user-token') {
+          logout(true);
+        }
+      });
+    }
+  }, SECURITY_CONFIG.tokenRefreshInterval);
+}
+
+/**
+ * Token aktualisieren
+ * @returns {Promise} Aktualisierungsresultat
+ */
+export async function refreshToken() {
+  if (!isAuthenticated()) {
+    return Promise.reject(new Error('Nicht authentifiziert'));
+  }
+  
+  try {
+    // Token aktualisieren
+    const token = await currentUser.getIdToken(true);
+    
+    // Aktualisiertes Token speichern
+    localStorage.setItem('auth_token', token);
+    
+    return { success: true, token };
+  } catch (error) {
+    console.error('Token-Aktualisierungsfehler:', error);
+    return Promise.reject(error);
+  }
+}
+
+/**
+ * Gespeicherte Sitzung wiederherstellen (wenn vorhanden)
+ */
+async function restoreSession() {
+  // Token aus localStorage abrufen
+  const storedToken = localStorage.getItem('auth_token');
+  
+  if (storedToken) {
+    try {
+      // Token validieren
+      const result = await validateToken(storedToken);
+      
+      if (result.valid) {
+        // Sitzung wiederherstellen
+        // In einer echten Anwendung würde hier Firebase Auth verwendet
+        // Für diese Übung simulieren wir den Benutzer
+        
+        const userEmail = sessionStorage.getItem('user_email') || 'admin@example.com';
+        
+        // Manuell den Auth-Status aktualisieren (vereinfacht)
+        handleAuthStateChange({
+          email: userEmail,
+          getIdToken: () => Promise.resolve(storedToken)
+        });
+        
+        return true;
+      } else {
+        // Ungültiges Token entfernen
+        localStorage.removeItem('auth_token');
+        sessionStorage.removeItem('user_email');
+      }
+    } catch (error) {
+      console.error('Fehler beim Wiederherstellen der Sitzung:', error);
+      
+      // Bei einem Fehler Token entfernen
+      localStorage.removeItem('auth_token');
+      sessionStorage.removeItem('user_email');
+    }
+  }
+  
+  return false;
+}
+
+/**
+ * Token validieren
+ * @param {string} token - Zu validierendes Token
+ * @returns {Promise} Validierungsresultat
+ */
+export async function validateToken(token) {
+  try {
+    const response = await fetch(API_ENDPOINTS.AUTH.VALIDATE, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      return { valid: false };
+    }
+    
+    const data = await response.json();
+    return { 
+      valid: data.valid || false, 
+      role: data.role || 'user',
+      email: data.email || ''
+    };
+  } catch (error) {
+    console.error('Token-Validierungsfehler:', error);
+    return { valid: false };
+  }
+}
+
+/**
+ * Sitzungs-Timeout-Prüfung einrichten
+ */
+function setupSessionTimeoutCheck() {
+  // Bestehenden Timer löschen
+  if (sessionTimeout) {
+    clearInterval(sessionTimeout);
+  }
+  
+  // Neuen Timer einrichten (alle Minute prüfen)
+  sessionTimeout = setInterval(() => {
+    if (isAuthenticated()) {
+      const currentTime = Date.now();
+      const inactiveTime = currentTime - lastActivityTime;
+      
+      // Bei Inaktivität abmelden (Standard: 1 Stunde)
+      if (inactiveTime > SECURITY_CONFIG.sessionTimeout) {
+        console.log('Sitzung aufgrund von Inaktivität beendet');
+        logout(true);
+      }
+    }
+  }, 60000); // Jede Minute prüfen
+}
+
+/**
+ * Aktivitätsverfolgung einrichten
+ */
+function setupActivityTracking() {
+  // Bei jeder Benutzeraktivität die Zeit aktualisieren
+  const activityEvents = ['mousedown', 'keydown', 'touchstart', 'scroll'];
+  
+  activityEvents.forEach(eventType => {
+    document.addEventListener(eventType, updateLastActivityTime, { passive: true });
+  });
+}
+
+/**
+ * Letzte Aktivitätszeit aktualisieren
+ */
+function updateLastActivityTime() {
+  lastActivityTime = Date.now();
+}
+
+/**
+ * Mit E-Mail und Passwort anmelden
+ * @param {string} email - Benutzer-E-Mail
+ * @param {string} password - Benutzerpasswort
+ * @returns {Promise} Anmeldeergebnis
  */
 export async function login(email, password) {
   const auth = getAuth();
-  if (!auth) return { success: false, error: 'Auth not initialized' };
+  if (!auth) return { success: false, error: 'Auth nicht initialisiert' };
   
-  // Input validation
+  // Eingabevalidierung
   if (!email || !email.includes('@')) {
-    return { success: false, error: 'Please enter a valid email address' };
+    return { success: false, error: 'Bitte geben Sie eine gültige E-Mail-Adresse ein' };
   }
   
   if (!password || password.length < 6) {
-    return { success: false, error: 'Password must be at least 6 characters' };
+    return { success: false, error: 'Passwort muss mindestens 6 Zeichen lang sein' };
   }
   
-  // Apply rate limiting
-  const now = Date.now();
-  const lastAttempt = parseInt(localStorage.getItem('lastLoginAttempt') || '0');
-  const attemptCount = parseInt(localStorage.getItem('loginAttemptCount') || '0');
+  // Ratenbegrenzung anwenden
+  const jetzt = Date.now();
+  const letzterVersuch = parseInt(localStorage.getItem('lastLoginAttempt') || '0');
+  const versuchsAnzahl = parseInt(localStorage.getItem('loginAttemptCount') || '0');
   
-  if (attemptCount >= 5 && (now - lastAttempt) < 60000) { // 1 minute lockout
-    return { success: false, error: 'Too many attempts. Please try again in a minute.' };
+  if (versuchsAnzahl >= SECURITY_CONFIG.maxLoginAttempts && 
+      (jetzt - letzterVersuch) < SECURITY_CONFIG.lockoutTime) {
+    const verbleibend = Math.ceil((SECURITY_CONFIG.lockoutTime - (jetzt - letzterVersuch)) / 1000 / 60);
+    return { 
+      success: false, 
+      error: `Zu viele Versuche. Bitte versuchen Sie es in ${verbleibend} Minute${verbleibend !== 1 ? 'n' : ''} erneut.` 
+    };
   }
   
-  // Update attempt tracking
-  localStorage.setItem('lastLoginAttempt', now.toString());
+  // Versuchsverfolgung aktualisieren
+  localStorage.setItem('lastLoginAttempt', jetzt.toString());
   localStorage.setItem('loginAttemptCount', 
-    (now - lastAttempt > 300000) ? '1' : (attemptCount + 1).toString()); // Reset after 5 minutes
+    (jetzt - letzterVersuch > 300000) ? '1' : (versuchsAnzahl + 1).toString()); // Nach 5 Minuten zurücksetzen
   
   try {
-    // Show loading status
-    showStatus('Logging in...', false, 0);
+    // CSRF-Token für API-Anfragen abrufen
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     
-    // Attempt login
-    const userCredential = await auth.signInWithEmailAndPassword(email, password);
+    // Ladestatus anzeigen
+    showStatus('Anmeldung...', false, 0);
     
-    // Reset attempt counter on success
+    // Bei Firebase oder über die API anmelden
+    // In einer echten Anwendung würden wir Firebase Auth verwenden:
+    // const userCredential = await auth.signInWithEmailAndPassword(email, password);
+    
+    // Da wir jedoch eine Direktanmeldung bei der API durchführen,
+    // verwenden wir einen API-Anfrageansatz:
+    const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken || ''
+      },
+      body: JSON.stringify({ email, password })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || 'Anmeldefehler');
+    }
+    
+    // Versuchszähler bei Erfolg zurücksetzen
     localStorage.setItem('loginAttemptCount', '0');
     
-    // Success message
-    showStatus('Logged in successfully');
+    // Token und Benutzerinformationen speichern
+    localStorage.setItem('auth_token', data.token);
+    if (data.refreshToken) {
+      // Refresh-Token im sessionStorage (nicht localStorage) speichern
+      sessionStorage.setItem('refresh_token', data.refreshToken);
+    }
+    sessionStorage.setItem('user_email', email);
     
-    return { success: true, user: userCredential.user };
+    // Benutzer manuell erstellen (vereinfacht)
+    const user = {
+      email: email,
+      role: data.user?.role || 'admin',
+      getIdToken: () => Promise.resolve(data.token)
+    };
+    
+    // Auth-Status aktualisieren
+    handleAuthStateChange(user);
+    
+    // Erfolgsmeldung
+    showStatus('Erfolgreich angemeldet');
+    
+    return { success: true, user };
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Anmeldefehler:', error);
+    showStatus(`Anmeldung fehlgeschlagen: ${error.message}`, true);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Aktuellen Benutzer abmelden
+ * @param {boolean} force - Ob Abmeldung auch bei ungespeicherten Änderungen erzwungen werden soll
+ * @returns {Promise} Abmeldeergebnis
+ */
+export async function logout(force = false) {
+  const auth = getAuth();
+  if (!auth) return { success: false, error: 'Auth nicht initialisiert' };
+  
+  // Auf ungespeicherte Änderungen prüfen
+  const hatUngespeicherteÄnderungen = window.isDirty === true;
+  
+  if (hatUngespeicherteÄnderungen && !force) {
+    const bestätigt = confirm('Sie haben ungespeicherte Änderungen. Möchten Sie sich wirklich abmelden?');
+    if (!bestätigt) {
+      return { success: false, error: 'Abmeldung aufgrund ungespeicherter Änderungen abgebrochen' };
+    }
+  }
+  
+  try {
+    // Ladestatus anzeigen
+    showStatus('Abmeldung...', false, 0);
     
-    showStatus(`Login failed: ${error.message}`, true);
+    // CSRF-Token für API-Anfragen abrufen
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
+    // Token aus localStorage abrufen
+    const token = localStorage.getItem('auth_token');
+    
+    // Bei der API abmelden
+    if (token) {
+      try {
+        await fetch(API_ENDPOINTS.AUTH.LOGOUT, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken || ''
+          }
+        });
+      } catch (error) {
+        console.warn('API-Abmeldung fehlgeschlagen:', error);
+        // Wir setzen fort, da wir trotzdem lokal abmelden können
+      }
+    }
+    
+    // Lokale Speicherung bereinigen
+    localStorage.removeItem('auth_token');
+    sessionStorage.removeItem('refresh_token');
+    sessionStorage.removeItem('user_email');
+    
+    // In einer echten Anwendung: Firebase-Abmeldung
+    // await auth.signOut();
+    
+    // Manuell Auth-Status aktualisieren
+    handleAuthStateChange(null);
+    
+    // Erfolgsmeldung
+    showStatus('Erfolgreich abgemeldet');
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Abmeldefehler:', error);
+    
+    showStatus(`Fehler bei der Abmeldung: ${error.message}`, true);
     
     return { success: false, error: error.message };
   }
 }
 
 /**
- * Logout the current user
- * @param {boolean} force - Whether to force logout even with unsaved changes
- * @returns {Promise} Logout result
+ * Anmeldeformular einrichten
  */
-export async function logout(force = false) {
-  const auth = getAuth();
-  if (!auth) return { success: false, error: 'Auth not initialized' };
-  
-  // Check for unsaved changes
-  const hasUnsavedChanges = window.isDirty === true;
-  
-  if (hasUnsavedChanges && !force) {
-    const confirmed = confirm('You have unsaved changes. Are you sure you want to log out?');
-    if (!confirmed) {
-      return { success: false, error: 'Logout canceled due to unsaved changes' };
-    }
-  }
-  
-  try {
-    // Show loading status
-    showStatus('Logging out...', false, 0);
-    
-    // Sign out
-    await auth.signOut();
-    
-    // Success message
-    showStatus('Logged out successfully');
-    
-    return { success: true };
-  } catch (error) {
-    console.error('Logout error:', error);
-    
-    showStatus(`Error during logout: ${error.message}`, true);
-    
-    return { success: false, error: error.message };
-  }
-}
-
-// Handles pressing enter in login form
 export function setupLoginForm() {
   const emailField = document.getElementById('emailField');
   const passField = document.getElementById('passField');
@@ -216,7 +521,7 @@ export function setupLoginForm() {
   
   if (!emailField || !passField || !loginBtn) return;
   
-  // Clear previous listeners to avoid duplicates
+  // Vorherige Listener löschen, um Duplikate zu vermeiden
   const newEmailField = emailField.cloneNode(true);
   const newPassField = passField.cloneNode(true);
   const newLoginBtn = loginBtn.cloneNode(true);
@@ -225,50 +530,89 @@ export function setupLoginForm() {
   passField.parentNode.replaceChild(newPassField, passField);
   loginBtn.parentNode.replaceChild(newLoginBtn, loginBtn);
   
-  // Login button click handler
-  newLoginBtn.addEventListener('click', async () => {
-    // Disable button during login
+  // Funktion zum Anzeigen von Fehlern
+  const showError = (message) => {
+    if (loginError) {
+      loginError.textContent = message;
+      loginError.style.display = 'block';
+    }
+  };
+  
+  // Funktion zum Ausblenden von Fehlern
+  const hideError = () => {
+    if (loginError) {
+      loginError.textContent = '';
+      loginError.style.display = 'none';
+    }
+  };
+  
+  // Bei Eingabe Fehler ausblenden
+  newEmailField.addEventListener('input', hideError);
+  newPassField.addEventListener('input', hideError);
+  
+  // Anmeldefunktion
+  const handleLoginAttempt = async () => {
+    // Schaltfläche während der Anmeldung deaktivieren
     newLoginBtn.disabled = true;
-    newLoginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+    newLoginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Anmeldung...';
     
-    // Clear previous error
-    if (loginError) loginError.textContent = '';
+    // Vorherigen Fehler löschen
+    hideError();
     
     const result = await login(newEmailField.value, newPassField.value);
     
-    // Update UI based on result
-    if (!result.success && loginError) {
-      loginError.textContent = result.error;
+    // UI basierend auf Ergebnis aktualisieren
+    if (!result.success) {
+      showError(result.error);
     }
     
-    // Reset button
+    // Schaltfläche zurücksetzen
     newLoginBtn.disabled = false;
-    newLoginBtn.innerHTML = 'Login';
-  });
+    newLoginBtn.innerHTML = 'Anmelden';
+  };
   
-  // Enter key handler
+  // Klick-Handler für Anmeldebutton
+  newLoginBtn.addEventListener('click', handleLoginAttempt);
+  
+  // Enter-Taste-Handler
   newPassField.addEventListener('keyup', async (e) => {
     if (e.key === 'Enter') {
-      // Disable button during login
-      newLoginBtn.disabled = true;
-      newLoginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
-      
-      // Clear previous error
-      if (loginError) loginError.textContent = '';
-      
-      const result = await login(newEmailField.value, newPassField.value);
-      
-      // Update UI based on result
-      if (!result.success && loginError) {
-        loginError.textContent = result.error;
-      }
-      
-      // Reset button
-      newLoginBtn.disabled = false;
-      newLoginBtn.innerHTML = 'Login';
+      handleLoginAttempt();
     }
   });
+  
+  // "Remember Me"-Funktionalität (falls vorhanden)
+  const rememberCheck = document.getElementById('rememberCheck');
+  if (rememberCheck) {
+    // Gespeicherten Zustand abrufen
+    const remembered = localStorage.getItem('remember_login') === 'true';
+    rememberCheck.checked = remembered;
+    
+    // Wenn "Remember Me" aktiviert ist, E-Mail aus localStorage abrufen
+    if (remembered && newEmailField) {
+      const savedEmail = localStorage.getItem('saved_email');
+      if (savedEmail) {
+        newEmailField.value = savedEmail;
+      }
+    }
+    
+    // Bei Änderung speichern
+    rememberCheck.addEventListener('change', () => {
+      if (rememberCheck.checked) {
+        localStorage.setItem('remember_login', 'true');
+        if (newEmailField.value) {
+          localStorage.setItem('saved_email', newEmailField.value);
+        }
+      } else {
+        localStorage.removeItem('remember_login');
+        localStorage.removeItem('saved_email');
+      }
+    });
+  }
 }
 
-// Initialize when this module is loaded
+// Initialisieren, wenn dieses Modul geladen wird
 initAuth();
+
+// Export der globalen Anmeldefunktion
+window.handleLogin = login;

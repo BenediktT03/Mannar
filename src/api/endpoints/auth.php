@@ -1,26 +1,27 @@
- <?php
+<?php
 /**
  * auth.php
- * Handles authentication-related API endpoints
+ * Behandelt authentifizierungsbezogene API-Endpunkte mit verbesserten Sicherheitsmaßnahmen
  */
 
-// Include required files
+// Erforderliche Dateien einbinden
 require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../../config/env.php';
 
-// Set CORS headers
+// CORS-Header setzen
 setCorsHeaders();
 
-// Get request method and action
+// Anfragemethode und Aktion abrufen
 $method = $_SERVER['REQUEST_METHOD'];
 $action = isset($_GET['action']) ? $_GET['action'] : 'login';
 
-// Handle OPTIONS preflight request
+// OPTIONS Preflight-Anfrage behandeln
 if ($method === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
 
-// Process based on action
+// Basierend auf Aktion verarbeiten
 try {
     switch ($action) {
         case 'login':
@@ -29,10 +30,6 @@ try {
             
         case 'logout':
             handleLogout();
-            break;
-            
-        case 'register':
-            handleRegister();
             break;
             
         case 'validate':
@@ -48,25 +45,25 @@ try {
             break;
             
         default:
-            sendJsonError('Unknown auth action', 400);
+            sendJsonError('Unbekannte Auth-Aktion', 400);
     }
 } catch (Exception $e) {
-    sendJsonError('Error: ' . $e->getMessage(), 500);
+    sendJsonError('Fehler: ' . $e->getMessage(), 500);
 }
 
 /**
- * Handle user login
+ * Behandelt Benutzeranmeldung mit Rate-Limiting
  */
 function handleLogin() {
-    // Only POST method allowed for login
+    // Nur POST-Methode für Login erlaubt
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        sendJsonError('Method not allowed', 405);
+        sendJsonError('Methode nicht erlaubt', 405);
     }
     
-    // Get request body
+    // Request-Body abrufen
     $data = json_decode(file_get_contents('php://input'), true);
     
-    // Check required fields
+    // Erforderliche Felder prüfen
     $validation = validateRequiredFields(['email', 'password'], $data);
     if ($validation !== true) {
         sendJsonError($validation, 400);
@@ -75,204 +72,210 @@ function handleLogin() {
     $email = filter_var($data['email'], FILTER_SANITIZE_EMAIL);
     $password = $data['password'];
     
-    // Validate email format
+    // E-Mail-Format validieren
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        sendJsonError('Invalid email format', 400);
+        sendJsonError('Ungültiges E-Mail-Format', 400);
     }
     
-    // In a real application, authenticate using Firebase Admin SDK
-    // Here we use a simplified example using firebase_config.php
+    // Rate-Limiting implementieren
+    $clientIp = $_SERVER['REMOTE_ADDR'];
+    $now = time();
+    $rateLimitKey = 'login_attempts_' . md5($clientIp . '_' . $email);
     
-    // For demo/testing purposes (in actual implementation, use Firebase SDK)
-    // Assuming this is the admin account
-    if ($email === 'admin@example.com' && $password === 'admin123') {
-        $token = generateAuthToken($email);
+    // Bestehende Anmeldeversuche abrufen
+    $attempts = getLoginAttempts($rateLimitKey);
+    
+    // Maximale Anmeldeversuche prüfen (5 Versuche innerhalb von 5 Minuten)
+    if ($attempts['count'] >= 5 && ($now - $attempts['last_attempt']) < 300) {
+        $timeLeft = 300 - ($now - $attempts['last_attempt']);
+        sendJsonError('Zu viele Anmeldeversuche. Bitte versuchen Sie es in ' . ceil($timeLeft / 60) . ' Minuten erneut.', 429);
+    }
+    
+    // Anmeldeversuch aktualisieren
+    updateLoginAttempts($rateLimitKey, $now, ($attempts['count'] + 1));
+    
+    // In einer echten Anwendung Firebase Admin SDK zur Authentifizierung verwenden
+    // Hier verwenden wir ein vereinfachtes Beispiel mit Umgebungsvariablen
+    
+    // Admin-Benutzer aus Umgebungsvariablen (in Produktion Firebase Admin SDK verwenden)
+    $adminEmail = env('ADMIN_EMAIL', 'admin@example.com');
+    $adminPasswordHash = env('ADMIN_PASSWORD_HASH', password_hash('admin123', PASSWORD_DEFAULT));
+    
+    // Anmeldung prüfen
+    if ($email === $adminEmail && password_verify($password, $adminPasswordHash)) {
+        // Token generieren
+        $token = generateJWT([
+            'email' => $email,
+            'role' => 'admin',
+            'exp' => time() + 3600, // 1 Stunde Gültigkeit
+            'iat' => time()
+        ]);
+        
+        // Refresh-Token generieren
+        $refreshToken = bin2hex(random_bytes(32));
+        
+        // In Produktion: Refresh-Token in der Datenbank speichern
+        // storeRefreshToken($email, $refreshToken, time() + 86400); // 24 Stunden Gültigkeit
+        
+        // Anmeldeversuche zurücksetzen
+        resetLoginAttempts($rateLimitKey);
         
         sendJsonResponse([
             'success' => true,
-            'message' => 'Login successful',
+            'message' => 'Anmeldung erfolgreich',
             'token' => $token,
+            'refreshToken' => $refreshToken,
             'user' => [
                 'email' => $email,
                 'role' => 'admin'
             ]
         ]);
     } else {
-        // Failed login attempt
-        sendJsonError('Invalid credentials', 401);
+        // Fehlgeschlagener Anmeldeversuch
+        sendJsonError('Ungültige Anmeldedaten', 401);
     }
 }
 
 /**
- * Handle user logout
+ * Behandelt Benutzerabmeldung
  */
 function handleLogout() {
-    // Only POST method allowed for logout
+    // Nur POST-Methode für Abmeldung erlaubt
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        sendJsonError('Method not allowed', 405);
+        sendJsonError('Methode nicht erlaubt', 405);
     }
     
-    // Get authorization header
+    // Autorisierungs-Header abrufen
     $token = getBearerToken();
     
     if (!$token) {
-        sendJsonError('No auth token provided', 401);
+        sendJsonError('Kein Auth-Token bereitgestellt', 401);
     }
     
-    // In a real app, invalidate the token in your token store
-    // Here we just return success message
+    // In einer echten App: Token im Token-Store ungültig machen
+    // Hier geben wir einfach eine Erfolgsmeldung zurück
     
     sendJsonResponse([
         'success' => true,
-        'message' => 'Logout successful'
+        'message' => 'Abmeldung erfolgreich'
     ]);
 }
 
 /**
- * Handle user registration
- */
-function handleRegister() {
-    // Only POST method allowed for registration
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        sendJsonError('Method not allowed', 405);
-    }
-    
-    // Get request body
-    $data = json_decode(file_get_contents('php://input'), true);
-    
-    // Check required fields
-    $validation = validateRequiredFields(['email', 'password', 'name'], $data);
-    if ($validation !== true) {
-        sendJsonError($validation, 400);
-    }
-    
-    $email = filter_var($data['email'], FILTER_SANITIZE_EMAIL);
-    $password = $data['password'];
-    $name = sanitizeInput($data['name']);
-    
-    // Validate email format
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        sendJsonError('Invalid email format', 400);
-    }
-    
-    // Password length check
-    if (strlen($password) < 6) {
-        sendJsonError('Password must be at least 6 characters', 400);
-    }
-    
-    // In a real app, create the user in Firebase
-    // For demo, just return success message
-    
-    sendJsonResponse([
-        'success' => true,
-        'message' => 'Registration successful',
-        'user' => [
-            'email' => $email,
-            'name' => $name
-        ]
-    ]);
-}
-
-/**
- * Validate authentication token
+ * Authentifizierungstoken validieren
  */
 function validateToken() {
-    // Get authorization header
+    // Autorisierungs-Header abrufen
     $token = getBearerToken();
     
     if (!$token) {
-        sendJsonError('No auth token provided', 401);
+        sendJsonError('Kein Auth-Token bereitgestellt', 401);
     }
     
-    // Use validateAdminToken from firebase-config.php
-    if (validateAdminToken($token)) {
-        sendJsonResponse([
-            'success' => true,
-            'valid' => true,
-            'role' => 'admin'
-        ]);
-    } else {
-        sendJsonError('Invalid token', 401);
+    // Token validieren
+    try {
+        $decoded = verifyJWT($token);
+        
+        if ($decoded) {
+            sendJsonResponse([
+                'success' => true,
+                'valid' => true,
+                'role' => $decoded['role'] ?? 'user',
+                'email' => $decoded['email'] ?? '',
+                'exp' => $decoded['exp'] ?? 0
+            ]);
+        } else {
+            sendJsonError('Ungültiges Token', 401);
+        }
+    } catch (Exception $e) {
+        sendJsonError('Token-Validierungsfehler: ' . $e->getMessage(), 401);
     }
 }
 
 /**
- * Refresh an authentication token
+ * Authentifizierungstoken aktualisieren
  */
 function refreshToken() {
-    // Only POST method allowed for token refresh
+    // Nur POST-Methode für Token-Aktualisierung erlaubt
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        sendJsonError('Method not allowed', 405);
+        sendJsonError('Methode nicht erlaubt', 405);
     }
     
-    // Get request body
+    // Request-Body abrufen
     $data = json_decode(file_get_contents('php://input'), true);
     
-    // Check required fields
-    if (!isset($data['refresh_token']) || empty($data['refresh_token'])) {
-        sendJsonError('Refresh token is required', 400);
+    // Erforderliche Felder prüfen
+    if (!isset($data['refreshToken']) || empty($data['refreshToken'])) {
+        sendJsonError('Refresh-Token ist erforderlich', 400);
     }
     
-    $refreshToken = $data['refresh_token'];
+    $refreshToken = $data['refreshToken'];
     
-    // In a real application, validate the refresh token 
-    // and generate a new auth token
+    // In einer echten Anwendung: Refresh-Token validieren und neues Auth-Token generieren
     
-    // For demo, we'll respond with a new token for the admin
-    if ($refreshToken === 'valid_refresh_token') {
-        $token = generateAuthToken('admin@example.com');
+    // Für Demo: Ein neues Token für den Admin zurückgeben
+    // In Produktion: Validierung gegen Datenbank
+    if (strlen($refreshToken) === 64) {
+        $adminEmail = env('ADMIN_EMAIL', 'admin@example.com');
+        
+        $token = generateJWT([
+            'email' => $adminEmail,
+            'role' => 'admin',
+            'exp' => time() + 3600, // 1 Stunde Gültigkeit
+            'iat' => time()
+        ]);
         
         sendJsonResponse([
             'success' => true,
             'token' => $token
         ]);
     } else {
-        sendJsonError('Invalid refresh token', 401);
+        sendJsonError('Ungültiges Refresh-Token', 401);
     }
 }
 
 /**
- * Handle password reset
+ * Passwort-Zurücksetzung behandeln
  */
 function handlePasswordReset() {
-    // Only POST method allowed for password reset
+    // Nur POST-Methode für Passwort-Zurücksetzung erlaubt
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        sendJsonError('Method not allowed', 405);
+        sendJsonError('Methode nicht erlaubt', 405);
     }
     
-    // Get request body
+    // Request-Body abrufen
     $data = json_decode(file_get_contents('php://input'), true);
     
-    // Check required fields
+    // Erforderliche Felder prüfen
     if (!isset($data['email']) || empty($data['email'])) {
-        sendJsonError('Email is required', 400);
+        sendJsonError('E-Mail ist erforderlich', 400);
     }
     
     $email = filter_var($data['email'], FILTER_SANITIZE_EMAIL);
     
-    // Validate email format
+    // E-Mail-Format validieren
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        sendJsonError('Invalid email format', 400);
+        sendJsonError('Ungültiges E-Mail-Format', 400);
     }
     
-    // In a real application, send password reset email using Firebase
-    // For demo, we'll just respond with success message
+    // In einer echten Anwendung: Passwort-Zurücksetzungs-E-Mail mit Firebase senden
+    // Für Demo: Einfach mit Erfolgsmeldung antworten
     
     sendJsonResponse([
         'success' => true,
-        'message' => 'Password reset email sent'
+        'message' => 'Passwort-Zurücksetzungs-E-Mail gesendet'
     ]);
 }
 
 /**
- * Get bearer token from authorization header
- * @return string|null The token or null if not found
+ * Bearer-Token aus Autorisierungs-Header abrufen
+ * @return string|null Das Token oder null, wenn nicht gefunden
  */
 function getBearerToken() {
     $headers = getallheaders();
     $authHeader = isset($headers['Authorization']) ? $headers['Authorization'] : '';
     
-    // Extract token
+    // Token extrahieren
     if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
         return $matches[1];
     }
@@ -281,21 +284,113 @@ function getBearerToken() {
 }
 
 /**
- * Generate an authentication token
- * @param string $email User email
- * @return string Generated token
+ * Anmeldeversuche aus dem Session-Speicher abrufen
+ * @param string $key Schlüssel für Anmeldeversuche
+ * @return array Anmeldeversuche (count und last_attempt)
  */
-function generateAuthToken($email) {
-    // In a real application, use a proper JWT library or Firebase
+function getLoginAttempts($key) {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
     
-    // For demo, create a simple token
-    $tokenData = [
-        'email' => $email,
-        'exp' => time() + AUTH_TOKEN_EXPIRY,
-        'iat' => time()
-    ];
+    if (!isset($_SESSION[$key])) {
+        return ['count' => 0, 'last_attempt' => 0];
+    }
     
-    // Encode token (this is not secure, just for demo)
-    return base64_encode(json_encode($tokenData));
+    return $_SESSION[$key];
 }
-?>
+
+/**
+ * Anmeldeversuche im Session-Speicher aktualisieren
+ * @param string $key Schlüssel für Anmeldeversuche
+ * @param int $timestamp Zeitstempel des letzten Versuchs
+ * @param int $count Anzahl der Versuche
+ */
+function updateLoginAttempts($key, $timestamp, $count) {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    $_SESSION[$key] = [
+        'count' => $count,
+        'last_attempt' => $timestamp
+    ];
+}
+
+/**
+ * Anmeldeversuche zurücksetzen
+ * @param string $key Schlüssel für Anmeldeversuche
+ */
+function resetLoginAttempts($key) {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    if (isset($_SESSION[$key])) {
+        unset($_SESSION[$key]);
+    }
+}
+
+/**
+ * Ein JWT (JSON Web Token) generieren
+ * @param array $payload Token-Payload
+ * @return string Generiertes Token
+ */
+function generateJWT($payload) {
+    $secret = ADMIN_SECRET;
+    
+    // Header
+    $header = json_encode([
+        'alg' => 'HS256',
+        'typ' => 'JWT'
+    ]);
+    
+    // Payload
+    $payload = json_encode($payload);
+    
+    // Base64Url-Kodierung
+    $base64UrlHeader = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
+    $base64UrlPayload = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($payload));
+    
+    // Signatur erstellen
+    $signature = hash_hmac('sha256', $base64UrlHeader . "." . $base64UrlPayload, $secret, true);
+    $base64UrlSignature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
+    
+    // JWT zusammensetzen
+    return $base64UrlHeader . "." . $base64UrlPayload . "." . $base64UrlSignature;
+}
+
+/**
+ * JWT (JSON Web Token) verifizieren
+ * @param string $token JWT-Token
+ * @return array|false Decodierter Payload oder false bei ungültigem Token
+ */
+function verifyJWT($token) {
+    $secret = ADMIN_SECRET;
+    
+    // Token aufteilen
+    $tokenParts = explode('.', $token);
+    if (count($tokenParts) != 3) {
+        return false;
+    }
+    
+    list($base64UrlHeader, $base64UrlPayload, $base64UrlSignature) = $tokenParts;
+    
+    // Signatur überprüfen
+    $signature = base64_decode(str_replace(['-', '_'], ['+', '/'], $base64UrlSignature));
+    $expectedSignature = hash_hmac('sha256', $base64UrlHeader . "." . $base64UrlPayload, $secret, true);
+    
+    if (!hash_equals($signature, $expectedSignature)) {
+        return false;
+    }
+    
+    // Payload decodieren
+    $payload = json_decode(base64_decode(str_replace(['-', '_'], ['+', '/'], $base64UrlPayload)), true);
+    
+    // Ablaufzeit überprüfen
+    if (isset($payload['exp']) && $payload['exp'] < time()) {
+        return false; // Token ist abgelaufen
+    }
+    
+    return $payload;
+}

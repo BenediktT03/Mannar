@@ -1,81 +1,85 @@
- <?php
+<?php
 /**
  * firebase-config.php
- * Centralized Firebase configuration for PHP components
+ * Zentralisierte Firebase-Konfiguration für PHP-Komponenten
  */
 
-// In a production environment, you would store these in environment variables
-// using something like $_ENV['FIREBASE_API_KEY'] or getenv('FIREBASE_API_KEY')
+// Lade Umgebungsvariablen
+require_once __DIR__ . '/../config/env.php';
 
-// Firebase configuration
-$firebase_config = [
-    'apiKey' => "AIzaSyAQszUApKHZ3lPrpc7HOINpdOWW3SgvUBM",
-    'authDomain' => "mannar-129a5.firebaseapp.com",
-    'projectId' => "mannar-129a5",
-    'storageBucket' => "mannar-129a5.firebasestorage.app",
-    'messagingSenderId' => "687710492532",
-    'appId' => "1:687710492532:web:c7b675da541271f8d83e21",
-    'measurementId' => "G-NXBLYJ5CXL"
-];
+// Firebase-Konfiguration aus Umgebungsvariablen
+$firebase_config = getFirebaseConfig(true);
 
-// Create JSON version for JavaScript
-$firebase_config_json = json_encode($firebase_config);
+// Erstelle JSON-Version für JavaScript
+$firebase_config_json = getFirebaseConfigJson(false);
 
-// PHP Admin Secret (for server-side validation)
-$admin_secret = "your-secret-admin-key"; // Replace with a strong secret in production
+// PHP Admin Secret (für serverseitige Validierung)
+$admin_secret = ADMIN_SECRET; 
 
 /**
- * Creates a JavaScript snippet to initialize Firebase
- * @return string The JavaScript code
+ * Erstellt ein JavaScript-Snippet zur Initialisierung von Firebase
+ * @return string Der JavaScript-Code
  */
 function getFirebaseInitScript() {
     global $firebase_config_json;
     
     return <<<EOT
 <script>
-  // Centralized Firebase configuration
+  // Zentralisierte Firebase-Konfiguration
   const FIREBASE_CONFIG = {$firebase_config_json};
 
-  // Initialize Firebase safely
+  // Initialisiere Firebase sicher
   if (typeof firebase !== 'undefined') {
     if (!firebase.apps.length) {
       firebase.initializeApp(FIREBASE_CONFIG);
     }
   } else {
-    console.error("Firebase SDK not loaded. Please check your connection and try again.");
+    console.error("Firebase SDK nicht geladen. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.");
   }
 </script>
 EOT;
 }
 
 /**
- * Validate authentication and admin permissions
- * For server-side operations requiring admin privileges
- * @param string $token Authentication token
- * @return bool Whether the user is authenticated as admin
+ * Validiere Authentifizierung und Admin-Berechtigungen
+ * Für serverseitige Operationen, die Admin-Rechte erfordern
+ * @param string $token Authentifizierungstoken
+ * @return bool Ob der Benutzer als Admin authentifiziert ist
  */
 function validateAdminToken($token) {
     global $admin_secret;
     
-    // In production, validate against Firebase Admin SDK or your auth system
-    // This is a simplified example
+    // In der Produktion gegen Firebase Admin SDK oder Ihr Auth-System validieren
+    // Dies ist ein vereinfachtes Beispiel
     if (empty($token)) {
         return false;
     }
     
-    // Compare with your stored admin token
-    return $token === $admin_secret;
+    // Vergleichen mit Ihrem gespeicherten Admin-Token
+    // Diese Methode sollte in einer Produktionsumgebung durch eine sichere
+    // Token-Validierung ersetzt werden, vorzugsweise mit Firebase Admin SDK
+    try {
+        // Vorschlag: JWT-Validierung implementieren
+        // $decoded = JWT::decode($token, $admin_secret, ['HS256']);
+        // return isset($decoded->role) && $decoded->role === 'admin';
+        
+        // Vorübergehend den einfachen Vergleich beibehalten
+        return $token === $admin_secret;
+    } catch (Exception $e) {
+        error_log('Token validation error: ' . $e->getMessage());
+        return false;
+    }
 }
 
 /**
- * Get Firebase credentials for server-side API access
- * @return array Firebase credentials
+ * Hole Firebase-Credentials für serverseitigen API-Zugriff
+ * @return array Firebase-Credentials
  */
 function getFirebaseServerCredentials() {
     global $firebase_config;
     
-    // In production, you would load a service account JSON file
-    // For service account: return json_decode(file_get_contents('path/to/serviceAccountKey.json'), true);
+    // In der Produktion würden Sie eine Service-Account-JSON-Datei laden
+    // Für Service-Account: return json_decode(file_get_contents('path/to/serviceAccountKey.json'), true);
     
     return $firebase_config;
 }
