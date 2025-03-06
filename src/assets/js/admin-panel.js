@@ -1156,7 +1156,6 @@ if (elements.previewWordCloudBtn) {
 
 );
 
-// Enhanced preview functionality
 function refreshPreview() {
   const previewFrame = document.getElementById('previewFrame');
   if (!previewFrame) {
@@ -1204,7 +1203,9 @@ function refreshPreview() {
     };
   }
   
-  showStatus(`Preview refreshed (${isDraft ? 'Draft' : 'Live'} version)`);
+  // Use console.log instead of showStatus since this function
+  // might be called from outside the scope where showStatus is defined
+  console.log(`Preview refreshed (${isDraft ? 'Draft' : 'Live'} version)`);
 }
 
 // Set up preview controls

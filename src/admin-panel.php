@@ -13,6 +13,8 @@
   <!-- Enhanced Admin Panel CSS -->
   <link rel="stylesheet" href="./assets/css/admin-enhanced.css" />
   <link rel="stylesheet" href="./assets/css/dashboard.css" />
+  <link rel="stylesheet" href="./assets/css/tab-fix.css">
+  <link rel="stylesheet" href="./assets/css/word-cloud-fix.css">
   
   <!-- TinyMCE -->
   <script src="https://cdn.tiny.cloud/1/5pxzy8guun55o6z5mi0r8c4j8gk5hqeq3hpsotx123ak212k/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
@@ -25,6 +27,8 @@
   <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-storage-compat.js"></script>
+  <script src="./assets/js/tab-fix.js"></script>
+  <script src="./assets/js/word-cloud-fix.js"></script>
 </head>
 <body>
 
