@@ -88,130 +88,63 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  // Inhalte aus Firestore laden
-  function loadWebsiteContent() {
-    // Hauptinhalte laden
-    db.collection("content").doc("main").get().then(doc => {
-      if (doc.exists) {
-        const data = doc.data();
-        console.log("Geladene Daten aus Firestore:", data);
-        
-        // About
-        if (data.aboutTitle) document.getElementById('aboutTitle').innerText = data.aboutTitle;
-        if (data.aboutSubtitle) document.getElementById('aboutSubtitle').innerText = data.aboutSubtitle;
-        if (data.aboutText) document.getElementById('aboutText').innerHTML = data.aboutText;
-        
-        // Angebote
-        if (data.offeringsTitle) document.getElementById('offeringsTitle').innerText = data.offeringsTitle;
-        if (data.offeringsSubtitle) document.getElementById('offeringsSubtitle').innerText = data.offeringsSubtitle;
-        
-        // Bilder überprüfen und setzen mit Fallback
-        // Angebot 1
-        const offer1Image = document.getElementById('offer1Image');
-        if (offer1Image) {
-          if (data.offer1Title) document.getElementById('offer1Title').innerText = data.offer1Title;
-          if (data.offer1Desc) document.getElementById('offer1Desc').innerHTML = data.offer1Desc;
-          
-          if (data.offer1_image && typeof data.offer1_image === 'object') {
-            // Standard Objekt-Format: { url: "...", public_id: "..." }
-            if (data.offer1_image.url) {
-              console.log("Setze Angebot 1 Bild aus URL:", data.offer1_image.url);
-              offer1Image.src = data.offer1_image.url;
-            }
-          } else if (typeof data.offer1_image === 'string') {
-            // Alternatives Format: direkter String-Pfad
-            console.log("Setze Angebot 1 Bild aus String:", data.offer1_image);
-            offer1Image.src = data.offer1_image;
-          }
-        }
-        
-        // Angebot 2
-        const offer2Image = document.getElementById('offer2Image');
-        if (offer2Image) {
-          if (data.offer2Title) document.getElementById('offer2Title').innerText = data.offer2Title;
-          if (data.offer2Desc) document.getElementById('offer2Desc').innerHTML = data.offer2Desc;
-          
-          if (data.offer2_image && typeof data.offer2_image === 'object') {
-            if (data.offer2_image.url) {
-              console.log("Setze Angebot 2 Bild aus URL:", data.offer2_image.url);
-              offer2Image.src = data.offer2_image.url;
-            }
-          } else if (typeof data.offer2_image === 'string') {
-            console.log("Setze Angebot 2 Bild aus String:", data.offer2_image);
-            offer2Image.src = data.offer2_image;
-          }
-        }
-        
-        // Angebot 3
-        const offer3Image = document.getElementById('offer3Image');
-        if (offer3Image) {
-          if (data.offer3Title) document.getElementById('offer3Title').innerText = data.offer3Title;
-          if (data.offer3Desc) document.getElementById('offer3Desc').innerHTML = data.offer3Desc;
-          
-          if (data.offer3_image && typeof data.offer3_image === 'object') {
-            if (data.offer3_image.url) {
-              console.log("Setze Angebot 3 Bild aus URL:", data.offer3_image.url);
-              offer3Image.src = data.offer3_image.url;
-            }
-          } else if (typeof data.offer3_image === 'string') {
-            console.log("Setze Angebot 3 Bild aus String:", data.offer3_image);
-            offer3Image.src = data.offer3_image;
-          }
-        }
-        
-        // Kontakt
-        if (data.contactTitle) document.getElementById('contactTitle').innerText = data.contactTitle;
-        if (data.contactSubtitle) document.getElementById('contactSubtitle').innerText = data.contactSubtitle;
-        
-        // Kontaktbild
-        const contactImage = document.getElementById('contactImage');
-        if (contactImage) {
-          if (data.contact_image && typeof data.contact_image === 'object') {
-            if (data.contact_image.url) {
-              console.log("Setze Kontakt Bild aus URL:", data.contact_image.url);
-              contactImage.src = data.contact_image.url;
-            }
-          } else if (typeof data.contact_image === 'string') {
-            console.log("Setze Kontakt Bild aus String:", data.contact_image);
-            contactImage.src = data.contact_image;
-          }
-        }
-      } else {
-        console.warn("Keine Inhalte in Firestore gefunden");
-      }
-    }).catch(error => {
-      console.error("Fehler beim Laden der Inhalte:", error);
+  // Suche nach der Funktion loadWebsiteContent
+function loadWebsiteContent() {
+  // Ersetze die gesamte Funktion mit folgendem Code:
+  
+  // Hauptinhalte laden
+  contentLoader.loadContent(false).then(data => {
+    if (!data) {
+      console.warn("Keine Inhalte in Firestore gefunden");
+      return;
+    }
+    
+    console.log("Geladene Daten aus Firestore:", data);
+    
+    // About
+    if (data.aboutTitle) document.getElementById('aboutTitle').innerText = data.aboutTitle;
+    if (data.aboutSubtitle) document.getElementById('aboutSubtitle').innerText = data.aboutSubtitle;
+    if (data.aboutText) document.getElementById('aboutText').innerHTML = data.aboutText;
+    
+    // Angebote
+    if (data.offeringsTitle) document.getElementById('offeringsTitle').innerText = data.offeringsTitle;
+    if (data.offeringsSubtitle) document.getElementById('offeringsSubtitle').innerText = data.offeringsSubtitle;
+    
+    // Aktualisiere Bildvorschauen
+    contentLoader.updateImagePreviews(data, {
+      offer1Img: document.getElementById('offer1Image'),
+      offer2Img: document.getElementById('offer2Image'),
+      offer3Img: document.getElementById('offer3Image'),
+      contactImg: document.getElementById('contactImage')
     });
     
-    // Wortwolke laden
-    db.collection("content").doc("wordCloud").get().then(doc => {
-      if (doc.exists && doc.data().words) {
-        const wordCloudList = document.getElementById('wordCloudList');
-        wordCloudList.innerHTML = '';
-        
-        doc.data().words.forEach(word => {
-          if (word && word.text) {
-            const li = document.createElement('li');
-            const a = document.createElement('a');
-            
-            a.href = word.link || "#";
-            a.setAttribute('data-weight', word.weight || "5");
-            a.textContent = word.text;
-            a.style.opacity = '0';
-            a.style.transform = 'translateY(20px)';
-            
-            li.appendChild(a);
-            wordCloudList.appendChild(li);
-          }
-        });
-        
-        // Wortwolken-Animation starten
-        animateWordCloud();
-      }
-    }).catch(error => {
-      console.error("Fehler beim Laden der Wortwolke:", error);
-    });
-  }
+    // Titel
+    if (data.offer1Title) document.getElementById('offer1Title').innerText = data.offer1Title;
+    if (data.offer1Desc) document.getElementById('offer1Desc').innerHTML = data.offer1Desc;
+    if (data.offer2Title) document.getElementById('offer2Title').innerText = data.offer2Title;
+    if (data.offer2Desc) document.getElementById('offer2Desc').innerHTML = data.offer2Desc;
+    if (data.offer3Title) document.getElementById('offer3Title').innerText = data.offer3Title;
+    if (data.offer3Desc) document.getElementById('offer3Desc').innerHTML = data.offer3Desc;
+    
+    // Kontakt
+    if (data.contactTitle) document.getElementById('contactTitle').innerText = data.contactTitle;
+    if (data.contactSubtitle) document.getElementById('contactSubtitle').innerText = data.contactSubtitle;
+  }).catch(error => {
+    console.error("Fehler beim Laden der Inhalte:", error);
+  });
+  
+  // Wortwolke laden
+  contentLoader.loadWordCloud().then(words => {
+    const wordCloudList = document.getElementById('wordCloudList');
+    if (wordCloudList) {
+      contentLoader.renderWordCloud(wordCloudList, words);
+      contentLoader.animateWordCloud(document.querySelector('.textbubble'));
+    }
+  }).catch(error => {
+    console.error("Fehler beim Laden der Wortwolke:", error);
+  });
+}
+ 
   
   // Wortwolken-Animation mit Intersection Observer
   function animateWordCloud() {
@@ -291,3 +224,48 @@ if (footerCopyright) {
   adminSpan.innerHTML = ' | <a href="admin-panel.php" style="opacity: 0.3; font-size: 0.8em; text-decoration: none;">Admin</a>';
   footerCopyright.appendChild(adminSpan);
 }
+
+// Navbar Funktionalität (früher in navbar.js)
+
+// navbar.js - Spezifisches Skript für die Navbar-Funktionalität
+// Dieses Skript wird vor allen anderen Skripten geladen, um die toggleFunction global verfügbar zu machen
+
+// Globale Funktion zum Umschalten des mobilen Menüs
+function toggleFunction() {
+  const navDemo = document.getElementById('navDemo');
+  if (navDemo) {
+    if (navDemo.classList.contains('w3-show')) {
+      navDemo.classList.remove('w3-show');
+    } else {
+      navDemo.classList.add('w3-show');
+    }
+  }
+}
+
+// Diese Funktion muss im globalen Bereich verfügbar sein
+window.toggleFunction = toggleFunction;
+
+// Zusätzliche Event-Listener nach DOM-Ladung
+document.addEventListener('DOMContentLoaded', function() {
+  const navbarToggleBtn = document.querySelector('.w3-right.w3-hide-medium.w3-hide-large');
+  const navDemo = document.getElementById('navDemo');
+
+  // Falls der Toggle-Button existiert, einen Klick-Listener hinzufügen
+  if (navbarToggleBtn) {
+    navbarToggleBtn.addEventListener('click', function(event) {
+      event.preventDefault(); // Verhindern, dass der Link gefolgt wird
+      toggleFunction();
+    });
+  }
+
+  // Schließen des Menüs beim Klick außerhalb
+  document.addEventListener('click', function(event) {
+    if (navDemo && navDemo.classList.contains('w3-show')) {
+      // Wenn das geklickte Element nicht Teil des Menüs oder des Toggle-Buttons ist
+      if (!navDemo.contains(event.target) && 
+          (!navbarToggleBtn || !navbarToggleBtn.contains(event.target))) {
+        navDemo.classList.remove('w3-show');
+      }
+    }
+  });
+}); 

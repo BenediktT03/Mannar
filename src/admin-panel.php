@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
   
   <!-- Enhanced Admin Panel CSS -->
-  <link rel="stylesheet" href="./assets/css/admin-enhanced.css" />
+  <link rel="stylesheet" href="./assets/css/admin.css" />
   
   <!-- TinyMCE -->
   <script src="https://cdn.tiny.cloud/1/5pxzy8guun55o6z5mi0r8c4j8gk5hqeq3hpsotx123ak212k/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
@@ -501,23 +501,10 @@
   </div>
 
   <!-- Firebase Initialization -->
-  <script>
-    // One-time Firebase initialization
-    if (typeof firebase !== 'undefined' && !firebase.apps.length) {
-      firebase.initializeApp({
-        apiKey: "AIzaSyAQszUApKHZ3lPrpc7HOINpdOWW3SgvUBM",
-        authDomain: "mannar-129a5.firebaseapp.com",
-        projectId: "mannar-129a5",
-        storageBucket: "mannar-129a5.firebasestorage.app",
-        messagingSenderId: "687710492532",
-        appId: "1:687710492532:web:c7b675da541271f8d83e21",
-        measurementId: "G-NXBLYJ5CXL"
-      });
-    }
-  </script>
+  <script src="./assets/js/firebase-config.js"></script>
   
   <!-- Scripts -->
-  <script src="./assets/js/navbar.js"></script>
+<script src="./assets/js/firebase-helper.js"></script>
   <script src="./assets/js/admin-panel.js"></script>
   <script src="./assets/js/page-editor-enhanced.js"></script>
   <script src="./assets/js/global-settings.js"></script>

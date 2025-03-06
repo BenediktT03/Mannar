@@ -315,98 +315,37 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     };
 
-    // Load content data with improved error handling
-    const loadContentData = async (isDraft = true) => {
-      showStatus("Loading content...", false, 0);
-      
-      try {
-        const docRef = db.collection("content").doc(isDraft ? "draft" : "main");
-        const docSnap = await docRef.get();
-        
-        if (!docSnap.exists) {
-          console.warn("No content document found");
-          showStatus("No content found. Please save some content first.", true);
-          return;
-        }
-        
-        const data = docSnap.data();
-        console.log("Loaded data:", data);
-        
-        // Fill text fields
-        if (elements.aboutTitle) elements.aboutTitle.value = data.aboutTitle || "";
-        if (elements.aboutSubtitle) elements.aboutSubtitle.value = data.aboutSubtitle || "";
-        
-        // For TinyMCE editor content we need a slight delay
-        setTimeout(() => {
-          // About text
-          if (tinymce.get('aboutText')) {
-            tinymce.get('aboutText').setContent(data.aboutText || "");
-          }
-          
-          // Offering descriptions
-          if (tinymce.get('offer1Desc')) {
-            tinymce.get('offer1Desc').setContent(data.offer1Desc || "");
-          }
-          
-          if (tinymce.get('offer2Desc')) {
-            tinymce.get('offer2Desc').setContent(data.offer2Desc || "");
-          }
-          
-          if (tinymce.get('offer3Desc')) {
-            tinymce.get('offer3Desc').setContent(data.offer3Desc || "");
-          }
-        }, 500);
-        
-        // Section titles and subtitles
-        if (elements.offeringsTitle) elements.offeringsTitle.value = data.offeringsTitle || "";
-        if (elements.offeringsSubtitle) elements.offeringsSubtitle.value = data.offeringsSubtitle || "";
-        
-        // Font size sliders
-        if (elements.offeringsTitleSize) {
-          const titleSize = data.offeringsTitleSize || 2.5;
-          elements.offeringsTitleSize.value = titleSize;
-          if (elements.offeringsTitleSizeValue) elements.offeringsTitleSizeValue.textContent = titleSize;
-        }
-        
-        if (elements.offeringsSubtitleSize) {
-          const subtitleSize = data.offeringsSubtitleSize || 1.2;
-          elements.offeringsSubtitleSize.value = subtitleSize;
-          if (elements.offeringsSubtitleSizeValue) elements.offeringsSubtitleSizeValue.textContent = subtitleSize;
-        }
-        
-        // Offering titles
-        if (elements.offer1Title) elements.offer1Title.value = data.offer1Title || "";
-        if (elements.offer2Title) elements.offer2Title.value = data.offer2Title || "";
-        if (elements.offer3Title) elements.offer3Title.value = data.offer3Title || "";
-        
-        // Contact section
-        if (elements.contactTitle) elements.contactTitle.value = data.contactTitle || "";
-        if (elements.contactSubtitle) elements.contactSubtitle.value = data.contactSubtitle || "";
-        
-        if (elements.contactTitleSize) {
-          const titleSize = data.contactTitleSize || 2.5;
-          elements.contactTitleSize.value = titleSize;
-          if (elements.contactTitleSizeValue) elements.contactTitleSizeValue.textContent = titleSize;
-        }
-        
-        if (elements.contactSubtitleSize) {
-          const subtitleSize = data.contactSubtitleSize || 1.2;
-          elements.contactSubtitleSize.value = subtitleSize;
-          if (elements.contactSubtitleSizeValue) elements.contactSubtitleSizeValue.textContent = subtitleSize;
-        }
-        
-        // Store image URLs and update previews
-        updateImagePreviews(data);
-        
-        // Reset dirty flag
-        state.isDirty = false;
-        
-        showStatus("Content loaded successfully");
-      } catch (err) {
-        console.error("Error loading data:", err);
-        showStatus("Error loading data: " + err.message, true);
+    // Ersetze die loadContentData-Funktion
+const loadContentData = async (isDraft = true) => {
+  showStatus("Loading content...", false, 0);
+  
+  try {
+    // Benutze den Firebase Helper
+    window.firebaseHelper.loadContent(`content/${isDraft ? "draft" : "main"}`, (data) => {
+      if (!data) {
+        showStatus("No content found. Please save some content first.", true);
+        return;
       }
-    };
+      
+      console.log("Loaded data:", data);
+      
+      // Fill text fields
+      if (elements.aboutTitle) elements.aboutTitle.value = data.aboutTitle || "";
+      if (elements.aboutSubtitle) elements.aboutSubtitle.value = data.aboutSubtitle || "";
+      
+      // Der Rest deiner Funktion bleibt gleich...
+      // ...
+      
+      // Reset dirty flag
+      state.isDirty = false;
+      
+      showStatus("Content loaded successfully");
+    });
+  } catch (err) {
+    console.error("Error loading data:", err);
+    showStatus("Error loading data: " + err.message, true);
+  }
+};
     
     // Update image previews based on loaded data
     const updateImagePreviews = (data) => {
@@ -626,97 +565,28 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Save content (draft or publish)
     const saveContent = async (isPublish = false) => {
-      try {
-        showStatus(isPublish ? "Publishing content..." : "Saving draft...", false, 0);
-        
-        // Get TinyMCE content with error handling
-        let aboutTextContent = "";
-        let offer1DescContent = "";
-        let offer2DescContent = "";
-        let offer3DescContent = "";
-        
-        try {
-          if (tinymce.get('aboutText')) {
-            aboutTextContent = tinymce.get('aboutText').getContent();
-          }
-        } catch (e) {
-          console.error("Error getting aboutText content:", e);
-        }
-        
-        try {
-          if (tinymce.get('offer1Desc')) {
-            offer1DescContent = tinymce.get('offer1Desc').getContent();
-          }
-        } catch (e) {
-          console.error("Error getting offer1Desc content:", e);
-        }
-        
-        try {
-          if (tinymce.get('offer2Desc')) {
-            offer2DescContent = tinymce.get('offer2Desc').getContent();
-          }
-        } catch (e) {
-          console.error("Error getting offer2Desc content:", e);
-        }
-        
-        try {
-          if (tinymce.get('offer3Desc')) {
-            offer3DescContent = tinymce.get('offer3Desc').getContent();
-          }
-        } catch (e) {
-          console.error("Error getting offer3Desc content:", e);
-        }
-        
-        // Compile data with null checks
-        const contentData = {
-          // About section
-          aboutTitle: elements.aboutTitle ? elements.aboutTitle.value : "",
-          aboutSubtitle: elements.aboutSubtitle ? elements.aboutSubtitle.value : "",
-          aboutText: aboutTextContent,
-          
-          // Offerings section
-          offeringsTitle: elements.offeringsTitle ? elements.offeringsTitle.value : "",
-          offeringsSubtitle: elements.offeringsSubtitle ? elements.offeringsSubtitle.value : "",
-          offeringsTitleSize: elements.offeringsTitleSize ? elements.offeringsTitleSize.value : 2.5,
-          offeringsSubtitleSize: elements.offeringsSubtitleSize ? elements.offeringsSubtitleSize.value : 1.2,
-          
-          // Offering 1
-          offer1Title: elements.offer1Title ? elements.offer1Title.value : "",
-          offer1Desc: offer1DescContent,
-          offer1_image: state.imageData.offer1_image.url ? state.imageData.offer1_image : null,
-          
-          // Offering 2
-          offer2Title: elements.offer2Title ? elements.offer2Title.value : "",
-          offer2Desc: offer2DescContent,
-          offer2_image: state.imageData.offer2_image.url ? state.imageData.offer2_image : null,
-          
-          // Offering 3
-          offer3Title: elements.offer3Title ? elements.offer3Title.value : "",
-          offer3Desc: offer3DescContent,
-          offer3_image: state.imageData.offer3_image.url ? state.imageData.offer3_image : null,
-          
-          // Contact section
-          contactTitle: elements.contactTitle ? elements.contactTitle.value : "",
-          contactSubtitle: elements.contactSubtitle ? elements.contactSubtitle.value : "",
-          contactTitleSize: elements.contactTitleSize ? elements.contactTitleSize.value : 2.5,
-          contactSubtitleSize: elements.contactSubtitleSize ? elements.contactSubtitleSize.value : 1.2,
-          contact_image: state.imageData.contact_image.url ? state.imageData.contact_image : null,
-          
-          // Timestamp
-          lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        
-        console.log("Saving content:", contentData);
-        
-        // Save as draft
-        await db.collection("content").doc("draft").set(contentData);
-        
+  try {
+    showStatus(isPublish ? "Publishing content..." : "Saving draft...", false, 0);
+    
+    // Sammle Daten aus dem Formular...
+    // (Dein bestehender Code zum Sammeln der Daten bleibt unverändert)
+    
+    console.log("Saving content:", contentData);
+    
+    // Speichere mit Firebase Helper
+    window.firebaseHelper.saveContent("content/draft", contentData, true, (success, error) => {
+      if (success) {
         if (isPublish) {
-          // Publish (copy to "main")
-          await db.collection("content").doc("main").set(contentData);
-          showStatus("Changes successfully published! 🚀");
+          // Kopiere nach "main", wenn veröffentlicht werden soll
+          window.firebaseHelper.saveContent("content/main", contentData, true, (success, error) => {
+            if (success) {
+              showStatus("Changes successfully published! 🚀");
+            } else {
+              console.error("Error publishing:", error);
+              showStatus(`Error publishing: ${error.message}`, true);
+            }
+          });
         } else {
           showStatus("Draft successfully saved! 💾");
         }
@@ -728,11 +598,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (document.getElementById('preview-tab').classList.contains('active')) {
           refreshPreview();
         }
-      } catch (err) {
-        console.error("Error saving:", err);
-        showStatus(`Error ${isPublish ? 'publishing' : 'saving'}: ${err.message}`, true);
+      } else {
+        console.error("Error saving:", error);
+        showStatus(`Error saving: ${error.message}`, true);
       }
-    };
+    });
+  } catch (err) {
+    console.error("Error saving:", err);
+    showStatus(`Error ${isPublish ? 'publishing' : 'saving'}: ${err.message}`, true);
+  }
+};
     
     // Set up image upload handlers
     const setupImageUploads = () => {
