@@ -1,0 +1,276 @@
+ /**
+ * cards.css
+ * Styling for card components used throughout the website
+ */
+
+/* Base card styles */
+.card {
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow-sm);
+  overflow: hidden;
+  transition: transform var(--transition-standard), 
+              box-shadow var(--transition-standard);
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--box-shadow-md);
+}
+
+/* Card header */
+.card-header {
+  padding: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: var(--light-color);
+}
+
+.card-header h3, 
+.card-header h4 {
+  margin: 0;
+}
+
+/* Card body */
+.card-body {
+  padding: 16px;
+}
+
+.card-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* Card footer */
+.card-footer {
+  padding: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: var(--light-color);
+}
+
+/* Card image cap */
+.card-img-top {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+.card-img-bottom {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+/* Card with image overlay */
+.card-img-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 16px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+/* Card variants */
+.card-primary {
+  border-top: 3px solid var(--primary-color);
+}
+
+.card-secondary {
+  border-top: 3px solid var(--secondary-color);
+}
+
+.card-success {
+  border-top: 3px solid var(--success-color);
+}
+
+.card-danger {
+  border-top: 3px solid var(--danger-color);
+}
+
+.card-warning {
+  border-top: 3px solid var(--warning-color);
+}
+
+/* Horizontal card */
+.card-horizontal {
+  display: flex;
+  flex-direction: row;
+}
+
+.card-horizontal .card-img {
+  width: 33.333%;
+  min-width: 200px;
+}
+
+.card-horizontal .card-body {
+  flex: 1;
+}
+
+/* Card grid */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+/* Offering cards (specific to this website) */
+.offering-card {
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.offering-card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  transition: transform var(--transition-standard);
+}
+
+.offering-card:hover img {
+  transform: scale(1.1);
+}
+
+.offering-card h4 {
+  color: var(--primary-color);
+  margin-top: 0.5rem;
+  font-weight: 700;
+}
+
+.offering-card p {
+  color: var(--text-color);
+}
+
+/* Portfolio cards */
+.portfolio-item {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 20px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow-sm);
+}
+
+.portfolio-item img {
+  width: 100%;
+  transition: transform var(--transition-standard);
+}
+
+.portfolio-item:hover img {
+  transform: scale(1.05);
+}
+
+.portfolio-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 15px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  transform: translateY(100%);
+  transition: transform var(--transition-standard);
+}
+
+.portfolio-item:hover .portfolio-info {
+  transform: translateY(0);
+}
+
+/* Admin cards */
+.admin-card {
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow-sm);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.admin-card-header {
+  padding: 15px;
+  background-color: var(--primary-color);
+  color: white;
+  font-weight: bold;
+}
+
+.admin-card-body {
+  padding: 15px;
+}
+
+.admin-stat-card {
+  padding: 20px;
+  text-align: center;
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow-sm);
+}
+
+.admin-stat-card i {
+  font-size: 3rem;
+  color: var(--primary-color);
+  margin-bottom: 10px;
+}
+
+.admin-stat-card h3 {
+  margin-top: 0;
+}
+
+/* W3.CSS compatibility helpers */
+/* These enhance the existing W3.CSS card classes */
+.w3-card,
+.w3-card-2 {
+  box-shadow: var(--box-shadow-sm) !important;
+  transition: transform var(--transition-standard), 
+              box-shadow var(--transition-standard);
+  border-radius: var(--border-radius);
+}
+
+.w3-card-4 {
+  box-shadow: var(--box-shadow-md) !important;
+  transition: transform var(--transition-standard), 
+              box-shadow var(--transition-standard);
+  border-radius: var(--border-radius);
+}
+
+.w3-card:hover,
+.w3-card-2:hover {
+  box-shadow: var(--box-shadow-md) !important;
+}
+
+.w3-card-4:hover {
+  box-shadow: var(--box-shadow-lg) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .card-horizontal {
+    flex-direction: column;
+  }
+  
+  .card-horizontal .card-img {
+    width: 100%;
+    min-width: 0;
+  }
+  
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Accessibility - Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .card:hover,
+  .offering-card img,
+  .portfolio-item img,
+  .portfolio-info {
+    transition: none !important;
+  }
+  
+  .card:hover,
+  .offering-card:hover {
+    transform: none !important;
+  }
+}
