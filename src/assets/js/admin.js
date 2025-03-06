@@ -1,23 +1,23 @@
- /**
- * Konsolidierte admin.js
- * Kombiniert admin-panel.js, tab-fix.js und page-display-fix.js
+/**
+ * Consolidated Admin JavaScript
+ * Combines firebase-helper.js, tab-navigation.js, and admin-panel.js
  */
 
-// IIFE, um den globalen Namespace sauber zu halten
+// IIFE to avoid global namespace pollution
 (function() {
-  // Globaler Admin-Zustand
+  // Global Admin state
   const Admin = {
-    // Firebase-Referenzen
+    // Firebase references
     db: null,
     auth: null,
     storage: null,
     
-    // UI-Status
+    // UI state
     currentTab: 'pages',
     isDirty: false,
     pageEditorInitialized: false,
     
-    // Cache für Daten
+    // Data cache
     imageData: {
       offer1_image: { url: "", public_id: "" },
       offer2_image: { url: "", public_id: "" },
@@ -26,37 +26,24 @@
     },
     wordCloudData: [],
     
-    // DOM-Elemente Cache
+    // DOM elements cache
     elements: {}
   };
 
-  /**
-   * Initialisieren nach DOM-Ladung
-   */
-  document.addEventListener('DOMContentLoaded', function() {
-    console.log("Admin Panel wird initialisiert");
-    
-    // Firebase initialisieren
-    initFirebase();
-    
-    // DOM-Elemente cachen
-    cacheElements();
-    
-    // Event-Listener hinzufügen
-    setupEventListeners();
-    
-    // Tabs vorbereiten
-    initializeTabs();
-    
-    // Fixes für Tab-Navigation und -Anzeige
-    applyTabFixes();
-    
-    // Auf Auth-Status reagieren
-    setupAuthStateListener();
-  });
+  /* ===== FIREBASE HELPER SECTION ===== */
+  // Centralized Firebase config
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyAQszUApKHZ3lPrpc7HOINpdOWW3SgvUBM",
+    authDomain: "mannar-129a5.firebaseapp.com",
+    projectId: "mannar-129a5",
+    storageBucket: "mannar-129a5.firebasestorage.app",
+    messagingSenderId: "687710492532",
+    appId: "1:687710492532:web:c7b675da541271f8d83e21",
+    measurementId: "G-NXBLYJ5CXL"
+  };
 
   /**
-   * Firebase initialisieren
+   * Initialize Firebase with error handling
    */
   function initFirebase() {
     try {
@@ -67,186 +54,103 @@
           Admin.storage = firebase.storage();
         }
       } else {
-        console.error('Firebase nicht gefunden');
-        showStatus('Firebase konnte nicht initialisiert werden. Einige Funktionen sind eingeschränkt.', true);
-      }
-    } catch (error) {
-      console.error('Firebase-Initialisierungsfehler:', error);
-      showStatus('Firebase-Initialisierungsfehler. Einige Funktionen sind eingeschränkt.', true);
-    }
-  }
-
-  /**
-   * DOM-Elemente cachen
-   */
-  function cacheElements() {
-    // Login-Elemente
-    Admin.elements.loginDiv = document.getElementById('loginDiv');
-    Admin.elements.adminDiv = document.getElementById('adminDiv');
-    Admin.elements.emailField = document.getElementById('emailField');
-    Admin.elements.passField = document.getElementById('passField');
-    Admin.elements.loginBtn = document.getElementById('loginBtn');
-    Admin.elements.loginError = document.getElementById('loginError');
-    Admin.elements.logoutBtn = document.getElementById('logoutBtn');
-    Admin.elements.statusMsg = document.getElementById('statusMsg');
-    
-    // Tab-Elemente
-    Admin.elements.tabButtons = document.querySelectorAll('.tab-btn');
-    Admin.elements.tabContents = document.querySelectorAll('.tab-content');
-    
-    // Content-Elemente
-    Admin.elements.contentTab = document.getElementById('content-tab');
-    Admin.elements.pagesTab = document.getElementById('pages-tab');
-    Admin.elements.wordcloudTab = document.getElementById('wordcloud-tab');
-    Admin.elements.previewTab = document.getElementById('preview-tab');
-    Admin.elements.settingsTab = document.getElementById('settings-tab');
-    
-    // Preview-Elemente
-    Admin.elements.previewFrame = document.getElementById('previewFrame');
-    Admin.elements.refreshPreviewBtn = document.getElementById('refreshPreviewBtn');
-    Admin.elements.previewTypeRadios = document.getElementsByName('previewType');
-  }
-
-  /**
-   * Event-Listener hinzufügen
-   */
-  function setupEventListeners() {
-    // Login-Button
-    if (Admin.elements.loginBtn) {
-      Admin.elements.loginBtn.addEventListener('click', handleLogin);
-    }
-    
-    // Passwortfeld: Login bei Enter
-    if (Admin.elements.passField) {
-      Admin.elements.passField.addEventListener('keyup', function(e) {
-        if (e.key === 'Enter') {
-          handleLogin();
-        }
-      });
-    }
-    
-    // Logout-Button
-    if (Admin.elements.logoutBtn) {
-      Admin.elements.logoutBtn.addEventListener('click', handleLogout);
-    }
-    
-    // Tab-Buttons
-    Admin.elements.tabButtons.forEach(button => {
-      button.addEventListener('click', handleTabChange);
-    });
-    
-    // Preview-Update-Button
-    if (Admin.elements.refreshPreviewBtn) {
-      Admin.elements.refreshPreviewBtn.addEventListener('click', refreshPreview);
-    }
-    
-    // Preview-Typ-Radiobuttons
-    if (Admin.elements.previewTypeRadios.length > 0) {
-      Array.from(Admin.elements.previewTypeRadios).forEach(radio => {
-        radio.addEventListener('change', refreshPreview);
-      });
-    }
-  }
-
-  /**
-   * Login-Handler
-   */
-  function handleLogin() {
-    if (!Admin.auth || !Admin.elements.emailField || !Admin.elements.passField) {
-      console.error("Auth oder Formularelemente nicht gefunden");
-      return;
-    }
-    
-    const email = Admin.elements.emailField.value.trim();
-    const pass = Admin.elements.passField.value;
-    
-    // Validierung
-    if (!email || !pass) {
-      if (Admin.elements.loginError) Admin.elements.loginError.textContent = "Bitte E-Mail und Passwort eingeben";
-      return;
-    }
-    
-    if (Admin.elements.loginError) Admin.elements.loginError.textContent = "";
-    showStatus("Einloggen...", false, 0);
-    
-    Admin.auth.signInWithEmailAndPassword(email, pass)
-      .then(userCredential => {
-        console.log("Login erfolgreich:", userCredential.user.email);
-        showStatus("Login erfolgreich! Admin-Panel wird geladen...");
-      })
-      .catch(err => {
-        console.error("Login-Fehler:", err);
-        if (Admin.elements.loginError) Admin.elements.loginError.textContent = "Login fehlgeschlagen: " + err.message;
-        showStatus("Login fehlgeschlagen", true);
-      });
-  }
-
-  /**
-   * Logout-Handler
-   */
-  function handleLogout() {
-    // Auf ungespeicherte Änderungen prüfen
-    if (Admin.isDirty) {
-      if (!confirm('Du hast ungespeicherte Änderungen. Möchtest du dich wirklich abmelden?')) {
+        console.error('Firebase not found');
+        showStatus('Firebase could not be initialized. Some features will be limited.', true);
         return;
       }
+    } catch (error) {
+      console.error('Firebase initialization error:', error);
+      showStatus('Firebase initialization error. Some features will be limited.', true);
     }
-    
-    if (!Admin.auth) return;
-    
-    Admin.auth.signOut().then(() => {
-      showStatus("Erfolgreich abgemeldet");
-    }).catch(err => {
-      console.error("Logout-Fehler:", err);
-      showStatus("Fehler beim Abmelden: " + err.message, true);
-    });
   }
 
   /**
-   * Tab-Wechsel-Handler
+   * Load content with improved validation
    */
-  function handleTabChange() {
-    const tabName = this.getAttribute('data-tab');
-    
-    console.log(`Wechsel zu Tab: ${tabName}`);
-    
-    // Alle Tab-Inhalte ausblenden
-    Admin.elements.tabContents.forEach(content => {
-      content.style.display = 'none';
-      content.classList.remove('active');
-    });
-    
-    // Alle Tab-Buttons deaktivieren
-    Admin.elements.tabButtons.forEach(btn => {
-      btn.classList.remove('active');
-    });
-    
-    // Aktuellen Tab aktivieren
-    this.classList.add('active');
-    
-    // Ziel-Tab-Inhalt anzeigen
-    const targetTab = document.getElementById(`${tabName}-tab`);
-    if (targetTab) {
-      targetTab.style.display = 'block';
-      targetTab.classList.add('active');
-      Admin.currentTab = tabName;
-      
-      // Tab-spezifische Initialisierung
-      if (tabName === 'preview') {
-        refreshPreview();
-      } else if (tabName === 'pages') {
-        initializePageEditor();
-      }
-    } else {
-      console.error(`Tab-Inhalt mit ID "${tabName}-tab" nicht gefunden`);
+  function loadContent(docPath, callback) {
+    if (!Admin.db) {
+      console.error('Firestore unavailable');
+      if (callback) callback(null);
+      return;
     }
+
+    // Validate path
+    if (!docPath || typeof docPath !== 'string' || !docPath.includes('/')) {
+      console.error('Invalid document path:', docPath);
+      if (callback) callback(null);
+      return;
+    }
+
+    const [collection, doc] = docPath.split('/');
+    
+    Admin.db.collection(collection).doc(doc).get()
+      .then(docSnap => {
+        if (docSnap.exists) {
+          if (callback) callback(docSnap.data());
+        } else {
+          console.log(`Document ${docPath} not found`);
+          if (callback) callback(null);
+        }
+      })
+      .catch(error => {
+        console.error(`Error loading ${docPath}:`, error);
+        if (callback) callback(null);
+      });
   }
 
   /**
-   * Initialisiere Tabs
+   * Save content with improved validation
+   */
+  function saveContent(docPath, data, merge = true, callback) {
+    if (!Admin.db) {
+      console.error('Firestore unavailable');
+      if (callback) callback(false, new Error('Firestore unavailable'));
+      return;
+    }
+
+    // Validate inputs
+    if (!docPath || typeof docPath !== 'string' || !docPath.includes('/')) {
+      console.error('Invalid document path:', docPath);
+      if (callback) callback(false, new Error('Invalid document path'));
+      return;
+    }
+
+    if (!data || typeof data !== 'object') {
+      console.error('Invalid data:', data);
+      if (callback) callback(false, new Error('Invalid data'));
+      return;
+    }
+
+    const [collection, doc] = docPath.split('/');
+    
+    // Clone data to avoid mutations
+    const contentData = {...data};
+    
+    // Add timestamp
+    if (firebase.firestore && firebase.firestore.FieldValue) {
+      contentData.lastUpdated = firebase.firestore.FieldValue.serverTimestamp();
+    } else {
+      contentData.lastUpdated = new Date().toISOString();
+    }
+    
+    Admin.db.collection(collection).doc(doc).set(contentData, { merge })
+      .then(() => {
+        console.log(`Document ${docPath} saved successfully`);
+        if (callback) callback(true);
+      })
+      .catch(error => {
+        console.error(`Error saving ${docPath}:`, error);
+        if (callback) callback(false, error);
+      });
+  }
+
+  /* ===== TAB NAVIGATION SECTION ===== */
+
+  /**
+   * Initialize tabs
    */
   function initializeTabs() {
-    // Standard-Tab aktivieren
+    // Default tab activation
     const activeTabBtn = document.querySelector('.tab-btn.active');
     if (activeTabBtn) {
       Admin.currentTab = activeTabBtn.getAttribute('data-tab');
@@ -256,7 +160,7 @@
         activeTabContent.classList.add('active');
       }
     } else {
-      // Fallback: Ersten Tab aktivieren
+      // Fallback: Activate first tab
       const firstTabBtn = document.querySelector('.tab-btn');
       if (firstTabBtn) {
         firstTabBtn.classList.add('active');
@@ -271,31 +175,55 @@
   }
 
   /**
-   * Fixes für Tab-Navigation und -Anzeige
+   * Tab change handler
    */
-  function applyTabFixes() {
-    // CSS-Fix für Tab-Anzeige
-    ensureTabStyles();
+  function handleTabChange() {
+    const tabName = this.getAttribute('data-tab');
     
-    // Fix für Pages-Tab
-    setTimeout(fixPageVisibility, 1000);
+    console.log(`Switching to tab: ${tabName}`);
     
-    // Page-Editor initialisieren, wenn der Pages-Tab aktiv ist
-    if (Admin.currentTab === 'pages') {
-      setTimeout(initializePageEditor, 1000);
+    // Hide all tab contents
+    Admin.elements.tabContents.forEach(content => {
+      content.style.display = 'none';
+      content.classList.remove('active');
+    });
+    
+    // Deactivate all tab buttons
+    Admin.elements.tabButtons.forEach(btn => {
+      btn.classList.remove('active');
+    });
+    
+    // Activate current tab
+    this.classList.add('active');
+    
+    // Show target tab content
+    const targetTab = document.getElementById(`${tabName}-tab`);
+    if (targetTab) {
+      targetTab.style.display = 'block';
+      targetTab.classList.add('active');
+      Admin.currentTab = tabName;
+      
+      // Tab-specific initialization
+      if (tabName === 'preview') {
+        refreshPreview();
+      } else if (tabName === 'pages') {
+        initializePageEditor();
+      }
+    } else {
+      console.error(`Tab content with ID "${tabName}-tab" not found`);
     }
   }
 
   /**
-   * Tab-Styles sicherstellen
+   * Apply tab CSS fixes
    */
   function ensureTabStyles() {
-    // Stil-Element erstellen, falls es nicht existiert
+    // Create style element if it doesn't exist
     if (!document.getElementById('admin-tab-fix-styles')) {
       const style = document.createElement('style');
       style.id = 'admin-tab-fix-styles';
       style.innerHTML = `
-        /* Tab-Anzeige-Fix */
+        /* Tab display fix */
         .tab-content {
           display: none !important;
         }
@@ -313,42 +241,211 @@
           display: block !important;
         }
         
-        /* Pages-Tab-Fix */
+        /* Pages tab fix */
         #pagesContainer {
           display: block !important;
           min-height: 200px;
         }
       `;
       document.head.appendChild(style);
-      console.log("Tab-Style-Fix hinzugefügt");
+      console.log("Tab style fix added");
+    }
+  }
+
+  /* ===== ADMIN PANEL SECTION ===== */
+
+  /**
+   * Initialize after DOM loaded
+   */
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log("Admin Panel initializing");
+    
+    // Initialize Firebase
+    initFirebase();
+    
+    // Cache DOM elements
+    cacheElements();
+    
+    // Add event listeners
+    setupEventListeners();
+    
+    // Prepare tabs
+    initializeTabs();
+    
+    // Apply tab navigation and display fixes
+    applyTabFixes();
+    
+    // React to auth state
+    setupAuthStateListener();
+  });
+
+  /**
+   * Cache DOM elements
+   */
+  function cacheElements() {
+    // Login elements
+    Admin.elements.loginDiv = document.getElementById('loginDiv');
+    Admin.elements.adminDiv = document.getElementById('adminDiv');
+    Admin.elements.emailField = document.getElementById('emailField');
+    Admin.elements.passField = document.getElementById('passField');
+    Admin.elements.loginBtn = document.getElementById('loginBtn');
+    Admin.elements.loginError = document.getElementById('loginError');
+    Admin.elements.logoutBtn = document.getElementById('logoutBtn');
+    Admin.elements.statusMsg = document.getElementById('statusMsg');
+    
+    // Tab elements
+    Admin.elements.tabButtons = document.querySelectorAll('.tab-btn');
+    Admin.elements.tabContents = document.querySelectorAll('.tab-content');
+    
+    // Content elements
+    Admin.elements.contentTab = document.getElementById('content-tab');
+    Admin.elements.pagesTab = document.getElementById('pages-tab');
+    Admin.elements.wordcloudTab = document.getElementById('wordcloud-tab');
+    Admin.elements.previewTab = document.getElementById('preview-tab');
+    Admin.elements.settingsTab = document.getElementById('settings-tab');
+    
+    // Preview elements
+    Admin.elements.previewFrame = document.getElementById('previewFrame');
+    Admin.elements.refreshPreviewBtn = document.getElementById('refreshPreviewBtn');
+    Admin.elements.previewTypeRadios = document.getElementsByName('previewType');
+  }
+
+  /**
+   * Set up event listeners
+   */
+  function setupEventListeners() {
+    // Login button
+    if (Admin.elements.loginBtn) {
+      Admin.elements.loginBtn.addEventListener('click', handleLogin);
+    }
+    
+    // Password field: Login on Enter
+    if (Admin.elements.passField) {
+      Admin.elements.passField.addEventListener('keyup', function(e) {
+        if (e.key === 'Enter') {
+          handleLogin();
+        }
+      });
+    }
+    
+    // Logout button
+    if (Admin.elements.logoutBtn) {
+      Admin.elements.logoutBtn.addEventListener('click', handleLogout);
+    }
+    
+    // Tab buttons
+    Admin.elements.tabButtons.forEach(button => {
+      button.addEventListener('click', handleTabChange);
+    });
+    
+    // Preview update button
+    if (Admin.elements.refreshPreviewBtn) {
+      Admin.elements.refreshPreviewBtn.addEventListener('click', refreshPreview);
+    }
+    
+    // Preview type radio buttons
+    if (Admin.elements.previewTypeRadios.length > 0) {
+      Array.from(Admin.elements.previewTypeRadios).forEach(radio => {
+        radio.addEventListener('change', refreshPreview);
+      });
     }
   }
 
   /**
-   * Pages-Tab-Sichtbarkeit korrigieren
+   * Login handler
+   */
+  function handleLogin() {
+    if (!Admin.auth || !Admin.elements.emailField || !Admin.elements.passField) {
+      console.error("Auth or form elements not found");
+      return;
+    }
+    
+    const email = Admin.elements.emailField.value.trim();
+    const pass = Admin.elements.passField.value;
+    
+    // Validation
+    if (!email || !pass) {
+      if (Admin.elements.loginError) Admin.elements.loginError.textContent = "Please enter email and password";
+      return;
+    }
+    
+    if (Admin.elements.loginError) Admin.elements.loginError.textContent = "";
+    showStatus("Logging in...", false, 0);
+    
+    Admin.auth.signInWithEmailAndPassword(email, pass)
+      .then(userCredential => {
+        console.log("Login successful:", userCredential.user.email);
+        showStatus("Login successful! Loading admin panel...");
+      })
+      .catch(err => {
+        console.error("Login error:", err);
+        if (Admin.elements.loginError) Admin.elements.loginError.textContent = "Login failed: " + err.message;
+        showStatus("Login failed", true);
+      });
+  }
+
+  /**
+   * Logout handler
+   */
+  function handleLogout() {
+    // Check for unsaved changes
+    if (Admin.isDirty) {
+      if (!confirm('You have unsaved changes. Are you sure you want to log out?')) {
+        return;
+      }
+    }
+    
+    if (!Admin.auth) return;
+    
+    Admin.auth.signOut().then(() => {
+      showStatus("Successfully logged out");
+    }).catch(err => {
+      console.error("Logout error:", err);
+      showStatus("Error during logout: " + err.message, true);
+    });
+  }
+
+  /**
+   * Apply tab fixes
+   */
+  function applyTabFixes() {
+    // CSS fix for tab display
+    ensureTabStyles();
+    
+    // Fix for Pages tab
+    setTimeout(fixPageVisibility, 1000);
+    
+    // Initialize Page Editor if Pages tab is active
+    if (Admin.currentTab === 'pages') {
+      setTimeout(initializePageEditor, 1000);
+    }
+  }
+
+  /**
+   * Fix Pages tab visibility
    */
   function fixPageVisibility() {
-    // Pages-Tab erzwingen, wenn er aktiv ist
+    // Force Pages tab visibility if active
     const pagesTab = Admin.elements.pagesTab;
     const pagesTabBtn = document.querySelector('.tab-btn[data-tab="pages"]');
     
     if (pagesTab && pagesTabBtn && pagesTabBtn.classList.contains('active')) {
       pagesTab.style.display = 'block';
       pagesTab.classList.add('active');
-      console.log("Pages-Tab sichtbar gemacht");
+      console.log("Made Pages tab visible");
     }
     
-    // Sicherstellen, dass pagesContainer existiert
+    // Ensure pagesContainer exists
     ensurePagesContainer();
     
-    // Page-Editor initialisieren, falls notwendig
+    // Initialize Page Editor if needed
     if (Admin.currentTab === 'pages') {
       initializePageEditor();
     }
   }
 
   /**
-   * Sicherstellen, dass pagesContainer existiert
+   * Ensure pagesContainer exists
    */
   function ensurePagesContainer() {
     const pagesTab = Admin.elements.pagesTab;
@@ -356,43 +453,43 @@
     
     let pagesContainer = document.getElementById('pagesContainer');
     if (!pagesContainer) {
-      console.log("pagesContainer erstellen");
+      console.log("Creating pagesContainer");
       pagesContainer = document.createElement('div');
       pagesContainer.id = 'pagesContainer';
       pagesContainer.className = 'w3-row';
       pagesTab.appendChild(pagesContainer);
     }
     
-    // Sicherstellen, dass der Container sichtbar ist
+    // Ensure container is visible
     pagesContainer.style.display = 'block';
     
-    // Spalte für Seitenliste erstellen, falls nicht vorhanden
+    // Create column for page list if not present
     if (!document.getElementById('pagesListCol')) {
-      console.log("pagesListCol erstellen");
+      console.log("Creating pagesListCol");
       const pagesListCol = document.createElement('div');
       pagesListCol.id = 'pagesListCol';
       pagesListCol.className = 'w3-col m4 l3';
       pagesContainer.appendChild(pagesListCol);
       
-      // Button zum Erstellen einer Seite hinzufügen
+      // Add button to create a page
       const createBtnContainer = document.createElement('div');
       createBtnContainer.className = 'w3-margin-bottom';
       createBtnContainer.innerHTML = `
         <button id="createPageBtn" class="w3-button w3-blue w3-block">
-          <i class="fas fa-plus"></i> Neue Seite erstellen
+          <i class="fas fa-plus"></i> Create New Page
         </button>
       `;
       pagesListCol.appendChild(createBtnContainer);
       
-      // Seitenliste hinzufügen
+      // Add page list
       const pagesListCard = document.createElement('div');
       pagesListCard.id = 'pagesListCard';
       pagesListCard.className = 'w3-card w3-padding';
       pagesListCard.innerHTML = `
-        <h3>Meine Seiten</h3>
+        <h3>Your Pages</h3>
         <div id="pagesList" class="pages-list">
           <div class="w3-center">
-            <i class="fas fa-spinner fa-spin"></i> Seiten werden geladen...
+            <i class="fas fa-spinner fa-spin"></i> Loading pages...
           </div>
         </div>
       `;
@@ -401,37 +498,37 @@
   }
 
   /**
-   * Page-Editor initialisieren
+   * Initialize Page Editor
    */
   function initializePageEditor() {
-    // Prüfen, ob PageEditor verfügbar ist
+    // Check if PageEditor is available
     if (typeof PageEditor !== 'undefined') {
       if (typeof PageEditor.init === 'function' && !Admin.pageEditorInitialized) {
-        console.log("PageEditor wird initialisiert");
+        console.log("Initializing PageEditor");
         try {
           PageEditor.init();
           Admin.pageEditorInitialized = true;
         } catch (error) {
-          console.error("Fehler bei PageEditor-Initialisierung:", error);
+          console.error("Error initializing PageEditor:", error);
         }
       }
       
-      // Seiten laden
+      // Load pages
       if (typeof PageEditor.loadPages === 'function') {
-        console.log("Seiten werden geladen");
+        console.log("Loading pages");
         try {
           PageEditor.loadPages();
         } catch (error) {
-          console.error("Fehler beim Laden der Seiten:", error);
+          console.error("Error loading pages:", error);
         }
       }
     } else {
-      console.warn("PageEditor nicht verfügbar");
+      console.warn("PageEditor not available");
     }
   }
 
   /**
-   * Vorschau aktualisieren
+   * Refresh preview
    */
   function refreshPreview() {
     if (!Admin.elements.previewFrame) return;
@@ -439,52 +536,79 @@
     const isDraft = Array.from(Admin.elements.previewTypeRadios)
       .find(radio => radio.checked)?.value === 'draft';
     
-    const timestamp = Date.now(); // Cache-Busting
+    const timestamp = Date.now(); // Cache busting
     Admin.elements.previewFrame.src = `preview.html?draft=${isDraft}&t=${timestamp}`;
+    
+    // Show loading indicator
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.id = 'preview-loading-indicator';
+    loadingIndicator.innerHTML = `
+      <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                background: rgba(255,255,255,0.9); padding: 20px; border-radius: 8px; 
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1); z-index: 1000; text-align: center;">
+        <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #3498db;"></i>
+        <p>Loading preview...</p>
+      </div>
+    `;
+    
+    // Position the loading indicator over the iframe
+    const previewContainer = Admin.elements.previewFrame.parentElement;
+    if (previewContainer) {
+      previewContainer.style.position = 'relative';
+      previewContainer.appendChild(loadingIndicator);
+      
+      // Remove loading indicator when iframe loads
+      Admin.elements.previewFrame.onload = function() {
+        const indicator = document.getElementById('preview-loading-indicator');
+        if (indicator) {
+          indicator.remove();
+        }
+      };
+    }
   }
 
   /**
-   * Auth-Status-Listener einrichten
+   * Set up auth state listener
    */
   function setupAuthStateListener() {
     if (!Admin.auth) return;
     
     Admin.auth.onAuthStateChanged(user => {
       if (user) {
-        // Benutzer ist eingeloggt
-        console.log("Benutzer eingeloggt:", user.email);
+        // User is logged in
+        console.log("User logged in:", user.email);
         
         if (Admin.elements.loginDiv) Admin.elements.loginDiv.style.display = 'none';
         if (Admin.elements.adminDiv) Admin.elements.adminDiv.style.display = 'block';
         
-        // TinyMCE initialisieren
+        // Initialize TinyMCE
         initTinyMCE();
         
-        // Auf TinyMCE warten und dann Inhalte laden
+        // Wait for TinyMCE and then load content
         setTimeout(() => {
-          // Content laden, wenn der Content-Tab aktiv ist
+          // Load content if Content tab is active
           if (Admin.currentTab === 'content') {
             loadContentData();
           }
           
-          // Word-Cloud laden, wenn der Word-Cloud-Tab aktiv ist
+          // Load word cloud if Word Cloud tab is active
           if (Admin.currentTab === 'wordcloud') {
             loadWordCloudData();
           }
           
-          // Sicherstellen, dass der Page-Editor geladen wird
+          // Ensure Page Editor loads
           if (Admin.currentTab === 'pages') {
             fixPageVisibility();
           }
         }, 1000);
       } else {
-        // Benutzer ist nicht eingeloggt
-        console.log("Benutzer nicht eingeloggt");
+        // User is not logged in
+        console.log("User not logged in");
         
         if (Admin.elements.adminDiv) Admin.elements.adminDiv.style.display = 'none';
         if (Admin.elements.loginDiv) Admin.elements.loginDiv.style.display = 'block';
         
-        // TinyMCE bereinigen
+        // Clean up TinyMCE
         if (typeof tinymce !== 'undefined') {
           tinymce.remove();
         }
@@ -493,14 +617,14 @@
   }
 
   /**
-   * TinyMCE initialisieren
+   * Initialize TinyMCE
    */
   function initTinyMCE() {
-    // Bestehende Instanzen entfernen
+    // Remove existing instances
     if (typeof tinymce !== 'undefined') {
       tinymce.remove();
       
-      // Für normale Inhaltsfelder
+      // For regular content fields
       tinymce.init({
         selector: '.tinymce-editor',
         height: 300,
@@ -523,7 +647,7 @@
         }
       });
       
-      // Für kleine Felder wie Titel/Untertitel
+      // For small fields like titles/subtitles
       tinymce.init({
         selector: '.tinymce-editor-small',
         height: 100,
@@ -547,40 +671,40 @@
   }
 
   /**
-   * Inhaltsdaten laden
+   * Load content data
    */
   function loadContentData(isDraft = true) {
     if (!Admin.db) return;
     
-    showStatus("Inhalt wird geladen...", false, 0);
+    showStatus("Loading content...", false, 0);
     
     Admin.db.collection("content").doc(isDraft ? "draft" : "main").get()
       .then(doc => {
         if (!doc.exists) {
-          console.warn("Kein Inhaltsdokument gefunden");
-          showStatus("Kein Inhalt gefunden. Bitte speichern Sie zuerst einen Inhalt.", true);
+          console.warn("No content document found");
+          showStatus("No content found. Please save content first.", true);
           return;
         }
         
         const data = doc.data();
-        console.log("Daten geladen:", data);
+        console.log("Data loaded:", data);
         
-        // Textfelder füllen und weitere Daten verarbeiten...
-        // (gekürzt, um den Code zu vereinfachen)
+        // Fill text fields and process other data...
+        // (abbreviated to simplify code)
         
-        // Dirty-Flag zurücksetzen
+        // Reset dirty flag
         Admin.isDirty = false;
         
-        showStatus("Inhalt erfolgreich geladen");
+        showStatus("Content loaded successfully");
       })
       .catch(err => {
-        console.error("Fehler beim Laden der Daten:", err);
-        showStatus("Fehler beim Laden der Daten: " + err.message, true);
+        console.error("Error loading data:", err);
+        showStatus("Error loading data: " + err.message, true);
       });
   }
 
   /**
-   * Word-Cloud-Daten laden
+   * Load word cloud data
    */
   function loadWordCloudData() {
     if (!Admin.db) return;
@@ -593,16 +717,16 @@
         if (doc.exists) {
           Admin.wordCloudData = doc.data().words || [];
         } else {
-          // Mit Standardwerten initialisieren
+          // Initialize with default values
           Admin.wordCloudData = [
             { text: "Mindfulness", weight: 5, link: "#" },
             { text: "Meditation", weight: 8, link: "#" },
-            { text: "Selbstreflexion", weight: 7, link: "#" },
-            { text: "Bewusstsein", weight: 9, link: "#" },
-            { text: "Spiritualität", weight: 6, link: "#" }
+            { text: "Self-reflection", weight: 7, link: "#" },
+            { text: "Consciousness", weight: 9, link: "#" },
+            { text: "Spirituality", weight: 6, link: "#" }
           ];
           
-          // Dokument mit Standarddaten erstellen
+          // Create document with default data
           Admin.db.collection("content").doc("wordCloud").set({
             words: Admin.wordCloudData,
             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
@@ -612,13 +736,13 @@
         renderWordCloudItems();
       });
     } catch (err) {
-      console.error("Fehler beim Laden der Wortwolke:", err);
-      showStatus("Fehler beim Laden der Wortwolke: " + err.message, true);
+      console.error("Error loading word cloud:", err);
+      showStatus("Error loading word cloud: " + err.message, true);
     }
   }
 
   /**
-   * Word-Cloud-Elemente rendern
+   * Render word cloud items
    */
   function renderWordCloudItems() {
     const wordCloudContainer = document.getElementById('wordCloudContainer');
@@ -629,33 +753,33 @@
     if (Admin.wordCloudData.length === 0) {
       wordCloudContainer.innerHTML = `
         <div class="w3-panel w3-pale-yellow w3-center">
-          <p>Keine Worte in der Wortwolke. Klicken Sie auf "Neues Wort hinzufügen" um Worte hinzuzufügen.</p>
+          <p>No words in the word cloud. Click "Add New Word" to add words.</p>
         </div>
       `;
       return;
     }
     
-    // Tabelle für bessere Struktur erstellen
+    // Create table for better structure
     const tableContainer = document.createElement('div');
     tableContainer.className = 'w3-responsive';
     
     const table = document.createElement('table');
     table.className = 'w3-table w3-bordered w3-striped';
     
-    // Tabellenkopf
+    // Table header
     const thead = document.createElement('thead');
     thead.innerHTML = `
       <tr class="w3-light-grey">
-        <th style="width:5%">Reihenfolge</th>
-        <th style="width:35%">Wort</th>
-        <th style="width:15%">Gewicht (1-9)</th>
+        <th style="width:5%">Order</th>
+        <th style="width:35%">Word</th>
+        <th style="width:15%">Weight (1-9)</th>
         <th style="width:35%">Link</th>
-        <th style="width:10%">Aktion</th>
+        <th style="width:10%">Action</th>
       </tr>
     `;
     table.appendChild(thead);
     
-    // Tabellenkörper
+    // Table body
     const tbody = document.createElement('tbody');
     
     Admin.wordCloudData.forEach((word, index) => {
@@ -667,7 +791,7 @@
           <i class="fas fa-grip-lines"></i> ${index + 1}
         </td>
         <td>
-          <input type="text" class="w3-input w3-border" value="${word.text || ''}" data-field="text" placeholder="Wort eingeben">
+          <input type="text" class="w3-input w3-border" value="${word.text || ''}" data-field="text" placeholder="Enter word">
         </td>
         <td>
           <input type="number" class="w3-input w3-border" value="${word.weight || 5}" data-field="weight" min="1" max="9" placeholder="1-9">
@@ -682,7 +806,7 @@
         </td>
       `;
       
-      // Event-Listener hinzufügen...
+      // Add event listeners...
       
       tbody.appendChild(tr);
     });
@@ -693,7 +817,7 @@
   }
 
   /**
-   * Statusmeldung anzeigen
+   * Show status message
    */
   function showStatus(message, isError = false, timeout = 3000) {
     const statusMsg = Admin.elements.statusMsg;
@@ -702,7 +826,7 @@
     statusMsg.textContent = message;
     statusMsg.className = isError ? 'status-msg error show' : 'status-msg success show';
     
-    // Nach Timeout ausblenden, außer wenn es 0 ist (persistent)
+    // Hide after timeout unless it's 0 (persistent)
     if (timeout > 0) {
       setTimeout(() => {
         statusMsg.classList.remove('show');
@@ -710,7 +834,7 @@
     }
   }
   
-  // Admin-Objekt global verfügbar machen (nur ausgewählte Funktionen)
+  // Make Admin object globally available (selected functions only)
   window.AdminPanel = {
     showStatus: showStatus,
     refreshPreview: refreshPreview,
