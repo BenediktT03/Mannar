@@ -571,7 +571,10 @@ const loadContentData = async (isDraft = true) => {
     
     // Sammle Daten aus dem Formular...
     // (Dein bestehender Code zum Sammeln der Daten bleibt unverändert)
-    
+       const csrfToken = window.csrfToken || document.getElementById('csrfToken')?.value;
+    if (csrfToken) {
+      contentData.csrf_token = csrfToken;
+    }
     console.log("Saving content:", contentData);
     
     // Speichere mit Firebase Helper

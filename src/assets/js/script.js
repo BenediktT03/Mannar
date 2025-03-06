@@ -233,11 +233,21 @@ if (footerCopyright) {
 // Globale Funktion zum Umschalten des mobilen Menüs
 function toggleFunction() {
   const navDemo = document.getElementById('navDemo');
+  const toggleBtn = document.querySelector('[aria-controls="navDemo"]');
+  
   if (navDemo) {
     if (navDemo.classList.contains('w3-show')) {
       navDemo.classList.remove('w3-show');
+      // ARIA-Status aktualisieren
+      if (toggleBtn) {
+        toggleBtn.setAttribute('aria-expanded', 'false');
+      }
     } else {
       navDemo.classList.add('w3-show');
+      // ARIA-Status aktualisieren
+      if (toggleBtn) {
+        toggleBtn.setAttribute('aria-expanded', 'true');
+      }
     }
   }
 }

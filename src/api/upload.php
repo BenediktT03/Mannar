@@ -1,7 +1,18 @@
 <?php
 // Verbesserter Upload-Handler mit Unterstützung für lokale und Cloudinary-Uploads
 header('Content-Type: application/json');
+require_once '../csrf-utils.php';
 
+// CSRF-Token prüfen
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
+        echo json_encode([
+            'success' => false,
+            'error' => 'CSRF-Validierung fehlgeschlagen.'
+        ]);
+        exit;
+    }
+}
 // Konfiguration
 $upload_provider = 'local'; // Optionen: 'local' oder 'cloudinary'
 

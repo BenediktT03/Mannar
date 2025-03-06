@@ -17,5 +17,8 @@
 <script src="./assets/js/content-loader.js"></script>
 <script src="./assets/js/script.js"></script>
 <?php if (isset($additional_scripts)) echo $additional_scripts; ?>
+<script src="./assets/js/lazy-load.js?v=<?php echo ASSET_VERSION; ?>"></script>
+<script src="./assets/js/cookie-notice.js?v=<?php echo ASSET_VERSION; ?>"></script>
+
 </body>
 </html>

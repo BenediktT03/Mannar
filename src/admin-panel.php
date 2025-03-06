@@ -21,6 +21,13 @@
   <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-storage-compat.js"></script>
+  <?php require_once 'csrf-utils.php'; 
+$csrf_token = generateCsrfToken();
+?>
+<script>
+// CSRF-Token für Javascript verfügbar machen
+const csrfToken = "<?php echo $csrf_token; ?>";
+</script>
 </head>
 <body>
 
@@ -49,6 +56,7 @@
     <input id="passField" class="w3-input w3-margin-bottom" type="password" placeholder="Password" />
     <button id="loginBtn" class="w3-button w3-black w3-block">Login</button>
     <p id="loginError" class="w3-text-red"></p>
+    <input type="hidden" name="csrf_token" id="csrfToken" value="<?php echo $csrf_token; ?>">
   </div>
 
   <!-- Admin Panel Content (only visible to logged-in users) -->
@@ -71,6 +79,7 @@
       <button class="tab-btn" data-tab="settings">
         <i class="fas fa-cog"></i> Global Settings
       </button>
+      <input type="hidden" name="csrf_token" id="csrfToken" value="<?php echo $csrf_token; ?>">
     </div>
     
     <!-- Tab: Content -->
@@ -242,6 +251,7 @@
           <i class="fas fa-globe"></i> Publish
         </button>
       </div>
+      <input type="hidden" name="csrf_token" id="csrfToken" value="<?php echo $csrf_token; ?>">
     </div>
     
     <!-- Tab: Pages -->
@@ -279,6 +289,7 @@
         <button id="saveWordCloudBtn" class="w3-button w3-green">
           <i class="fas fa-save"></i> Save Word Cloud
         </button>
+        <input type="hidden" name="csrf_token" id="csrfToken" value="<?php echo $csrf_token; ?>">
       </div>
     </div>
     
@@ -496,6 +507,7 @@
         <button id="saveSettingsBtn" class="w3-button w3-green">
           <i class="fas fa-save"></i> Save Settings
         </button>
+        <input type="hidden" name="csrf_token" id="csrfToken" value="<?php echo $csrf_token; ?>">
       </div>
     </div>
   </div>
