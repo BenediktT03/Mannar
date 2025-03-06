@@ -1,0 +1,355 @@
+ /**
+ * word-cloud.css
+ * Word cloud component for both frontend and admin
+ */
+
+/* Frontend Word Cloud */
+.textbubble {
+  display: flex;
+  width: 90%;
+  max-width: 1000px;
+  margin: 2rem auto;
+  padding: 2rem 0;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  transition: opacity var(--transition-standard);
+}
+
+.word-cloud {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  line-height: 2.75rem;
+  width: 100%;
+  margin: 2rem auto;
+  position: relative;
+}
+
+.word-cloud li a {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity var(--animation-medium) ease, 
+              transform var(--animation-medium) ease;
+  display: inline-block;
+}
+
+.word-cloud a {
+  color: var(--color, #000);
+  padding: 0.125rem 0.25rem;
+  position: relative;
+  text-decoration: none;
+  transition: transform var(--transition-standard),
+              text-shadow var(--transition-standard),
+              color var(--transition-standard);
+  will-change: transform, text-shadow, color;
+  border-radius: 45px;
+}
+
+/* Interactive hover effect */
+.word-cloud a::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 0;
+  height: 100%;
+  background: var(--color);
+  transform: translate(-50%, 0);
+  opacity: 0.15;
+  transition: width var(--transition-standard);
+  z-index: -1;
+  border-radius: 30px;
+}
+
+.word-cloud a:hover::before,
+.word-cloud a:focus::before {
+  width: 100%;
+  opacity: 0.1;
+}
+
+/* Weight-based styling */
+.word-cloud a[data-weight="1"] { 
+  --size: 1; 
+  --color: #6d6d6d; 
+  font-size: calc(var(--size) * 0.2rem + 0.5rem); 
+}
+
+.word-cloud a[data-weight="2"] { 
+  --size: 2; 
+  --color: #606060; 
+  font-size: calc(var(--size) * 0.2rem + 0.5rem); 
+}
+
+.word-cloud a[data-weight="3"] { 
+  --size: 3; 
+  --color: #535353; 
+  font-size: calc(var(--size) * 0.2rem + 0.5rem); 
+}
+
+.word-cloud a[data-weight="4"] { 
+  --size: 4; 
+  --color: #474747; 
+  font-size: calc(var(--size) * 0.2rem + 0.5rem); 
+}
+
+.word-cloud a[data-weight="5"] { 
+  --size: 6; 
+  --color: #3a3a3a; 
+  font-size: calc(var(--size) * 0.2rem + 0.5rem); 
+}
+
+.word-cloud a[data-weight="6"] { 
+  --size: 8; 
+  --color: #2d2d2d; 
+  font-size: calc(var(--size) * 0.2rem + 0.5rem); 
+}
+
+.word-cloud a[data-weight="7"] { 
+  --size: 10; 
+  --color: #202020; 
+  font-size: calc(var(--size) * 0.2rem + 0.5rem); 
+}
+
+.word-cloud a[data-weight="8"] { 
+  --size: 13; 
+  --color: #131313; 
+  font-size: calc(var(--size) * 0.2rem + 0.5rem); 
+}
+
+.word-cloud a[data-weight="9"] { 
+  --size: 16; 
+  --color: #000000; 
+  font-size: calc(var(--size) * 0.2rem + 0.5rem); 
+}
+
+/* Interactive elements */
+.word-cloud a:hover,
+.word-cloud a:focus {
+  transform: scale(1.1) translateY(-2px);
+  text-shadow: 2px 2px 12px rgba(0, 0, 0, 0.25);
+  color: var(--secondary-color);
+}
+
+/* Admin Word Cloud Editor */
+.word-cloud-admin {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  box-shadow: var(--box-shadow-sm);
+}
+
+.word-item {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow-sm);
+  transition: transform var(--transition-fast), 
+              box-shadow var(--transition-fast);
+}
+
+.word-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--box-shadow-md);
+}
+
+.word-item input {
+  margin-right: 10px;
+  border-radius: var(--border-radius);
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+.draggable-handle {
+  cursor: move;
+  padding: 0 10px;
+  color: #888;
+  display: flex;
+  align-items: center;
+}
+
+.draggable-handle i {
+  margin-right: 8px;
+}
+
+/* Word cloud table */
+.word-cloud-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.word-cloud-table th {
+  background-color: #f1f1f1;
+  text-align: left;
+  padding: 10px;
+  font-weight: bold;
+}
+
+.word-cloud-table td {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.word-cloud-table tr:last-child td {
+  border-bottom: none;
+}
+
+.word-cloud-table .word-text {
+  width: 35%;
+}
+
+.word-cloud-table .word-weight {
+  width: 15%;
+}
+
+.word-cloud-table .word-link {
+  width: 35%;
+}
+
+.word-cloud-table .word-action {
+  width: 10%;
+  text-align: center;
+}
+
+/* Word cloud preview */
+.word-cloud-preview {
+  background-color: white;
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-top: 20px;
+  box-shadow: var(--box-shadow-sm);
+}
+
+.word-cloud-preview h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+/* Word cloud actions */
+.word-cloud-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.word-add-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+.word-add-btn i {
+  margin-right: 8px;
+}
+
+.word-add-btn:hover {
+  background-color: var(--primary-dark);
+}
+
+/* Empty word cloud message */
+.empty-word-cloud {
+  text-align: center;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: var(--border-radius);
+  margin: 20px 0;
+}
+
+.empty-word-cloud p {
+  margin: 0;
+  color: #666;
+}
+
+/* Word cloud sortable styles */
+.sortable-ghost {
+  opacity: 0.4;
+  background-color: #f1f1f1;
+}
+
+.sortable-chosen {
+  background-color: #f9f9f9;
+}
+
+.sortable-drag {
+  opacity: 0.8;
+  background-color: white;
+  box-shadow: var(--box-shadow-md);
+}
+
+/* Mobile optimization */
+@media (max-width: 768px) {
+  .textbubble {
+    width: 95%;
+    padding: 1rem 0;
+  }
+  
+  .word-cloud {
+    line-height: 2rem;
+  }
+  
+  .word-item {
+    flex-wrap: wrap;
+  }
+  
+  .word-item input {
+    margin-bottom: 8px;
+  }
+  
+  .word-cloud a[data-weight="8"] { 
+    font-size: 1.6rem; 
+  }
+  
+  .word-cloud a[data-weight="9"] { 
+    font-size: 1.8rem; 
+  }
+  
+  .word-cloud-table {
+    display: block;
+    overflow-x: auto;
+  }
+  
+  .word-cloud-actions {
+    flex-direction: column;
+  }
+  
+  .word-cloud-actions button {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+}
+
+/* Accessibility - Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .word-cloud a {
+    transition: none !important;
+    animation: none !important;
+  }
+  
+  .word-cloud a:hover,
+  .word-cloud a:focus {
+    transform: none !important;
+  }
+  
+  .word-item:hover {
+    transform: none !important;
+  }
+}
