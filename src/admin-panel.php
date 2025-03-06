@@ -27,7 +27,8 @@
   <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-storage-compat.js"></script>
-<script src="./assets/js/admin.js"></script>
+<script src="./assets/js/page-editor-enhanced.js"></script>
+<script src="./assets/js/admin-bundle.js"></script>
   <script src="./assets/js/word-cloud-fix.js"></script>
 </head>
 <body>
