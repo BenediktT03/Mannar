@@ -13,9 +13,9 @@ $max_file_size = 5 * 1024 * 1024; // 5MB
 $upload_dir = '../uploads/';
 
 // Cloudinary-Konfiguration (nur verwendet wenn $upload_provider = 'cloudinary')
-$cloudinary_cloud_name = 'dein_cloud_name'; // Ändere diese Werte
-$cloudinary_api_key = 'dein_api_key';
-$cloudinary_api_secret = 'dein_api_secret';
+$cloudinary_cloud_name = 'dlegnsmho'; // Ändere diese Werte
+$cloudinary_api_key = '811453586293945';
+$cloudinary_api_secret = 'ygiBwVjmJJNsPmmVJ9lhAUDz9lQ';
 $cloudinary_upload_preset = 'ml_default';
 
 // Prüfen, ob ein Bild hochgeladen wurde
