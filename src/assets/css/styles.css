@@ -5,8 +5,10 @@
   --hover-accent: #292929;
   --transition-standard: 0.3s cubic-bezier(0.22, 1, 0.36, 1);
   --transition-fast: 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  --border-radius: 45px;
 }
 
+/* Base Styles */
 body, h1, h2, h3, h4, h5, h6 {
   font-family: "Lato", sans-serif;
   color: var(--text-color);
@@ -19,27 +21,89 @@ body, html {
   scroll-behavior: smooth;
 }
 
-/* Dropdown-Stil */
+/* Improved Accessibility & Performance */
+@media (prefers-reduced-motion: reduce) {
+  html, body {
+    scroll-behavior: auto;
+  }
+  .word-cloud *, 
+  .w3-display-middle img,
+  #mainLogo,
+  .w3-hover-opacity,
+  .w3-bar-item,
+  .word-cloud a {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Navigation Styles */
+.w3-bar {
+  position: fixed;
+  width: 100%;
+  top: 0;
+  z-index: 100;
+  opacity: 0;
+  background-color: #e0dfb8;
+  transition: opacity 0.5s ease, background-color 0.5s ease, box-shadow 0.5s ease;
+  border-radius: var(--border-radius);
+}
+
+.w3-bar.scrolled {
+  background-color: var(--accent-color);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  opacity: 1;
+  border-radius: var(--border-radius);
+}
+
+.w3-bar.visible {
+  opacity: 1;
+}
+
+.w3-bar-item {
+  transition: background-color var(--transition-standard);
+}
+
+/* Dropdown Navigation */
 .w3-show {
   display: block !important;
   position: absolute;
   opacity: 0;
   transition: opacity var(--transition-standard);
 }
+
 .w3-show.visible {
   opacity: 1;
 }
-.visible {
-  display: block !important;
-  opacity: 1;
-  transition: opacity var(--transition-standard);
+
+/* Logo Animations */
+@keyframes logoAnimation {
+  0% { transform: scale(0.8); opacity: 0; }
+  70% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
 }
 
-.scrolled {
-  background-color: var(--accent-color);
+#mainLogo {
+  animation: logoAnimation 1.5s ease forwards;
+  transition: transform 0.3s ease;
+  max-width: 100%;
+  height: auto;
 }
 
-/* Stil fÃ¼r die Textbubble */
+#mainLogo:hover {
+  transform: scale(1.1);
+}
+
+/* Home Section */
+.bgimg-1 {
+  background-color: var(--primary-bg);
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Word Cloud Styles */
 .textbubble {
   display: flex;
   width: 80%;
@@ -50,97 +114,6 @@ body, html {
   transition: opacity var(--transition-standard);
 }
 
-/* Navigation Bar */
-.w3-bar {
-  position: fixed;
-  width: 100%;
-  top: 0;
-  z-index: 100;
-  opacity: 0;
-  background-color: #e0dfb8;
-  transition: opacity 0.5s ease, background-color 0.5s ease, box-shadow 0.5s ease;
-  border-radius:45px;
-}
-.w3-bar.scrolled {
-  background-color: varvar(--accent-color);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  opacity: 1;
-  border-radius:45px;
-}
-.w3-bar.visible {
-  opacity: 1;
-}
-.w3-bar-item {
-  transition: background-color var(--transition-standard);
-}
-
-/* Bildoptimierung */
-.w3-display-middle img {
-  max-width: 100%;
-  height: auto;
-  display: block;
-  will-change: transform;
-  transform-origin: center center;
-  backface-visibility: hidden;
-}
-
-/* Logo Animation */
-@keyframes logoAnimation {
-  0% { transform: scale(0.8); opacity: 0; }
-  70% { transform: scale(1.05); }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-#mainLogo {
-  animation: logoAnimation 1.5s ease forwards;
-  transition: transform 0.3s ease; /* Ãœbergang fÃ¼r Hover */
-}
-
-/* VergrÃ¶ÃŸerung des Logos bei Hover */
-#mainLogo:hover {
-  transform: scale(1.1); /* Logo wird auf 110% skaliert */
-}
-
-/* First Section (Home) */
-.bgimg-1 {
-  background-color: var(--primary-bg);
-  min-height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.w3-wide {
-  letter-spacing: 10px;
-}
-
-/* Interaktive Elemente */
-.w3-hover-opacity,
-.w3-bar-item,
-.w3-display-middle img,
-.word-cloud a {
-  transition: transform var(--transition-standard); /* Ãœbergang hinzufÃ¼gen */
-}
-
-.w3-hover-opacity:hover,
-.w3-bar-item:hover,
-.w3-display-middle img:hover,
-.word-cloud a:hover {
-  transform: scale(1.1); /* VergrÃ¶ÃŸerung der Elemente bei Hover */
-}
-
-/* Um die Hover-Effekte noch differenzierter zu gestalten, kann man spezifische Ãœbergangseffekte hinzufÃ¼gen */
-.w3-hover-opacity:hover {
-  opacity: 0.8;
-}
-
-.word-cloud a:hover,
-.word-cloud a:focus {
-  transform: scale(1.1) translateY(-2px); /* Spezieller Hover-Effekt fÃ¼r Wortwolke */
-  text-shadow: 2px 2px 12px rgba(0, 0, 0, 0.25);
-  color: var(--hover-accent);
-}
-
-/* Word Cloud Styling */
 .word-cloud {
   list-style: none;
   padding: 0;
@@ -188,49 +161,46 @@ body, html {
   border-radius: 30px;
 }
 
-
 .word-cloud a:hover::before,
 .word-cloud a:focus::before {
   width: 100%;
-  opacity: 0,1;
+  opacity: 0.1;
 }
 
-/* Word Cloud Gewichtungen */
-.word-cloud a[data-weight="1"] { --size: 1; --color: #6d6d6d; }
-.word-cloud a[data-weight="2"] { --size: 2; --color: #606060; }
-.word-cloud a[data-weight="3"] { --size: 3; --color: #535353; }
-.word-cloud a[data-weight="4"] { --size: 4; --color: #474747; }
-.word-cloud a[data-weight="5"] { --size: 6; --color: #3a3a3a; }
-.word-cloud a[data-weight="6"] { --size: 8; --color: #2d2d2d; }
-.word-cloud a[data-weight="7"] { --size: 10; --color: #202020; }
-.word-cloud a[data-weight="8"] { --size: 13; --color: #131313; }
-.word-cloud a[data-weight="9"] { --size: 16; --color: #000000; }
+/* Weighted Word Sizes & Colors */
+.word-cloud a[data-weight="1"] { --size: 1; --color: #6d6d6d; font-size: calc(var(--size) * 0.2rem + 0.5rem); }
+.word-cloud a[data-weight="2"] { --size: 2; --color: #606060; font-size: calc(var(--size) * 0.2rem + 0.5rem); }
+.word-cloud a[data-weight="3"] { --size: 3; --color: #535353; font-size: calc(var(--size) * 0.2rem + 0.5rem); }
+.word-cloud a[data-weight="4"] { --size: 4; --color: #474747; font-size: calc(var(--size) * 0.2rem + 0.5rem); }
+.word-cloud a[data-weight="5"] { --size: 6; --color: #3a3a3a; font-size: calc(var(--size) * 0.2rem + 0.5rem); }
+.word-cloud a[data-weight="6"] { --size: 8; --color: #2d2d2d; font-size: calc(var(--size) * 0.2rem + 0.5rem); }
+.word-cloud a[data-weight="7"] { --size: 10; --color: #202020; font-size: calc(var(--size) * 0.2rem + 0.5rem); }
+.word-cloud a[data-weight="8"] { --size: 13; --color: #131313; font-size: calc(var(--size) * 0.2rem + 0.5rem); }
+.word-cloud a[data-weight="9"] { --size: 16; --color: #000000; font-size: calc(var(--size) * 0.2rem + 0.5rem); }
 
-@media (max-width: 768px) {
-  .textbubble {
-    width: 95%;
-  }
-  .word-cloud {
-    width: 100%;
-    line-height: 2rem;
-  }
-  .word-cloud a {
-    font-size: calc(var(--size) * 0.2rem + 0.5rem);
-    padding: 0.15rem 0.35rem;
-  }
+/* Interactive Elements */
+.w3-hover-opacity,
+.w3-bar-item,
+.w3-display-middle img,
+.word-cloud a {
+  transition: transform var(--transition-standard);
 }
 
-/* Accessibility: reduzierte Motion */
-@media (prefers-reduced-motion: reduce) {
-  .word-cloud *, 
-  .w3-display-middle img,
-  #mainLogo {
-    transition: none !important;
-    animation: none !important;
-  }
+.w3-hover-opacity:hover,
+.w3-bar-item:hover,
+.w3-display-middle img:hover,
+.word-cloud a:hover {
+  transform: scale(1.1);
 }
 
-/* Kontaktformular Verbesserungen */
+.word-cloud a:hover,
+.word-cloud a:focus {
+  transform: scale(1.1) translateY(-2px);
+  text-shadow: 2px 2px 12px rgba(0, 0, 0, 0.25);
+  color: var(--hover-accent);
+}
+
+/* Contact Form */
 .contact-form input,
 .contact-form textarea {
   transition: border-color var(--transition-standard), box-shadow var(--transition-standard);
@@ -245,7 +215,9 @@ body, html {
 }
 
 .contact-form button {
-  transition: background-color var(--transition-standard), transform var(--transition-standard), box-shadow var(--transition-standard);
+  transition: background-color var(--transition-standard), 
+              transform var(--transition-standard), 
+              box-shadow var(--transition-standard);
   border-radius: 4px;
 }
 
@@ -255,13 +227,9 @@ body, html {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Footer Verbesserungen */
+/* Footer Styles */
 footer {
   padding: 2rem 0;
-}
-
-footer .w3-xlarge {
-  margin: 1rem 0;
 }
 
 footer .social-icons i {
@@ -276,7 +244,7 @@ footer .social-icons i:focus {
   color: var(--hover-accent);
 }
 
-/* "Go to top" Button */
+/* Go-to-top Button */
 .go-top {
   position: fixed;
   bottom: 2rem;
@@ -291,7 +259,9 @@ footer .social-icons i:focus {
   justify-content: center;
   opacity: 0;
   visibility: hidden;
-  transition: opacity var(--transition-standard), visibility var(--transition-standard), transform var(--transition-standard);
+  transition: opacity var(--transition-standard), 
+              visibility var(--transition-standard), 
+              transform var(--transition-standard);
   cursor: pointer;
   z-index: 99;
 }
@@ -307,50 +277,18 @@ footer .social-icons i:focus {
   transform: scale(1.1);
 }
 
-/* Mobile Dropdown-Menü */
-#navDemo {
-  position: absolute;
-  top: 100%; /* Positioniert direkt unter der Navbar */
-  right: 0;
-  width: 200px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  opacity: 0;
-  transform: translateY(-20px);
-  transition: opacity 0.3s ease, transform 0.3s ease;
-  pointer-events: none; /* Verhindert Klicks, wenn ausgeblendet */
-  z-index: 99;
-}
-
-#navDemo.w3-show {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto; /* Erlaubt Klicks, wenn angezeigt */
-  display: block !important;
-}
-
-/* Hamburger-Menü-Icon-Styling */
-.fa-bars {
-  font-size: 18px;
-  padding: 8px;
-}
-
-/* Hover-Effekt für mobile Menüpunkte */
-#navDemo .w3-bar-item:hover {
-  background-color: #f1f1f1;
-}
-
-/* Bessere Sichtbarkeit der mobilen Navbar */
-@media (max-width: 600px) {
-  .w3-bar-item.w3-button.w3-right {
-    padding: 8px 16px;
-    background-color: rgba(255, 255, 255, 0.15);
-    border-radius: 4px;
+/* Mobile Styles */
+@media (max-width: 768px) {
+  .textbubble {
+    width: 95%;
   }
   
-  .w3-bar-item.w3-button.w3-right:hover {
-    background-color: rgba(255, 255, 255, 0.25);
+  .word-cloud {
+    width: 100%;
+    line-height: 2rem;
   }
   
+  /* Improved mobile dropdown menu */
   #navDemo {
     width: 100%;
     right: 0;
@@ -362,12 +300,14 @@ footer .social-icons i:focus {
     border-bottom: 1px solid rgba(0,0,0,0.05);
   }
   
-  #navDemo .w3-bar-item:last-child {
-    border-bottom: none;
+  .w3-bar-item.w3-button.w3-right {
+    padding: 8px 16px;
+    background-color: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
   }
 }
 
-/* Admin Panel Spezifische Styles */
+/* Admin Panel Messages */
 .success-message {
   background-color: #d4edda;
   color: #155724;
@@ -395,27 +335,7 @@ footer .social-icons i:focus {
   margin: 10px 0;
 }
 
-.image-preview-container {
-  max-height: 150px;
-  overflow: hidden;
-  margin-bottom: 10px;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-}
-
-.image-preview {
-  max-width: 100%;
-  max-height: 150px;
-}
-
-.upload-container {
-  margin-bottom: 15px;
-  padding: 10px;
-  border: 1px solid #eee;
-  border-radius: 4px;
-}
-
-/* Vorschau-Modus Anzeige */
+/* Preview Mode Indicator */
 .preview-mode-indicator {
   position: fixed;
   top: 0;
@@ -432,9 +352,7 @@ footer .social-icons i:focus {
   background-color: #4CAF50;
 }
 
-/* Stylingverbesserungen für Admin-Panel */
-
-/* Status-Meldungen */
+/* Status Message */
 .status-msg {
   position: fixed;
   top: 10px;
@@ -465,382 +383,3 @@ footer .social-icons i:focus {
   color: #721c24;
   border: 1px solid #f5c6cb;
 }
-
-/* Button-Positionierung */
-.action-buttons {
-  position: sticky;
-  bottom: 20px;
-  background-color: rgba(255, 255, 255, 0.9);
-  padding: 15px;
-  border-radius: 5px;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-  margin-top: 20px;
-  z-index: 100;
-}
-
-/* Tab-Navigation verbessern */
-.tabs {
-  position: sticky;
-  top: 0;
-  background-color: white;
-  z-index: 99;
-  padding: 10px 0;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-/* Admin-Bereich verbessern */
-#adminDiv {
-  padding-bottom: 80px; /* Platz für die Buttons lassen */
-}
-
-/* Abschnitte deutlicher trennen */
-.section-divider {
-  margin: 30px 0;
-  border-top: 1px solid #eee;
-}
-
-/* Formatierungsoptionen für TinyMCE */
-.text-left {
-  text-align: left !important;
-}
-
-.text-center {
-  text-align: center !important;
-}
-
-.text-right {
-  text-align: right !important;
-}
-
-.text-justify {
-  text-align: justify !important;
-}
-
-/* Überschriften */
-h1 {
-  font-size: 2.5em;
-  font-weight: bold;
-  margin: 0.67em 0;
-}
-
-h2 {
-  font-size: 2em;
-  font-weight: bold;
-  margin: 0.83em 0;
-}
-
-h3 {
-  font-size: 1.5em;
-  font-weight: bold;
-  margin: 1em 0;
-}
-
-h4 {
-  font-size: 1.25em;
-  font-weight: bold;
-  margin: 1.33em 0;
-}
-
-h5 {
-  font-size: 1em;
-  font-weight: bold;
-  margin: 1.67em 0;
-}
-
-h6 {
-  font-size: 0.83em;
-  font-weight: bold;
-  margin: 2.33em 0;
-}
-
-/* Textgrößen über Font-Size-Selector */
-.mce-content-body [style*="font-size: 8pt"], .content-preview [style*="font-size: 8pt"] { font-size: 8pt !important; }
-.mce-content-body [style*="font-size: 10pt"], .content-preview [style*="font-size: 10pt"] { font-size: 10pt !important; }
-.mce-content-body [style*="font-size: 12pt"], .content-preview [style*="font-size: 12pt"] { font-size: 12pt !important; }
-.mce-content-body [style*="font-size: 14pt"], .content-preview [style*="font-size: 14pt"] { font-size: 14pt !important; }
-.mce-content-body [style*="font-size: 16pt"], .content-preview [style*="font-size: 16pt"] { font-size: 16pt !important; }
-.mce-content-body [style*="font-size: 18pt"], .content-preview [style*="font-size: 18pt"] { font-size: 18pt !important; }
-.mce-content-body [style*="font-size: 20pt"], .content-preview [style*="font-size: 20pt"] { font-size: 20pt !important; }
-.mce-content-body [style*="font-size: 24pt"], .content-preview [style*="font-size: 24pt"] { font-size: 24pt !important; }
-.mce-content-body [style*="font-size: 36pt"], .content-preview [style*="font-size: 36pt"] { font-size: 36pt !important; }
-.mce-content-body [style*="font-size: 48pt"], .content-preview [style*="font-size: 48pt"] { font-size: 48pt !important; }
-
-/* Anpassungen für den Inhalt von TinyMCE-bearbeiteten Bereichen */
-#aboutText, #offer1Desc, #offer2Desc, #offer3Desc {
-  line-height: 1.6;
-}
-
-#aboutText p, #offer1Desc p, #offer2Desc p, #offer3Desc p {
-  margin-bottom: 1em;
-}
-
-#aboutText h1, #aboutText h2, #aboutText h3,
-#offer1Desc h1, #offer1Desc h2, #offer1Desc h3,
-#offer2Desc h1, #offer2Desc h2, #offer2Desc h3,
-#offer3Desc h1, #offer3Desc h2, #offer3Desc h3 {
-  margin-top: 1em;
-  margin-bottom: 0.5em;
-}
-
-#aboutText ul, #aboutText ol,
-#offer1Desc ul, #offer1Desc ol,
-#offer2Desc ul, #offer2Desc ol,
-#offer3Desc ul, #offer3Desc ol {
-  padding-left: 2em;
-  margin-bottom: 1em;
-}
-
-/* Formatierungsoptionen für TinyMCE */
-.text-left {
-  text-align: left !important;
-}
-
-.text-center {
-  text-align: center !important;
-}
-
-.text-right {
-  text-align: right !important;
-}
-
-.text-justify {
-  text-align: justify !important;
-}
-
-/* Überschriften */
-h1 {
-  font-size: 2.5em;
-  font-weight: bold;
-  margin: 0.67em 0;
-}
-
-h2 {
-  font-size: 2em;
-  font-weight: bold;
-  margin: 0.83em 0;
-}
-
-h3 {
-  font-size: 1.5em;
-  font-weight: bold;
-  margin: 1em 0;
-}
-
-h4 {
-  font-size: 1.25em;
-  font-weight: bold;
-  margin: 1.33em 0;
-}
-
-h5 {
-  font-size: 1em;
-  font-weight: bold;
-  margin: 1.67em 0;
-}
-
-h6 {
-  font-size: 0.83em;
-  font-weight: bold;
-  margin: 2.33em 0;
-}
-
-/* Textgrößen über Font-Size-Selector */
-.mce-content-body [style*="font-size: 8pt"], .content-preview [style*="font-size: 8pt"] { font-size: 8pt !important; }
-.mce-content-body [style*="font-size: 10pt"], .content-preview [style*="font-size: 10pt"] { font-size: 10pt !important; }
-.mce-content-body [style*="font-size: 12pt"], .content-preview [style*="font-size: 12pt"] { font-size: 12pt !important; }
-.mce-content-body [style*="font-size: 14pt"], .content-preview [style*="font-size: 14pt"] { font-size: 14pt !important; }
-.mce-content-body [style*="font-size: 16pt"], .content-preview [style*="font-size: 16pt"] { font-size: 16pt !important; }
-.mce-content-body [style*="font-size: 18pt"], .content-preview [style*="font-size: 18pt"] { font-size: 18pt !important; }
-.mce-content-body [style*="font-size: 20pt"], .content-preview [style*="font-size: 20pt"] { font-size: 20pt !important; }
-.mce-content-body [style*="font-size: 24pt"], .content-preview [style*="font-size: 24pt"] { font-size: 24pt !important; }
-.mce-content-body [style*="font-size: 36pt"], .content-preview [style*="font-size: 36pt"] { font-size: 36pt !important; }
-.mce-content-body [style*="font-size: 48pt"], .content-preview [style*="font-size: 48pt"] { font-size: 48pt !important; }
-
-/* Anpassungen für den Inhalt von TinyMCE-bearbeiteten Bereichen */
-#aboutText, #offer1Desc, #offer2Desc, #offer3Desc, 
-#aboutTextDisplay, #offer1DescDisplay, #offer2DescDisplay, #offer3DescDisplay {
-  line-height: 1.6;
-}
-
-#aboutText p, #offer1Desc p, #offer2Desc p, #offer3Desc p,
-#aboutTextDisplay p, #offer1DescDisplay p, #offer2DescDisplay p, #offer3DescDisplay p {
-  margin-bottom: 1em;
-}
-
-#aboutText h1, #aboutText h2, #aboutText h3,
-#offer1Desc h1, #offer1Desc h2, #offer1Desc h3,
-#offer2Desc h1, #offer2Desc h2, #offer2Desc h3,
-#offer3Desc h1, #offer3Desc h2, #offer3Desc h3,
-#aboutTextDisplay h1, #aboutTextDisplay h2, #aboutTextDisplay h3,
-#offer1DescDisplay h1, #offer1DescDisplay h2, #offer1DescDisplay h3,
-#offer2DescDisplay h1, #offer2DescDisplay h2, #offer2DescDisplay h3,
-#offer3DescDisplay h1, #offer3DescDisplay h2, #offer3DescDisplay h3 {
-  margin-top: 1em;
-  margin-bottom: 0.5em;
-}
-
-#aboutText ul, #aboutText ol,
-#offer1Desc ul, #offer1Desc ol,
-#offer2Desc ul, #offer2Desc ol,
-#offer3Desc ul, #offer3Desc ol,
-#aboutTextDisplay ul, #aboutTextDisplay ol,
-#offer1DescDisplay ul, #offer1DescDisplay ol,
-#offer2DescDisplay ul, #offer2DescDisplay ol,
-#offer3DescDisplay ul, #offer3DescDisplay ol {
-  padding-left: 2em;
-  margin-bottom: 1em;
-}
-
-/* Verbesserte Darstellung von Text-Hervorhebungen */
-#aboutText strong, #offer1Desc strong, #offer2Desc strong, #offer3Desc strong,
-#aboutTextDisplay strong, #offer1DescDisplay strong, #offer2DescDisplay strong, #offer3DescDisplay strong {
-  font-weight: 700;
-}
-
-#aboutText em, #offer1Desc em, #offer2Desc em, #offer3Desc em,
-#aboutTextDisplay em, #offer1DescDisplay em, #offer2DescDisplay em, #offer3DescDisplay em {
-  font-style: italic;
-}
-
-/* Verbesserungen für Listen */
-#aboutText ul, #offer1Desc ul, #offer2Desc ul, #offer3Desc ul,
-#aboutTextDisplay ul, #offer1DescDisplay ul, #offer2DescDisplay ul, #offer3DescDisplay ul {
-  list-style-type: disc;
-}
-
-#aboutText ol, #offer1Desc ol, #offer2Desc ol, #offer3Desc ol,
-#aboutTextDisplay ol, #offer1DescDisplay ol, #offer2DescDisplay ol, #offer3DescDisplay ol {
-  list-style-type: decimal;
-}
-
-#aboutText ul ul, #offer1Desc ul ul, #offer2Desc ul ul, #offer3Desc ul ul,
-#aboutTextDisplay ul ul, #offer1DescDisplay ul ul, #offer2DescDisplay ul ul, #offer3DescDisplay ul ul {
-  list-style-type: circle;
-}
-
-#aboutText ol ol, #offer1Desc ol ol, #offer2Desc ol ol, #offer3Desc ol ol,
-#aboutTextDisplay ol ol, #offer1DescDisplay ol ol, #offer2DescDisplay ol ol, #offer3DescDisplay ol ol {
-  list-style-type: lower-alpha;
-}
-
-/* Links in den TinyMCE-Inhalten */
-#aboutText a, #offer1Desc a, #offer2Desc a, #offer3Desc a,
-#aboutTextDisplay a, #offer1DescDisplay a, #offer2DescDisplay a, #offer3DescDisplay a {
-  color: #0078ff;
-  text-decoration: underline;
-  transition: color 0.3s ease;
-}
-
-#aboutText a:hover, #offer1Desc a:hover, #offer2Desc a:hover, #offer3Desc a:hover,
-#aboutTextDisplay a:hover, #offer1DescDisplay a:hover, #offer2DescDisplay a:hover, #offer3DescDisplay a:hover {
-  color: #005bb7;
-}
-
-/* Seitenverwaltung Styles */
-.template-preview-container {
-  background-color: #f9f9f9;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 10px;
-  margin-top: 10px;
-}
-
-.template-preview {
-  display: flex;
-  flex-wrap: wrap;
-  min-height: 100px;
-}
-
-.tp-header {
-  width: 100%;
-  height: 30px;
-  background-color: #ddd;
-  margin-bottom: 10px;
-}
-
-.tp-content {
-  width: 100%;
-  height: 80px;
-  background-color: #e6e6e6;
-}
-
-.tp-text-col {
-  width: 60%;
-  height: 100px;
-  background-color: #e6e6e6;
-  margin-right: 2%;
-}
-
-.tp-image-col {
-  width: 38%;
-  height: 100px;
-  background-color: #ccc;
-}
-
-.tp-gallery {
-  width: 100%;
-  height: 80px;
-  background-color: #e6e6e6;
-  display: flex;
-  justify-content: space-between;
-}
-
-.tp-gallery:before,
-.tp-gallery:after {
-  content: '';
-  width: 23%;
-  height: 100%;
-  background-color: #ccc;
-}
-
-.tp-gallery:after {
-  background-color: #bbb;
-}
-
-.tp-form-col {
-  width: 40%;
-  height: 100px;
-  background-color: #e6e6e6;
-}
-
-.gallery-image-wrapper {
-  position: relative;
-  margin-bottom: 15px;
-}
-
-.gallery-image-wrapper img {
-  width: 100%;
-  height: auto;
-  border-radius: 4px;
-}
-
-.gallery-image-wrapper .w3-button {
-  opacity: 0.7;
-  transition: opacity 0.3s ease;
-}
-
-.gallery-image-wrapper .w3-button:hover {
-  opacity: 1;
-}
-
-#pagesList .w3-bar {
-  border-left: 4px solid #2196F3;
-  background-color: #f9f9f9;
-  transition: all 0.3s ease;
-}
-
-#pagesList .w3-bar:hover {
-  background-color: #f1f1f1;
-  border-left-color: #0b7dda;
-}
-
-#templatePreview h5 {
-  margin-top: 0;
-  font-weight: bold;
-}
-
-#templatePreview p {
-  margin-bottom: 10px;
-  color: #666;
-}
-

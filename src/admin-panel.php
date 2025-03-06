@@ -11,9 +11,9 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
   
   <!-- Enhanced Admin Panel CSS -->
-  <link rel="stylesheet" href="./assets/css/admin-enhanced.css" />
+
   <link rel="stylesheet" href="./assets/css/dashboard.css" />
-  <link rel="stylesheet" href="./assets/css/tab-fix.css">
+<link rel="stylesheet" href="./assets/css/admin.css" />
   <link rel="stylesheet" href="./assets/css/word-cloud-fix.css">
   
   <!-- TinyMCE -->
@@ -27,7 +27,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-storage-compat.js"></script>
-  <script src="./assets/js/tab-fix.js"></script>
+<script src="./assets/js/admin.js"></script>
   <script src="./assets/js/word-cloud-fix.js"></script>
 </head>
 <body>

@@ -1,9 +1,8 @@
  /**
- * Enhanced Admin Panel Styles
- * Completely redesigned admin experience with focus on usability and aesthetics
+ * Konsolidierte Admin CSS
+ * Kombiniert admin-enhanced.css, tab-fix.css und andere Stil-Fixes
  */
 
-/* ===== Base & Layout ===== */
 :root {
   --primary-color: #3498db;
   --primary-dark: #2980b9;
@@ -19,8 +18,9 @@
   --transition-speed: 0.3s;
 }
 
+/* ===== Basis & Layout ===== */
 body {
-  font-family: 'Lato', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Lato', 'Segoe UI', sans-serif;
   color: var(--text-color);
   background-color: #f5f7f9;
   line-height: 1.6;
@@ -93,13 +93,22 @@ body {
   background-color: var(--primary-color);
 }
 
+/* WICHTIG: Tab-Anzeige-Fix */
 .tab-content {
-  display: none;
-  animation: fadeIn var(--transition-speed) ease;
+  display: none !important;
 }
 
 .tab-content.active {
-  display: block;
+  display: block !important;
+}
+
+#dashboard-tab.active, 
+#content-tab.active,
+#pages-tab.active, 
+#wordcloud-tab.active, 
+#preview-tab.active,
+#settings-tab.active {
+  display: block !important;
 }
 
 @keyframes fadeIn {
@@ -263,6 +272,11 @@ label {
 }
 
 /* ===== Page Editor Specific Styles ===== */
+#pagesContainer {
+  display: block !important;
+  min-height: 300px;
+}
+
 .page-welcome-container {
   padding: 60px 20px;
   background-color: white;
@@ -320,7 +334,7 @@ label {
   overflow: hidden;
   margin-bottom: 10px;
   min-height: 150px;
-  display: flex;
+  display: flex !important;
   align-items: center;
   justify-content: center;
 }
@@ -362,204 +376,55 @@ label {
   opacity: 1;
 }
 
-/* ===== Repeater Fields ===== */
-.repeater-container {
-  border: 1px solid #eee;
-  border-radius: var(--border-radius);
-  margin-bottom: 20px;
-}
-
-.repeater-header {
-  padding: 10px;
+/* ===== Word Cloud ===== */
+.word-cloud-admin {
   background-color: #f9f9f9;
-  border-bottom: 1px solid #eee;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.repeater-item {
-  margin: 10px;
-  border-radius: var(--border-radius);
-  overflow: hidden;
-}
-
-.repeater-item-header {
-  padding: 8px;
-}
-
-.repeater-item-content {
+.word-item {
+  display: flex;
+  align-items: center;
   background-color: white;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.repeater-remove-btn {
-  padding: 5px 10px;
-  font-size: 12px;
+.word-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* ===== Style Editor ===== */
-.style-editor {
-  background-color: #f9f9f9;
-  border-radius: var(--border-radius);
+.word-item input {
+  margin-right: 10px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
 }
 
-.style-editor h4 {
-  margin-top: 0;
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  color: var(--secondary-color);
-}
-
-input[type="range"] {
-  width: 100%;
-  height: 6px;
-  border-radius: 3px;
-  background-color: #ddd;
-  outline: none;
-  -webkit-appearance: none;
-  cursor: pointer;
-}
-
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background-color: var(--primary-color);
-  cursor: pointer;
-}
-
-input[type="color"] {
-  -webkit-appearance: none;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--border-radius);
-  border: none;
-  cursor: pointer;
-}
-
-input[type="color"]::-webkit-color-swatch-wrapper {
-  padding: 0;
-  border-radius: var(--border-radius);
-}
-
-input[type="color"]::-webkit-color-swatch {
-  border: none;
-  border-radius: var(--border-radius);
-}
-
-/* ===== Live Preview ===== */
-.live-preview {
-  border-radius: var(--border-radius);
-  border: 1px solid #eee;
-  overflow: hidden;
-  min-height: 400px;
-  max-height: 600px;
-  overflow-y: auto;
-  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.05);
-}
-
-/* ===== Template Preview ===== */
-.template-preview-container {
-  background-color: #f9f9f9;
-  border: 1px solid #eee;
-  border-radius: var(--border-radius);
-  padding: 15px;
-  margin-top: 15px;
-}
-
-.template-preview {
+.draggable-handle {
+  cursor: move;
+  padding: 0 10px;
+  color: #888;
   display: flex;
-  flex-wrap: wrap;
-  min-height: 150px;
-  background-color: white;
-  padding: 10px;
-  border-radius: var(--border-radius);
-}
-
-.tp-header, .tp-hero {
-  width: 100%;
-  height: 50px;
-  background-color: #ddd;
-  margin-bottom: 15px;
-  border-radius: var(--border-radius);
-}
-
-.tp-content {
-  width: 100%;
-  height: 100px;
-  background-color: #eee;
-  border-radius: var(--border-radius);
-}
-
-.tp-text-col {
-  width: 60%;
-  height: 120px;
-  background-color: #eee;
-  margin-right: 2%;
-  border-radius: var(--border-radius);
-}
-
-.tp-image-col {
-  width: 38%;
-  height: 120px;
-  background-color: #ddd;
-  border-radius: var(--border-radius);
-}
-
-.tp-gallery {
-  width: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.tp-gallery::before,
-.tp-gallery::after {
-  content: '';
-  flex-basis: 30%;
-  height: 80px;
-  background-color: #ddd;
-  border-radius: var(--border-radius);
-}
-
-.tp-features {
-  width: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin: 15px 0;
-}
-
-.tp-features::before,
-.tp-features::after,
-.tp-features::before {
-  content: '';
-  flex-basis: 30%;
-  height: 100px;
-  background-color: #eee;
-  border-radius: var(--border-radius);
-}
-
-.tp-cta {
-  width: 100%;
-  height: 80px;
-  background-color: #ddd;
-  border-radius: var(--border-radius);
-  margin-top: 15px;
+  align-items: center;
 }
 
 /* ===== TinyMCE Improvements ===== */
 .tox.tox-tinymce {
   border-radius: var(--border-radius) !important;
   border-color: #ddd !important;
+  visibility: visible !important;
+  z-index: 1 !important;
 }
 
 .tox .tox-toolbar, .tox .tox-toolbar__overflow, .tox .tox-toolbar__primary {
   background-color: #f9f9f9 !important;
-}
-
-/* ===== Create Page Dialog ===== */
-.w3-modal-content {
-  border-radius: var(--border-radius);
-  overflow: hidden;
 }
 
 /* ===== Responsive Adjustments ===== */
@@ -594,140 +459,4 @@ input[type="color"]::-webkit-color-swatch {
   .editor-main [class*="w3-col"] {
     width: 100%;
   }
-}
-
-/* Force tab display for active tabs */
-#content-tab.active, 
-#pages-tab.active, 
-#wordcloud-tab.active, 
-#preview-tab.active {
-  display: block !important;
-}
-
-/* Improved Word Cloud Admin Styling */
-#wordCloudContainer table {
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  border-radius: var(--border-radius);
-  overflow: hidden;
-}
-
-#wordCloudContainer thead th {
-  background-color: var(--primary-color, #3498db);
-  color: white;
-  font-weight: 500;
-  padding: 12px 8px;
-}
-
-#wordCloudContainer .word-item td {
-  vertical-align: middle;
-  padding: 8px;
-}
-
-#wordCloudContainer .word-item:hover {
-  background-color: rgba(0,0,0,0.02);
-}
-
-#wordCloudContainer .draggable-handle {
-  color: #888;
-  padding: 8px;
-  text-align: center;
-  border-right: 1px solid #eee;
-}
-
-#wordCloudContainer .w3-input {
-  margin: 0;
-  border: 1px solid #ddd !important;
-}
-
-#wordCloudContainer .w3-input:focus {
-  border-color: var(--primary-color, #3498db) !important;
-  box-shadow: 0 0 0 2px rgba(33,150,243,0.1);
-}
-
-#wordCloudContainer .delete-word-btn {
-  padding: 4px 8px;
-  border-radius: 50%;
-  width: 34px;
-  height: 34px;
-  min-width: auto;
-}
-
-/* Word Cloud Live Preview */
-.word-cloud-preview {
-  background-color: #f8f9fa;
-  border-radius: var(--border-radius, 4px);
-  padding: 20px;
-  margin-top: 20px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.word-cloud-preview ul {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-}
-
-.word-cloud-preview li {
-  display: inline-block;
-  margin: 5px;
-}
-
-.word-cloud-preview a {
-  display: inline-block;
-  padding: 5px;
-  text-decoration: none;
-  transition: transform 0.3s ease;
-}
-
-.word-cloud-preview a:hover {
-  transform: scale(1.1);
-}
-
-/* Weight-based styling */
-.word-cloud-preview a[data-weight="1"] { font-size: 0.8em; color: #999; }
-.word-cloud-preview a[data-weight="2"] { font-size: 0.9em; color: #888; }
-.word-cloud-preview a[data-weight="3"] { font-size: 1em; color: #777; }
-.word-cloud-preview a[data-weight="4"] { font-size: 1.2em; color: #666; }
-.word-cloud-preview a[data-weight="5"] { font-size: 1.4em; color: #555; }
-.word-cloud-preview a[data-weight="6"] { font-size: 1.6em; color: #444; }
-.word-cloud-preview a[data-weight="7"] { font-size: 1.8em; color: #333; }
-.word-cloud-preview a[data-weight="8"] { font-size: 2em; color: #222; }
-.word-cloud-preview a[data-weight="9"] { font-size: 2.2em; color: #111; }
-
-#content-tab.active, 
-#pages-tab.active, 
-#wordcloud-tab.active, 
-#preview-tab.active,
-#settings-tab.active,
-#dashboard-tab.active {
-  display: block !important;
-}
-
-/* Hide all tabs by default */
-#content-tab, 
-#pages-tab, 
-#wordcloud-tab, 
-#preview-tab,
-#settings-tab,
-#dashboard-tab {
-  display: none !important;
-}
-
-/* Ensure iframe in preview tab displays correctly */
-#previewFrame {
-  width: 100%;
-  height: 600px;
-  border: 1px solid #ddd;
-  border-radius: var(--border-radius);
-}
-
-/* Make sure page editor loads properly */
-#pagesContainer {
-  display: block !important;
-  min-height: 200px;
 }
