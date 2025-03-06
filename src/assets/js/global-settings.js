@@ -1,8 +1,6 @@
- /**
- * Global Settings Manager
- * Handles site-wide style and layout settings
+/**
+ * Optimized Global Settings Manager
  */
-
 const GlobalSettings = (function() {
   // Default settings
   const defaults = {
@@ -26,21 +24,23 @@ const GlobalSettings = (function() {
     }
   };
 
-  // Current settings (will be loaded from Firebase)
   let currentSettings = JSON.parse(JSON.stringify(defaults));
-  
-  // DOM Elements
+  let db = null;
   const elements = {};
-  
-  // Firebase references
-  let db;
 
-  // Initialize
+  // Initialize settings
   function init() {
-    if (typeof firebase !== 'undefined') {
-      db = firebase.firestore();
-    } else {
-      console.error('Firebase not found');
+    try {
+      if (typeof firebase !== 'undefined') {
+        db = firebase.firestore();
+      } else {
+        console.error('Firebase not found');
+        showStatus('Firebase could not be initialized. Settings functionality will be limited.', true);
+        return;
+      }
+    } catch (error) {
+      console.error('Firebase initialization error:', error);
+      showStatus('Firebase initialization error. Settings functionality will be limited.', true);
       return;
     }
     
@@ -50,7 +50,7 @@ const GlobalSettings = (function() {
     // Add event listeners
     attachEvents();
     
-    // Load settings from Firebase
+    // Load settings
     loadSettings();
     
     console.log('Global Settings Manager initialized');
@@ -102,108 +102,21 @@ const GlobalSettings = (function() {
   // Attach event listeners
   function attachEvents() {
     // Color inputs
-    if (elements.primaryColor) {
-      elements.primaryColor.addEventListener('input', function() {
-        if (elements.primaryColorValue) {
-          elements.primaryColorValue.textContent = this.value;
-        }
-        currentSettings.colors.primary = this.value;
-        updatePreview();
-      });
-    }
-    
-    if (elements.secondaryColor) {
-      elements.secondaryColor.addEventListener('input', function() {
-        if (elements.secondaryColorValue) {
-          elements.secondaryColorValue.textContent = this.value;
-        }
-        currentSettings.colors.secondary = this.value;
-        updatePreview();
-      });
-    }
-    
-    if (elements.accentColor) {
-      elements.accentColor.addEventListener('input', function() {
-        if (elements.accentColorValue) {
-          elements.accentColorValue.textContent = this.value;
-        }
-        currentSettings.colors.accent = this.value;
-        updatePreview();
-      });
-    }
-    
-    if (elements.textColor) {
-      elements.textColor.addEventListener('input', function() {
-        if (elements.textColorValue) {
-          elements.textColorValue.textContent = this.value;
-        }
-        currentSettings.colors.text = this.value;
-        updatePreview();
-      });
-    }
+    setupColorInput('primaryColor', 'colors', 'primary');
+    setupColorInput('secondaryColor', 'colors', 'secondary');
+    setupColorInput('accentColor', 'colors', 'accent');
+    setupColorInput('textColor', 'colors', 'text');
     
     // Typography inputs
-    if (elements.fontFamily) {
-      elements.fontFamily.addEventListener('change', function() {
-        currentSettings.typography.fontFamily = this.value;
-        updatePreview();
-      });
-    }
-    
-    if (elements.headingFont) {
-      elements.headingFont.addEventListener('change', function() {
-        currentSettings.typography.headingFont = this.value;
-        updatePreview();
-      });
-    }
-    
-    if (elements.baseFontSize) {
-      elements.baseFontSize.addEventListener('input', function() {
-        if (elements.baseFontSizeValue) {
-          elements.baseFontSizeValue.textContent = this.value;
-        }
-        currentSettings.typography.baseFontSize = parseInt(this.value);
-        updatePreview();
-      });
-    }
-    
-    if (elements.lineHeight) {
-      elements.lineHeight.addEventListener('input', function() {
-        if (elements.lineHeightValue) {
-          elements.lineHeightValue.textContent = this.value;
-        }
-        currentSettings.typography.lineHeight = parseFloat(this.value);
-        updatePreview();
-      });
-    }
+    setupSelectInput('fontFamily', 'typography', 'fontFamily');
+    setupSelectInput('headingFont', 'typography', 'headingFont');
+    setupRangeInput('baseFontSize', 'typography', 'baseFontSize', 'baseFontSizeValue');
+    setupRangeInput('lineHeight', 'typography', 'lineHeight', 'lineHeightValue');
     
     // Layout inputs
-    if (elements.containerWidth) {
-      elements.containerWidth.addEventListener('input', function() {
-        if (elements.containerWidthValue) {
-          elements.containerWidthValue.textContent = this.value;
-        }
-        currentSettings.layout.containerWidth = parseInt(this.value);
-        updatePreview();
-      });
-    }
-    
-    if (elements.borderRadius) {
-      elements.borderRadius.addEventListener('input', function() {
-        if (elements.borderRadiusValue) {
-          elements.borderRadiusValue.textContent = this.value;
-        }
-        currentSettings.layout.borderRadius = parseInt(this.value);
-        updatePreview();
-      });
-    }
-    
-    if (elements.buttonStyle) {
-      elements.buttonStyle.addEventListener('change', function() {
-        currentSettings.layout.buttonStyle = this.value;
-        updatePreview();
-      });
-    }
+    setupRangeInput('containerWidth', 'layout', 'containerWidth', 'containerWidthValue');
+    setupRangeInput('borderRadius', 'layout', 'borderRadius', 'borderRadiusValue');
+    setupSelectInput('buttonStyle', 'layout', 'buttonStyle');
     
     if (elements.enableAnimations) {
       elements.enableAnimations.addEventListener('change', function() {
@@ -226,9 +139,55 @@ const GlobalSettings = (function() {
     }
   }
 
+  // Setup color input
+  function setupColorInput(elementId, settingGroup, settingName) {
+    const input = elements[elementId];
+    const valueDisplay = elements[`${elementId}Value`];
+    
+    if (!input) return;
+    
+    input.addEventListener('input', function() {
+      if (valueDisplay) {
+        valueDisplay.textContent = this.value;
+      }
+      currentSettings[settingGroup][settingName] = this.value;
+      updatePreview();
+    });
+  }
+
+  // Setup select input
+  function setupSelectInput(elementId, settingGroup, settingName) {
+    const input = elements[elementId];
+    
+    if (!input) return;
+    
+    input.addEventListener('change', function() {
+      currentSettings[settingGroup][settingName] = this.value;
+      updatePreview();
+    });
+  }
+
+  // Setup range input
+  function setupRangeInput(elementId, settingGroup, settingName, valueDisplayId) {
+    const input = elements[elementId];
+    const valueDisplay = elements[valueDisplayId];
+    
+    if (!input) return;
+    
+    input.addEventListener('input', function() {
+      if (valueDisplay) {
+        valueDisplay.textContent = this.value;
+      }
+      currentSettings[settingGroup][settingName] = parseFloat(this.value);
+      updatePreview();
+    });
+  }
+
   // Load settings from Firebase
   function loadSettings() {
     if (!db) return;
+    
+    showStatus('Loading settings...', false, 0);
     
     db.collection('settings').doc('global').get()
       .then(doc => {
@@ -242,16 +201,19 @@ const GlobalSettings = (function() {
             layout: { ...defaults.layout, ...settings.layout }
           };
           
-          // Update UI with loaded settings
+          // Update UI
           updateSettingsUI();
+          showStatus('Settings loaded successfully');
         } else {
-          // Create settings document with defaults if it doesn't exist
+          // Create document with defaults
           db.collection('settings').doc('global').set(defaults)
             .then(() => {
               console.log('Created default settings');
+              showStatus('Default settings created');
             })
             .catch(error => {
               console.error('Error creating default settings:', error);
+              showStatus('Error creating default settings: ' + error.message, true);
             });
         }
       })
@@ -264,77 +226,23 @@ const GlobalSettings = (function() {
   // Update UI with current settings
   function updateSettingsUI() {
     // Update color inputs
-    if (elements.primaryColor && currentSettings.colors.primary) {
-      elements.primaryColor.value = currentSettings.colors.primary;
-      if (elements.primaryColorValue) {
-        elements.primaryColorValue.textContent = currentSettings.colors.primary;
-      }
-    }
-    
-    if (elements.secondaryColor && currentSettings.colors.secondary) {
-      elements.secondaryColor.value = currentSettings.colors.secondary;
-      if (elements.secondaryColorValue) {
-        elements.secondaryColorValue.textContent = currentSettings.colors.secondary;
-      }
-    }
-    
-    if (elements.accentColor && currentSettings.colors.accent) {
-      elements.accentColor.value = currentSettings.colors.accent;
-      if (elements.accentColorValue) {
-        elements.accentColorValue.textContent = currentSettings.colors.accent;
-      }
-    }
-    
-    if (elements.textColor && currentSettings.colors.text) {
-      elements.textColor.value = currentSettings.colors.text;
-      if (elements.textColorValue) {
-        elements.textColorValue.textContent = currentSettings.colors.text;
-      }
-    }
+    updateColorInput('primaryColor', currentSettings.colors.primary);
+    updateColorInput('secondaryColor', currentSettings.colors.secondary);
+    updateColorInput('accentColor', currentSettings.colors.accent);
+    updateColorInput('textColor', currentSettings.colors.text);
     
     // Update typography inputs
-    if (elements.fontFamily && currentSettings.typography.fontFamily) {
-      elements.fontFamily.value = currentSettings.typography.fontFamily;
-    }
-    
-    if (elements.headingFont && currentSettings.typography.headingFont) {
-      elements.headingFont.value = currentSettings.typography.headingFont;
-    }
-    
-    if (elements.baseFontSize && currentSettings.typography.baseFontSize) {
-      elements.baseFontSize.value = currentSettings.typography.baseFontSize;
-      if (elements.baseFontSizeValue) {
-        elements.baseFontSizeValue.textContent = currentSettings.typography.baseFontSize;
-      }
-    }
-    
-    if (elements.lineHeight && currentSettings.typography.lineHeight) {
-      elements.lineHeight.value = currentSettings.typography.lineHeight;
-      if (elements.lineHeightValue) {
-        elements.lineHeightValue.textContent = currentSettings.typography.lineHeight;
-      }
-    }
+    updateSelectInput('fontFamily', currentSettings.typography.fontFamily);
+    updateSelectInput('headingFont', currentSettings.typography.headingFont);
+    updateRangeInput('baseFontSize', 'baseFontSizeValue', currentSettings.typography.baseFontSize);
+    updateRangeInput('lineHeight', 'lineHeightValue', currentSettings.typography.lineHeight);
     
     // Update layout inputs
-    if (elements.containerWidth && currentSettings.layout.containerWidth) {
-      elements.containerWidth.value = currentSettings.layout.containerWidth;
-      if (elements.containerWidthValue) {
-        elements.containerWidthValue.textContent = currentSettings.layout.containerWidth;
-      }
-    }
+    updateRangeInput('containerWidth', 'containerWidthValue', currentSettings.layout.containerWidth);
+    updateRangeInput('borderRadius', 'borderRadiusValue', currentSettings.layout.borderRadius);
+    updateSelectInput('buttonStyle', currentSettings.layout.buttonStyle);
     
-    if (elements.borderRadius && currentSettings.layout.borderRadius !== undefined) {
-      elements.borderRadius.value = currentSettings.layout.borderRadius;
-      if (elements.borderRadiusValue) {
-        elements.borderRadiusValue.textContent = currentSettings.layout.borderRadius;
-      }
-    }
-    
-    if (elements.buttonStyle && currentSettings.layout.buttonStyle) {
-      elements.buttonStyle.value = currentSettings.layout.buttonStyle;
-    }
-    
-    if (elements.enableAnimations && currentSettings.layout.enableAnimations !== undefined) {
+    if (elements.enableAnimations) {
       elements.enableAnimations.checked = currentSettings.layout.enableAnimations;
     }
     
@@ -342,7 +250,42 @@ const GlobalSettings = (function() {
     updatePreview();
   }
 
-  // Update the style preview
+  // Update color input
+  function updateColorInput(elementId, value) {
+    const input = elements[elementId];
+    const valueDisplay = elements[`${elementId}Value`];
+    
+    if (input && value) {
+      input.value = value;
+      if (valueDisplay) {
+        valueDisplay.textContent = value;
+      }
+    }
+  }
+
+  // Update select input
+  function updateSelectInput(elementId, value) {
+    const input = elements[elementId];
+    
+    if (input && value) {
+      input.value = value;
+    }
+  }
+
+  // Update range input
+  function updateRangeInput(elementId, valueDisplayId, value) {
+    const input = elements[elementId];
+    const valueDisplay = elements[valueDisplayId];
+    
+    if (input && value !== undefined) {
+      input.value = value;
+      if (valueDisplay) {
+        valueDisplay.textContent = value;
+      }
+    }
+  }
+
+  // Update preview
   function updatePreview() {
     if (!elements.stylePreview) return;
     
@@ -402,13 +345,9 @@ const GlobalSettings = (function() {
       </style>
     `;
     
-    // Insert the style tag at the beginning of the preview
+    // Insert style
     let currentContent = elements.stylePreview.innerHTML;
-    
-    // Remove any existing style tags
     currentContent = currentContent.replace(/<style>[\s\S]*?<\/style>/g, '');
-    
-    // Add the new style tag
     elements.stylePreview.innerHTML = previewCSS + currentContent;
   }
   
@@ -463,25 +402,21 @@ const GlobalSettings = (function() {
     // Update UI
     updateSettingsUI();
     
-    // Show status message
+    // Show message
     showStatus('Settings reset to defaults');
   }
 
   // Open settings preview in a new tab
- function openSettingsPreview() {
-  // Generate a style tag with the current settings
-  const css = generateCSS();
-  
-  // Create a temporary element to hold our style tag
-  const temp = document.createElement('div');
-  temp.innerHTML = css;
-  
-  // Store the CSS in local storage (limited to current session)
-  sessionStorage.setItem('previewCSS', css);
-  
-  // Open preview page in a new tab - explicitly use draft mode
-  window.open('preview.html?draft=true', '_blank');
-}
+  function openSettingsPreview() {
+    // Generate CSS
+    const css = generateCSS();
+    
+    // Store in session storage
+    sessionStorage.setItem('previewCSS', css);
+    
+    // Open preview page
+    window.open('preview.html?draft=true', '_blank');
+  }
 
   // Generate CSS from current settings
   function generateCSS() {
@@ -565,7 +500,7 @@ const GlobalSettings = (function() {
       return;
     }
     
-    // Show status message
+    // Show status
     showStatus('Saving settings...', false, 0);
     
     // Save to Firebase
@@ -573,10 +508,9 @@ const GlobalSettings = (function() {
       .then(() => {
         showStatus('Settings saved successfully');
         
-        // Generate CSS
+        // Generate and save CSS
         const css = generateCSS();
         
-        // Save CSS to a file that can be included in the website
         return db.collection('settings').doc('css').set({
           css: css,
           updated: firebase.firestore.FieldValue.serverTimestamp()
@@ -609,16 +543,16 @@ const GlobalSettings = (function() {
 
   // Public API
   return {
-    init: init,
-    loadSettings: loadSettings,
-    generateCSS: generateCSS,
+    init,
+    loadSettings,
+    generateCSS,
     getCurrentSettings: function() {
       return JSON.parse(JSON.stringify(currentSettings));
     }
   };
 })();
 
-// Initialize when DOM is loaded
+// Initialize on DOM load
 document.addEventListener('DOMContentLoaded', function() {
   GlobalSettings.init();
 });

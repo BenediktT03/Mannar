@@ -502,19 +502,168 @@
 
   <!-- Firebase Initialization -->
   <script>
-    // One-time Firebase initialization
-    if (typeof firebase !== 'undefined' && !firebase.apps.length) {
-      firebase.initializeApp({
-        apiKey: "AIzaSyAQszUApKHZ3lPrpc7HOINpdOWW3SgvUBM",
-        authDomain: "mannar-129a5.firebaseapp.com",
-        projectId: "mannar-129a5",
-        storageBucket: "mannar-129a5.firebasestorage.app",
-        messagingSenderId: "687710492532",
-        appId: "1:687710492532:web:c7b675da541271f8d83e21",
-        measurementId: "G-NXBLYJ5CXL"
-      });
+  // Centralized Firebase configuration
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyAQszUApKHZ3lPrpc7HOINpdOWW3SgvUBM",
+    authDomain: "mannar-129a5.firebaseapp.com",
+    projectId: "mannar-129a5",
+    storageBucket: "mannar-129a5.firebasestorage.app",
+    messagingSenderId: "687710492532",
+    appId: "1:687710492532:web:c7b675da541271f8d83e21",
+    measurementId: "G-NXBLYJ5CXL"
+  };
+
+  // Initialize Firebase safely
+  if (typeof firebase !== 'undefined') {
+    if (!firebase.apps.length) {
+      firebase.initializeApp(FIREBASE_CONFIG);
     }
-  </script>
+  } else {
+    console.error("Firebase SDK not loaded. Please check your connection and try again.");
+    
+    // Display error message
+    document.addEventListener('DOMContentLoaded', function() {
+      const adminHeader = document.querySelector('.admin-header');
+      if (adminHeader) {
+        const errorAlert = document.createElement('div');
+        errorAlert.className = 'w3-panel w3-red';
+        errorAlert.innerHTML = `
+          <p><i class="fas fa-exclamation-triangle"></i> Firebase SDK failed to load. Please check your connection and refresh the page.</p>
+        `;
+        adminHeader.after(errorAlert);
+      }
+    });
+  }
+  // Enhanced login validation
+function secureLogin() {
+  const email = document.getElementById('emailField').value.trim();
+  const password = document.getElementById('passField').value;
+  const loginError = document.getElementById('loginError');
+  
+  // Clear previous error
+  loginError.textContent = '';
+  
+  // Basic validation
+  if (!email || !email.includes('@')) {
+    loginError.textContent = 'Please enter a valid email address';
+    return;
+  }
+  
+  if (!password || password.length < 6) {
+    loginError.textContent = 'Password must be at least 6 characters';
+    return;
+  }
+  
+  // Show loading state
+  document.getElementById('loginBtn').disabled = true;
+  document.getElementById('loginBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+  
+  // Rate limiting (prevent brute force)
+  const now = new Date().getTime();
+  const lastAttempt = parseInt(localStorage.getItem('lastLoginAttempt') || '0');
+  const attemptCount = parseInt(localStorage.getItem('loginAttemptCount') || '0');
+  
+  // If too many recent attempts
+  if (attemptCount >= 5 && (now - lastAttempt) < 60000) { // 1 minute lockout
+    loginError.textContent = 'Too many attempts. Please try again in a minute.';
+    document.getElementById('loginBtn').disabled = false;
+    document.getElementById('loginBtn').textContent = 'Login';
+    return;
+  }
+  
+  // Update attempt tracking
+  localStorage.setItem('lastLoginAttempt', now.toString());
+  localStorage.setItem('loginAttemptCount', 
+    (now - lastAttempt > 300000) ? '1' : (attemptCount + 1).toString()); // Reset after 5 minutes
+  
+  // Attempt login
+  firebase.auth().signInWithEmailAndPassword(email, password)
+    .then(userCredential => {
+      // Reset attempt counter on success
+      localStorage.setItem('loginAttemptCount', '0');
+      
+      // Redirect to admin panel or show admin UI
+      document.getElementById('loginDiv').style.display = 'none';
+      document.getElementById('adminDiv').style.display = 'block';
+      
+      // Show success notification
+      showStatusMessage('Logged in successfully', false);
+    })
+    .catch(error => {
+      console.error('Login error:', error);
+      loginError.textContent = error.message;
+      document.getElementById('loginBtn').disabled = false;
+      document.getElementById('loginBtn').textContent = 'Login';
+      
+      // Show error notification
+      showStatusMessage('Login failed: ' + error.message, true);
+    });
+}
+
+// Status message function
+function showStatusMessage(message, isError) {
+  const statusMsg = document.getElementById('statusMsg');
+  if (!statusMsg) return;
+  
+  statusMsg.textContent = message;
+  statusMsg.className = isError ? 'status-msg error show' : 'status-msg success show';
+  
+  // Hide after 3 seconds
+  setTimeout(() => {
+    statusMsg.classList.remove('show');
+  }, 3000);
+}
+
+// Attach to login button
+document.getElementById('loginBtn').addEventListener('click', secureLogin);
+
+// Enable login with Enter key
+document.getElementById('passField').addEventListener('keyup', function(e) {
+  if (e.key === 'Enter') {
+    secureLogin();
+  }
+});
+// Enhanced logout function
+function secureLogout() {
+  // Check for unsaved changes
+  const hasUnsavedChanges = window.isDirty === true;
+  
+  if (hasUnsavedChanges) {
+    if (!confirm('You have unsaved changes. Are you sure you want to log out?')) {
+      return;
+    }
+  }
+  
+  // Show loading state
+  document.getElementById('logoutBtn').disabled = true;
+  document.getElementById('logoutBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging out...';
+  
+  firebase.auth().signOut()
+    .then(() => {
+      // Show login form
+      document.getElementById('loginDiv').style.display = 'block';
+      document.getElementById('adminDiv').style.display = 'none';
+      
+      // Reset form fields
+      document.getElementById('emailField').value = '';
+      document.getElementById('passField').value = '';
+      
+      // Show success message
+      showStatusMessage('Logged out successfully', false);
+    })
+    .catch(error => {
+      console.error('Logout error:', error);
+      showStatusMessage('Error during logout: ' + error.message, true);
+    })
+    .finally(() => {
+      document.getElementById('logoutBtn').disabled = false;
+      document.getElementById('logoutBtn').innerHTML = '<i class="fas fa-sign-out-alt"></i> Logout';
+    });
+}
+
+// Attach to logout button
+document.getElementById('logoutBtn').addEventListener('click', secureLogout);
+</script>
   
   <!-- Scripts -->
   <script src="./assets/js/navbar.js"></script>

@@ -1,9 +1,8 @@
 /**
- * Firebase Helper - Ein einfaches Modul zum Verwalten von Firebase-Operationen
- * Speziell für die Mannar-Website auf W3Schools Space
+ * Optimized Firebase Helper Module
  */
 
-// Firebase-Konfiguration
+// Centralized Firebase config
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyAQszUApKHZ3lPrpc7HOINpdOWW3SgvUBM",
   authDomain: "mannar-129a5.firebaseapp.com",
@@ -15,24 +14,16 @@ const FIREBASE_CONFIG = {
 };
 
 /**
- * Initialisiert Firebase und gibt Firebase-Instanzen zurück
- * @returns {Object} Objekt mit Firebase-Instanzen (app, db, auth)
+ * Initialize Firebase with error handling
  */
 function initFirebase() {
-  // Initialisierung für die compat-Version
-  if (typeof firebase !== 'undefined') {
-    // Prüfen, ob Firebase bereits initialisiert wurde
-    if (firebase.apps && firebase.apps.length > 0) {
-      return {
-        app: firebase.app(),
-        db: firebase.firestore ? firebase.firestore() : null,
-        auth: firebase.auth ? firebase.auth() : null
-      };
-    }
-    
-    // Initialisierung
-    firebase.initializeApp(FIREBASE_CONFIG);
-    
+  if (typeof firebase === 'undefined') {
+    console.error('Firebase SDK not loaded');
+    return { app: null, db: null, auth: null };
+  }
+  
+  // Use existing instance if available
+  if (firebase.apps && firebase.apps.length > 0) {
     return {
       app: firebase.app(),
       db: firebase.firestore ? firebase.firestore() : null,
@@ -40,149 +31,172 @@ function initFirebase() {
     };
   }
   
-  console.error('Firebase ist nicht verfügbar - stellen Sie sicher, dass die Firebase-SDK geladen wurde');
+  // Initialize new instance
+  firebase.initializeApp(FIREBASE_CONFIG);
+  
   return {
-    app: null,
-    db: null,
-    auth: null
+    app: firebase.app(),
+    db: firebase.firestore ? firebase.firestore() : null,
+    auth: firebase.auth ? firebase.auth() : null
   };
 }
 
 /**
- * Lädt Inhalte aus Firestore
- * @param {string} docPath - Der Pfad zum Dokument (z.B. "content/main")
- * @param {Function} callback - Callback-Funktion, die mit den Daten aufgerufen wird
+ * Load content with improved validation
  */
 function loadContent(docPath, callback) {
   const { db } = initFirebase();
   if (!db) {
-    console.error('Firestore ist nicht verfügbar');
-    callback(null);
+    console.error('Firestore unavailable');
+    if (callback) callback(null);
     return;
   }
 
-  // Pfad in Sammlung und Dokument aufteilen
+  // Validate path
+  if (!docPath || typeof docPath !== 'string' || !docPath.includes('/')) {
+    console.error('Invalid document path:', docPath);
+    if (callback) callback(null);
+    return;
+  }
+
   const [collection, doc] = docPath.split('/');
   
-  // Daten abrufen
   db.collection(collection).doc(doc).get()
     .then(docSnap => {
       if (docSnap.exists) {
-        callback(docSnap.data());
+        if (callback) callback(docSnap.data());
       } else {
-        console.log(`Dokument ${docPath} wurde nicht gefunden.`);
-        callback(null);
+        console.log(`Document ${docPath} not found`);
+        if (callback) callback(null);
       }
     })
     .catch(error => {
-      console.error(`Fehler beim Laden von ${docPath}:`, error);
-      callback(null);
+      console.error(`Error loading ${docPath}:`, error);
+      if (callback) callback(null);
     });
 }
 
 /**
- * Speichert Inhalte in Firestore
- * @param {string} docPath - Der Pfad zum Dokument (z.B. "content/draft")
- * @param {Object} data - Die zu speichernden Daten
- * @param {boolean} merge - Ob die Daten mit vorhandenen Daten zusammengeführt werden sollen
- * @param {Function} callback - Callback-Funktion, die nach dem Speichern aufgerufen wird
+ * Save content with improved validation
  */
 function saveContent(docPath, data, merge = true, callback) {
   const { db } = initFirebase();
   if (!db) {
-    console.error('Firestore ist nicht verfügbar');
-    if (callback) callback(false, new Error('Firestore ist nicht verfügbar'));
+    console.error('Firestore unavailable');
+    if (callback) callback(false, new Error('Firestore unavailable'));
     return;
   }
 
-  // Pfad in Sammlung und Dokument aufteilen
+  // Validate inputs
+  if (!docPath || typeof docPath !== 'string' || !docPath.includes('/')) {
+    console.error('Invalid document path:', docPath);
+    if (callback) callback(false, new Error('Invalid document path'));
+    return;
+  }
+
+  if (!data || typeof data !== 'object') {
+    console.error('Invalid data:', data);
+    if (callback) callback(false, new Error('Invalid data'));
+    return;
+  }
+
   const [collection, doc] = docPath.split('/');
   
-  // Zeitstempel hinzufügen, wenn Firestore verfügbar ist
+  // Clone data to avoid mutations
+  const contentData = {...data};
+  
+  // Add timestamp
   if (firebase.firestore && firebase.firestore.FieldValue) {
-    data.lastUpdated = firebase.firestore.FieldValue.serverTimestamp();
+    contentData.lastUpdated = firebase.firestore.FieldValue.serverTimestamp();
   } else {
-    data.lastUpdated = new Date().toISOString();
+    contentData.lastUpdated = new Date().toISOString();
   }
   
-  // Daten speichern
-  db.collection(collection).doc(doc).set(data, { merge })
+  db.collection(collection).doc(doc).set(contentData, { merge })
     .then(() => {
-      console.log(`Dokument ${docPath} erfolgreich gespeichert.`);
+      console.log(`Document ${docPath} saved successfully`);
       if (callback) callback(true);
     })
     .catch(error => {
-      console.error(`Fehler beim Speichern von ${docPath}:`, error);
+      console.error(`Error saving ${docPath}:`, error);
       if (callback) callback(false, error);
     });
 }
 
 /**
- * Fügt einen Auth-Zustandsbeobachter hinzu
- * @param {Function} callback - Callback-Funktion, die bei Änderungen des Auth-Zustands aufgerufen wird
+ * Auth state observer with validation
  */
 function onAuthStateChanged(callback) {
   const { auth } = initFirebase();
   if (!auth) {
-    console.error('Firebase Auth ist nicht verfügbar');
-    callback(null);
+    console.error('Firebase Auth unavailable');
+    if (callback) callback(null);
     return;
   }
   
   auth.onAuthStateChanged(user => {
-    callback(user);
+    if (callback) callback(user);
   });
 }
 
 /**
- * Meldet einen Benutzer mit E-Mail und Passwort an
- * @param {string} email - Die E-Mail-Adresse des Benutzers
- * @param {string} password - Das Passwort des Benutzers
- * @param {Function} callback - Callback-Funktion, die nach dem Anmelden aufgerufen wird
+ * Login with validation
  */
 function login(email, password, callback) {
   const { auth } = initFirebase();
   if (!auth) {
-    console.error('Firebase Auth ist nicht verfügbar');
-    if (callback) callback(false, new Error('Firebase Auth ist nicht verfügbar'));
+    console.error('Firebase Auth unavailable');
+    if (callback) callback(false, new Error('Firebase Auth unavailable'));
+    return;
+  }
+  
+  // Validate credentials
+  if (!email || typeof email !== 'string' || !email.includes('@')) {
+    console.error('Invalid email address');
+    if (callback) callback(false, new Error('Invalid email address'));
+    return;
+  }
+  
+  if (!password || typeof password !== 'string' || password.length < 6) {
+    console.error('Invalid password (min 6 characters)');
+    if (callback) callback(false, new Error('Invalid password'));
     return;
   }
   
   auth.signInWithEmailAndPassword(email, password)
     .then(userCredential => {
-      console.log('Anmeldung erfolgreich:', userCredential.user.email);
+      console.log('Login successful:', userCredential.user.email);
       if (callback) callback(true, userCredential.user);
     })
     .catch(error => {
-      console.error('Anmeldefehler:', error);
+      console.error('Login error:', error);
       if (callback) callback(false, error);
     });
 }
 
 /**
- * Meldet den aktuellen Benutzer ab
- * @param {Function} callback - Callback-Funktion, die nach dem Abmelden aufgerufen wird
+ * Logout with validation
  */
 function logout(callback) {
   const { auth } = initFirebase();
   if (!auth) {
-    console.error('Firebase Auth ist nicht verfügbar');
-    if (callback) callback(false, new Error('Firebase Auth ist nicht verfügbar'));
+    console.error('Firebase Auth unavailable');
+    if (callback) callback(false, new Error('Firebase Auth unavailable'));
     return;
   }
   
   auth.signOut()
     .then(() => {
-      console.log('Abmeldung erfolgreich');
+      console.log('Logout successful');
       if (callback) callback(true);
     })
     .catch(error => {
-      console.error('Abmeldefehler:', error);
+      console.error('Logout error:', error);
       if (callback) callback(false, error);
     });
 }
 
-// Exportiere Funktionen für die globale Verwendung
+// Export for global use
 window.firebaseHelper = {
   init: initFirebase,
   loadContent,
