@@ -51,13 +51,13 @@ const csrfToken = "<?php echo $csrf_token; ?>";
 
   <!-- Login Form -->
   <div id="loginDiv" class="w3-card w3-padding">
-    <h3>Login</h3>
-    <input id="emailField" class="w3-input w3-margin-bottom" type="email" placeholder="Email" />
-    <input id="passField" class="w3-input w3-margin-bottom" type="password" placeholder="Password" />
-    <button id="loginBtn" class="w3-button w3-black w3-block">Login</button>
-    <p id="loginError" class="w3-text-red"></p>
-    <input type="hidden" name="csrf_token" id="csrfToken" value="<?php echo $csrf_token; ?>">
-  </div>
+  <h3>Login</h3>
+  <input id="emailField" class="w3-input w3-margin-bottom" type="email" placeholder="Email" />
+  <input id="passField" class="w3-input w3-margin-bottom" type="password" placeholder="Password" />
+  <button id="loginBtn" class="w3-button w3-black w3-block">Login</button>
+  <p id="loginError" class="w3-text-red"></p>
+  <input type="hidden" name="csrf_token" id="csrfToken" value="<?php echo $csrf_token; ?>">
+</div>
 
   <!-- Admin Panel Content (only visible to logged-in users) -->
   <div id="adminDiv" class="w3-container admin-panel" style="display: none;">
@@ -512,13 +512,70 @@ const csrfToken = "<?php echo $csrf_token; ?>";
     </div>
   </div>
 
-  <!-- Firebase Initialization -->
- <script src="./assets/js/firebase-service.js?v=<?php echo ASSET_VERSION; ?>"></script>
-  
-  <!-- Scripts -->
-
-  <script src="./assets/js/admin-panel.js"></script>
-  <script src="./assets/js/page-editor-enhanced.js"></script>
-  <script src="./assets/js/global-settings.js"></script>
+  <script src="./assets/js/firebase-service.js"></script>
+<!-- Wait a moment for Firebase to initialize -->
+<script>
+  // Add this inline script to ensure Firebase is initialized before proceeding
+  document.addEventListener('DOMContentLoaded', function() {
+    // Check if Firebase is available
+    if (typeof firebase === 'undefined') {
+      console.error('Firebase is not available! Check script loading.');
+    } else {
+      console.log('Firebase is available');
+    }
+  });
+</script>
+<!-- Then load the admin panel script -->
+<script src="./assets/js/admin-panel.js"></script>
+<script src="./assets/js/page-editor-enhanced.js"></script>
+<script src="./assets/js/global-settings.js"></script>
+<script>
+  // Ensure this runs after everything else is loaded
+  document.addEventListener('DOMContentLoaded', function() {
+    const loginBtn = document.getElementById('loginBtn');
+    if (loginBtn) {
+      console.log('Login button found, adding direct handler');
+      loginBtn.addEventListener('click', function() {
+        const emailField = document.getElementById('emailField');
+        const passField = document.getElementById('passField');
+        const loginError = document.getElementById('loginError');
+        
+        if (!emailField || !passField) {
+          console.error('Email or password field not found');
+          return;
+        }
+        
+        const email = emailField.value.trim();
+        const pass = passField.value;
+        
+        if (!email || !pass) {
+          if (loginError) loginError.textContent = "Please enter email and password";
+          return;
+        }
+        
+        console.log('Attempting login with:', email);
+        
+        // Initialize Firebase if needed
+        if (typeof firebase !== 'undefined') {
+          firebase.auth().signInWithEmailAndPassword(email, pass)
+            .then(function(userCredential) {
+              console.log('Login successful:', userCredential.user.email);
+              document.getElementById('loginDiv').style.display = 'none';
+              document.getElementById('adminDiv').style.display = 'block';
+            })
+            .catch(function(error) {
+              console.error('Login error:', error);
+              if (loginError) loginError.textContent = "Login failed: " + error.message;
+            });
+        } else {
+          console.error('Firebase is not initialized!');
+          if (loginError) loginError.textContent = "Error: Firebase not available";
+        }
+      });
+    } else {
+      console.error('Login button not found!');
+    }
+  });
+</script>
 </body>
 </html>

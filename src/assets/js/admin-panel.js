@@ -831,36 +831,42 @@ const loadContentData = async (isDraft = true) => {
 
     // Login button event
     if (elements.loginBtn) {
-      elements.loginBtn.addEventListener('click', () => {
-        if (!elements.emailField || !elements.passField) {
-          console.error("Email or password field not found");
-          return;
-        }
-        
-        const email = elements.emailField.value.trim();
-        const pass = elements.passField.value;
-        
-        if (!email || !pass) {
-          if (elements.loginError) elements.loginError.textContent = "Please enter email and password";
-          return;
-        }
-        
-        if (elements.loginError) elements.loginError.textContent = "";
-        showStatus("Logging in...", false, 0);
-        
-        auth.signInWithEmailAndPassword(email, pass)
-          .then(userCredential => {
-            console.log("Login successful:", userCredential.user.email);
-            showStatus("Login successful! Loading admin panel...");
-          })
-          .catch(err => {
-            console.error("Login error:", err);
-            if (elements.loginError) elements.loginError.textContent = "Login failed: " + err.message;
-            showStatus("Login failed", true);
-          });
-      });
+  elements.loginBtn.addEventListener('click', () => {
+    if (!elements.emailField || !elements.passField) {
+      console.error("Email or password field not found");
+      return;
     }
-
+    
+    const email = elements.emailField.value.trim();
+    const pass = elements.passField.value;
+    
+    if (!email || !pass) {
+      if (elements.loginError) elements.loginError.textContent = "Please enter email and password";
+      return;
+    }
+    
+    console.log("Login attempt with:", email);
+    if (elements.loginError) elements.loginError.textContent = "";
+    
+    // Make sure we're using the correct auth method
+    if (firebase && firebase.auth) {
+      firebase.auth().signInWithEmailAndPassword(email, pass)
+        .then(userCredential => {
+          console.log("Login successful:", userCredential.user.email);
+          // Explicitly update UI
+          if (elements.loginDiv) elements.loginDiv.style.display = 'none';
+          if (elements.adminDiv) elements.adminDiv.style.display = 'block';
+        })
+        .catch(err => {
+          console.error("Login error:", err);
+          if (elements.loginError) elements.loginError.textContent = "Login failed: " + err.message;
+        });
+    } else {
+      console.error("Firebase auth not available");
+      if (elements.loginError) elements.loginError.textContent = "Firebase authentication not available";
+    }
+  });
+}
     // Login with Enter key
     if (elements.passField) {
       elements.passField.addEventListener('keyup', (e) => {
