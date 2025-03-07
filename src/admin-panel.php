@@ -513,10 +513,10 @@ const csrfToken = "<?php echo $csrf_token; ?>";
   </div>
 
   <!-- Firebase Initialization -->
-  <script src="./assets/js/firebase-config.js"></script>
+ <script src="./assets/js/firebase-service.js?v=<?php echo ASSET_VERSION; ?>"></script>
   
   <!-- Scripts -->
-<script src="./assets/js/firebase-helper.js"></script>
+
   <script src="./assets/js/admin-panel.js"></script>
   <script src="./assets/js/page-editor-enhanced.js"></script>
   <script src="./assets/js/global-settings.js"></script>

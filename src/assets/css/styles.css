@@ -849,3 +849,52 @@ h6 {
   color: #666;
 }
 
+/* ===== Barrierefreiheits-Styles ===== */
+/* Hinzugefügt aus accessibility.css */
+
+/* Fokus-Stile verbessern */
+a:focus, button:focus, input:focus, textarea:focus, select:focus {
+  outline: 3px solid #4285f4 !important;
+  outline-offset: 2px !important;
+}
+
+/* Skip-Link für Tastaturnavigation */
+.skip-link {
+  position: absolute;
+  left: 0;
+  top: -40px; /* Außerhalb des sichtbaren Bereichs */
+  z-index: 9999;
+  padding: 8px;
+  background: #000;
+  color: #fff;
+  transition: top 0.3s;
+}
+
+.skip-link:focus {
+  top: 0; /* Bei Fokus sichtbar machen */
+}
+
+/* Bessere Touch-Ziele für Mobile */
+@media (max-width: 767px) {
+  .w3-button, 
+  a.w3-bar-item,
+  button {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 12px 16px;
+  }
+  
+  .w3-bar-item {
+    line-height: 1.4;
+  }
+}
+
+/* Kein Text mit zu geringem Kontrast */
+.w3-opacity {
+  opacity: 0.9 !important; /* Verbessert den Kontrast */
+}
+
+/* Verbesserte Kontraste für Textfarben */
+.w3-text-grey {
+  color: #595959 !important; /* Dunkleres Grau für besseren Kontrast */
+}

@@ -13,12 +13,24 @@
 </footer>
 
 <!-- Firebase-Konfiguration -->
-<script src="./assets/js/firebase-config.js"></script>
-<script src="./assets/js/content-loader.js"></script>
+<script src="./assets/js/firebase-service.js"></script>
+
 <script src="./assets/js/script.js"></script>
 <?php if (isset($additional_scripts)) echo $additional_scripts; ?>
-<script src="./assets/js/lazy-load.js?v=<?php echo ASSET_VERSION; ?>"></script>
-<script src="./assets/js/cookie-notice.js?v=<?php echo ASSET_VERSION; ?>"></script>
 
+  <!-- Firebase-Konfiguration und Services -->
+<script src="./assets/js/firebase-service.js?v=<?php echo ASSET_VERSION; ?>"></script>
+
+<!-- Haupt-Skript -->
+<script src="./assets/js/script.js?v=<?php echo ASSET_VERSION; ?>"></script>
+
+<!-- UI-Verbesserungen (asynchron laden) -->
+<script src="./assets/js/ui-enhancements.js?v=<?php echo ASSET_VERSION; ?>" defer></script>
+
+<?php if (isset($additional_scripts)) echo $additional_scripts; ?>
+<script src="./assets/js/ui-enhancements.js?v=<?php echo ASSET_VERSION; ?>"></script>
+
+</body>
+</html>
 </body>
 </html>
