@@ -24,8 +24,7 @@
 <!-- Haupt-Skript -->
 <script src="./assets/js/script.js?v=<?php echo ASSET_VERSION; ?>"></script>
 
-<!-- UI-Verbesserungen (asynchron laden) -->
-<script src="./assets/js/ui-enhancements.js?v=<?php echo ASSET_VERSION; ?>" defer></script>
+
 
 <?php if (isset($additional_scripts)) echo $additional_scripts; ?>
 <script src="./assets/js/ui-enhancements.js?v=<?php echo ASSET_VERSION; ?>"></script>

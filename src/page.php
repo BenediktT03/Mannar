@@ -138,7 +138,7 @@ if (empty($page_id)) {
   </footer>
 
   <!-- Firebase Initialisierung -->
-  <script src="./assets/js/firebase-config.js"></script>
+<script src="./assets/js/firebase-service.js"></script>
 
   
   
@@ -834,6 +834,6 @@ if (empty($page_id)) {
       });
     });
   </script>
-  <script src="./assets/js/firebase-helper.js"></script>
+
 </body>
 </html>

@@ -167,12 +167,10 @@
   <p>&copy; 2025 Mannar | Peer und Genesungsbegleiter</p>
 </footer>
 
-<!-- Firebase Initialisierung -->
-<script src="./assets/js/firebase-config.js"></script>
+
 
 <!-- Skripte einbinden -->
-<script src="./assets/js/content-loader.js"></script>
-<script src="./assets/js/firebase-helper.js"></script>
+<script src="./assets/js/firebase-service.js"></script>
 <script src="./assets/js/script.js"></script>
 </body>
 </html>

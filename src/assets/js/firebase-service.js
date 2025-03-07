@@ -1,6 +1,7 @@
- /**
+/**
  * firebase-service.js - Umfassender Firebase-Service für die Mannar-Website
  * Konsolidiert die Funktionalitäten aus firebase-config.js, firebase-helper.js und content-loader.js
+ * Bietet zusätzlich Kompatibilität für legacy Code, der contentLoader und firebaseHelper verwendet
  */
 
 // Namespace für alle Firebase-Funktionen
@@ -55,10 +56,10 @@ window.firebaseService = (function() {
    * @param {Function} callback - Callback-Funktion, die mit den Daten aufgerufen wird
    */
   function loadContent(docPath, callback) {
-    const { db } = initFirebase();
-    if (!db) {
+    const instances = initFirebase();
+    if (!instances.db) {
       console.error('Firestore ist nicht verfügbar');
-      callback(null);
+      if (callback) callback(null);
       return;
     }
 
@@ -66,18 +67,18 @@ window.firebaseService = (function() {
     const [collection, doc] = docPath.split('/');
     
     // Daten abrufen
-    db.collection(collection).doc(doc).get()
+    instances.db.collection(collection).doc(doc).get()
       .then(docSnap => {
         if (docSnap.exists) {
-          callback(docSnap.data());
+          if (callback) callback(docSnap.data());
         } else {
           console.log(`Dokument ${docPath} wurde nicht gefunden.`);
-          callback(null);
+          if (callback) callback(null);
         }
       })
       .catch(error => {
         console.error(`Fehler beim Laden von ${docPath}:`, error);
-        callback(null);
+        if (callback) callback(null);
       });
   }
 
@@ -89,8 +90,8 @@ window.firebaseService = (function() {
    * @param {Function} callback - Callback-Funktion, die nach dem Speichern aufgerufen wird
    */
   function saveContent(docPath, data, merge = true, callback) {
-    const { db } = initFirebase();
-    if (!db) {
+    const instances = initFirebase();
+    if (!instances.db) {
       console.error('Firestore ist nicht verfügbar');
       if (callback) callback(false, new Error('Firestore ist nicht verfügbar'));
       return;
@@ -107,7 +108,7 @@ window.firebaseService = (function() {
     }
     
     // Daten speichern
-    db.collection(collection).doc(doc).set(data, { merge })
+    instances.db.collection(collection).doc(doc).set(data, { merge })
       .then(() => {
         console.log(`Dokument ${docPath} erfolgreich gespeichert.`);
         if (callback) callback(true);
@@ -123,15 +124,15 @@ window.firebaseService = (function() {
    * @param {Function} callback - Callback-Funktion, die bei Änderungen des Auth-Zustands aufgerufen wird
    */
   function onAuthStateChanged(callback) {
-    const { auth } = initFirebase();
-    if (!auth) {
+    const instances = initFirebase();
+    if (!instances.auth) {
       console.error('Firebase Auth ist nicht verfügbar');
-      callback(null);
+      if (callback) callback(null);
       return;
     }
     
-    auth.onAuthStateChanged(user => {
-      callback(user);
+    instances.auth.onAuthStateChanged(user => {
+      if (callback) callback(user);
     });
   }
 
@@ -142,14 +143,14 @@ window.firebaseService = (function() {
    * @param {Function} callback - Callback-Funktion, die nach dem Anmelden aufgerufen wird
    */
   function login(email, password, callback) {
-    const { auth } = initFirebase();
-    if (!auth) {
+    const instances = initFirebase();
+    if (!instances.auth) {
       console.error('Firebase Auth ist nicht verfügbar');
       if (callback) callback(false, new Error('Firebase Auth ist nicht verfügbar'));
       return;
     }
     
-    auth.signInWithEmailAndPassword(email, password)
+    instances.auth.signInWithEmailAndPassword(email, password)
       .then(userCredential => {
         console.log('Anmeldung erfolgreich:', userCredential.user.email);
         if (callback) callback(true, userCredential.user);
@@ -165,14 +166,14 @@ window.firebaseService = (function() {
    * @param {Function} callback - Callback-Funktion, die nach dem Abmelden aufgerufen wird
    */
   function logout(callback) {
-    const { auth } = initFirebase();
-    if (!auth) {
+    const instances = initFirebase();
+    if (!instances.auth) {
       console.error('Firebase Auth ist nicht verfügbar');
       if (callback) callback(false, new Error('Firebase Auth ist nicht verfügbar'));
       return;
     }
     
-    auth.signOut()
+    instances.auth.signOut()
       .then(() => {
         console.log('Abmeldung erfolgreich');
         if (callback) callback(true);
@@ -188,12 +189,12 @@ window.firebaseService = (function() {
    * @returns {Promise} Promise mit den Wortwolkendaten
    */
   function loadWordCloud() {
-    const { db } = initFirebase();
-    if (!db) {
+    const instances = initFirebase();
+    if (!instances.db) {
       return Promise.reject(new Error('Firestore ist nicht verfügbar'));
     }
     
-    return db.collection("content").doc("wordCloud").get()
+    return instances.db.collection("content").doc("wordCloud").get()
       .then(docSnap => {
         if (docSnap.exists && docSnap.data().words) {
           return docSnap.data().words;
@@ -203,13 +204,39 @@ window.firebaseService = (function() {
   }
 
   /**
+   * Löscht ein Dokument
+   * @param {string} docPath - Pfad zum Dokument (z.B. "content/draft")
+   * @param {Function} callback - Callback nach Abschluss
+   */
+  function deleteDocument(docPath, callback) {
+    const instances = initFirebase();
+    if (!instances.db) {
+      if (callback) callback(false, new Error('Firestore ist nicht verfügbar'));
+      return;
+    }
+    
+    // Pfad in Sammlung und Dokument aufteilen
+    const [collection, doc] = docPath.split('/');
+    
+    instances.db.collection(collection).doc(doc).delete()
+      .then(() => {
+        console.log(`Dokument ${docPath} gelöscht`);
+        if (callback) callback(true);
+      })
+      .catch(error => {
+        console.error(`Fehler beim Löschen von ${docPath}:`, error);
+        if (callback) callback(false, error);
+      });
+  }
+  
+  /**
    * Normalisiert Bilddaten in ein einheitliches Format
    * @param {string|Object} imageData - Bilddaten als String oder Objekt
    * @returns {Object} Normalisiertes Bilddatenobjekt
    */
   function normalizeImageData(imageData) {
     if (typeof imageData === 'string') {
-      return { url: imageData, public_id: "" };
+      return { url: imageData, public_id: "", alt: "" };
     } else if (typeof imageData === 'object' && imageData !== null) {
       return {
         url: imageData.url || "",
@@ -226,6 +253,7 @@ window.firebaseService = (function() {
     init: initFirebase,
     loadContent,
     saveContent,
+    deleteDocument,
     onAuthStateChanged,
     login,
     logout,
@@ -234,7 +262,171 @@ window.firebaseService = (function() {
   };
 })();
 
+// =====================================================
+// KOMPATIBILITÄTSSCHICHT FÜR LEGACY CODE
+// =====================================================
+
+// 1. contentLoader für Kompatibilität mit älteren Skripten
+window.contentLoader = {
+  /**
+   * Lädt Inhalte aus Firestore basierend auf isDraft-Flag
+   * @param {boolean} isDraft - Ob Entwurf oder Live-Daten geladen werden sollen
+   * @returns {Promise} - Promise mit den Daten
+   */
+  loadContent: function(isDraft) {
+    return new Promise((resolve, reject) => {
+      window.firebaseService.loadContent(`content/${isDraft ? "draft" : "main"}`, function(data) {
+        if (data) {
+          resolve(data);
+        } else {
+          reject(new Error("Keine Inhalte gefunden"));
+        }
+      });
+    });
+  },
+  
+  /**
+   * Lädt Wortwolkendaten
+   * @returns {Promise} - Promise mit den Wortwolkendaten
+   */
+  loadWordCloud: function() {
+    return window.firebaseService.loadWordCloud();
+  },
+  
+  /**
+   * Aktualisiert Bildvorschauen aus Contentdaten
+   * @param {Object} data - Content-Daten mit Bildpfaden
+   * @param {Object} imageElements - Objekt mit Bild-DOM-Elementen
+   */
+  updateImagePreviews: function(data, imageElements) {
+    if (!data || !imageElements) return;
+    
+    // Jedes Bild aktualisieren, falls vorhanden
+    Object.keys(imageElements).forEach(key => {
+      const imgElement = imageElements[key];
+      if (!imgElement) return;
+      
+      const dataKey = key.replace('Img', '_image'); // Umwandlung: offer1Img -> offer1_image
+      if (data[dataKey]) {
+        const imageData = window.firebaseService.normalizeImageData(data[dataKey]);
+        imgElement.src = imageData.url || "/api/placeholder/400/300";
+        
+        if (imageData.url) {
+          imgElement.style.display = "block";
+          if (imageData.alt) imgElement.alt = imageData.alt;
+        } else {
+          imgElement.style.display = "none";
+        }
+      }
+    });
+  },
+  
+  /**
+   * Rendert Wortwolke in Container
+   * @param {HTMLElement} container - DOM-Container für die Wortwolke
+   * @param {Array} words - Array mit Wortwolkendaten
+   */
+  renderWordCloud: function(container, words) {
+    if (!container || !words) return;
+    
+    // Container leeren
+    container.innerHTML = '';
+    
+    // Wortwolkenelemente hinzufügen
+    words.forEach(word => {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      
+      a.href = word.link || '#';
+      a.textContent = word.text || '';
+      a.setAttribute('data-weight', word.weight || 5);
+      
+      li.appendChild(a);
+      container.appendChild(li);
+    });
+  },
+  
+  /**
+   * Animiert die Wortwolkenelemente
+   * @param {HTMLElement} container - Container für die Wortwolke
+   */
+  animateWordCloud: function(container) {
+    if (!container) return;
+    
+    const wordElements = container.querySelectorAll('.word-cloud li a');
+    
+    wordElements.forEach((word, index) => {
+      setTimeout(() => {
+        word.style.opacity = '1';
+        word.style.transform = 'translateY(0)';
+      }, 50 * index);
+    });
+  }
+};
+
+// 2. firebaseHelper für Kompatibilität mit älteren Skripten
+window.firebaseHelper = {
+  /**
+   * Lädt Content aus Firestore
+   * @param {string} path - Pfad zum Dokument
+   * @param {Function} callback - Callback-Funktion
+   */
+  loadContent: function(path, callback) {
+    window.firebaseService.loadContent(path, callback);
+  },
+  
+  /**
+   * Speichert Content in Firestore
+   * @param {string} path - Pfad zum Dokument
+   * @param {Object} data - Zu speichernde Daten
+   * @param {boolean} merge - Ob die Daten zusammengeführt werden sollen
+   * @param {Function} callback - Callback-Funktion
+   */
+  saveContent: function(path, data, merge, callback) {
+    window.firebaseService.saveContent(path, data, merge, callback);
+  },
+  
+  /**
+   * Löscht ein Dokument
+   * @param {string} path - Pfad zum Dokument
+   * @param {Function} callback - Callback-Funktion
+   */
+  deleteDocument: function(path, callback) {
+    window.firebaseService.deleteDocument(path, callback);
+  },
+  
+  /**
+   * Lädt Liste von Dokumenten
+   * @param {string} collection - Name der Sammlung
+   * @param {Function} callback - Callback-Funktion
+   */
+  getDocumentsList: function(collection, callback) {
+    const instances = window.firebaseService.init();
+    if (!instances.db) {
+      if (callback) callback([]);
+      return;
+    }
+    
+    instances.db.collection(collection).get()
+      .then(snapshot => {
+        const documents = [];
+        snapshot.forEach(doc => {
+          documents.push({
+            id: doc.id,
+            ...doc.data()
+          });
+        });
+        if (callback) callback(documents);
+      })
+      .catch(error => {
+        console.error(`Fehler beim Laden von Dokumenten aus ${collection}:`, error);
+        if (callback) callback([]);
+      });
+  }
+};
+
 // Automatische Initialisierung beim Laden der Seite
 document.addEventListener('DOMContentLoaded', function() {
+  console.log("Initialisiere Firebase Service...");
   window.firebaseService.init();
 });
