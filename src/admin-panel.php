@@ -583,6 +583,517 @@ const csrfToken = "<?php echo $csrf_token; ?>";
       });
     }
   });
+
+  <script>
+  // Add this script at the end of admin-panel.php
+  document.addEventListener('DOMContentLoaded', function() {
+    // Log important elements to console for debugging
+    console.log('DOM Content Loaded');
+    console.log('pagesContainer:', document.getElementById('pagesContainer'));
+    console.log('pagesList or pagesListCard:', 
+                document.getElementById('pagesList') || document.getElementById('pagesListCard'));
+    
+    // Check Firebase initialization
+    console.log('Firebase available:', typeof firebase !== 'undefined');
+    if (typeof firebase !== 'undefined') {
+      console.log('Firebase apps:', firebase.apps.length);
+      console.log('Firestore available:', typeof firebase.firestore === 'function');
+    }
+    
+    // Ensure that the PageEditor initializes correctly
+    if (typeof PageEditor === 'undefined') {
+      console.error('PageEditor is not defined. Check that page-editor-enhanced.js is loaded');
+    } else {
+      console.log('PageEditor is defined. Methods:', 
+                  Object.keys(PageEditor).filter(key => typeof PageEditor[key] === 'function'));
+    }
+    
+    // Add a retry button for page loading if needed
+    const pagesTab = document.getElementById('pages-tab');
+    if (pagesTab) {
+      const retryButton = document.createElement('button');
+      retryButton.className = 'w3-button w3-blue w3-margin-top';
+      retryButton.innerHTML = '<i class="fas fa-sync"></i> Reload Pages';
+      retryButton.onclick = function() {
+        console.log('Manual page reload triggered');
+        if (typeof PageEditor !== 'undefined' && typeof PageEditor.loadPages === 'function') {
+          PageEditor.loadPages();
+        } else {
+          console.error('PageEditor.loadPages is not available');
+          alert('Error: Page editor not properly initialized. Try refreshing the page.');
+        }
+      };
+      
+      // Add the button at the top of the pages tab
+      const firstChild = pagesTab.firstChild;
+      if (firstChild) {
+        pagesTab.insertBefore(retryButton, firstChild);
+      } else {
+        pagesTab.appendChild(retryButton);
+      }
+    }
+  });
+
+
+<!-- Make sure scripts are loaded in the correct order -->
+
+  // Check if scripts are loaded in the correct order
+  document.addEventListener('DOMContentLoaded', function() {
+    const scriptOrder = [
+      { name: 'Firebase App', loaded: typeof firebase !== 'undefined' },
+      { name: 'Firebase Firestore', loaded: typeof firebase !== 'undefined' && typeof firebase.firestore === 'function' },
+      { name: 'Firebase Auth', loaded: typeof firebase !== 'undefined' && typeof firebase.auth === 'function' },
+      { name: 'Quill Editor', loaded: typeof Quill !== 'undefined' },
+      { name: 'Firebase Service', loaded: typeof firebaseService !== 'undefined' },
+      { name: 'Quill Integration', loaded: typeof quillEditor !== 'undefined' },
+      { name: 'Page Editor', loaded: typeof PageEditor !== 'undefined' }
+    ];
+    
+    console.log('Script loading status:');
+    console.table(scriptOrder);
+    
+    // Check for issues
+    const missingScripts = scriptOrder.filter(script => !script.loaded);
+    if (missingScripts.length > 0) {
+      console.error('Missing scripts:', missingScripts.map(s => s.name).join(', '));
+      alert('Warning: Some required scripts failed to load. Admin panel may not work correctly.');
+    }
+  });
+
+<!-- Add this script block at the end of admin-panel.php, replacing any existing debugging scripts -->
+<!-- Make sure this comes before any closing </body> tag -->
+
+<!-- Debug and helper scripts -->
+
+  // Helper script to detect and report script loading issues
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM fully loaded');
+    
+    // Check for script dependencies
+    const dependencies = [
+      { name: 'Firebase App', status: typeof firebase !== 'undefined' },
+      { name: 'Firebase Firestore', status: typeof firebase !== 'undefined' && typeof firebase.firestore === 'function' },
+      { name: 'Firebase Auth', status: typeof firebase !== 'undefined' && typeof firebase.auth === 'function' },
+      { name: 'Quill Editor', status: typeof Quill !== 'undefined' },
+      { name: 'FirebaseService', status: typeof firebaseService !== 'undefined' || typeof window.firebaseService !== 'undefined' },
+      { name: 'QuillEditor', status: typeof quillEditor !== 'undefined' || typeof window.quillEditor !== 'undefined' },
+      { name: 'PageEditor', status: typeof PageEditor !== 'undefined' }
+    ];
+    
+    console.table(dependencies);
+    
+    // Check for critical elements
+    console.log('Pages tab:', document.getElementById('pages-tab') ? 'Found' : 'Missing');
+    console.log('Pages container:', document.getElementById('pagesContainer') ? 'Found' : 'Missing');
+    
+    // Add force refresh button
+    const addRefreshButton = () => {
+      const refreshBtn = document.createElement('button');
+      refreshBtn.className = 'w3-button w3-blue w3-margin';
+      refreshBtn.innerHTML = '<i class="fas fa-sync"></i> Force Reload Pages';
+      refreshBtn.onclick = function() {
+        if (typeof PageEditor !== 'undefined' && typeof PageEditor.loadPages === 'function') {
+          console.log('Force reloading pages...');
+          PageEditor.loadPages();
+        } else {
+          console.error('PageEditor not available');
+          alert('PageEditor not available. Try refreshing the page.');
+        }
+      };
+      
+      const pagesTab = document.getElementById('pages-tab');
+      if (pagesTab) {
+        pagesTab.insertBefore(refreshBtn, pagesTab.firstChild);
+      }
+    };
+    
+    // Add the refresh button after a short delay
+    setTimeout(addRefreshButton, 1000);
+  });
+</script>
+
+<!-- Firebase initialization checking script -->
+<script>
+  // Check Firebase initialization
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof firebase === 'undefined') {
+      console.error('Firebase is not defined! Check Firebase script loading.');
+      
+      // Create an error message
+      const errorMsg = document.createElement('div');
+      errorMsg.className = 'w3-panel w3-red';
+      errorMsg.innerHTML = `
+        <h3>Firebase Error</h3>
+        <p>Firebase failed to load. The admin panel may not work correctly.</p>
+        <button class="w3-button w3-white" onclick="location.reload()">Reload Page</button>
+      `;
+      
+      // Add to the top of the page
+      document.body.insertBefore(errorMsg, document.body.firstChild);
+      return;
+    }
+    
+    // Ensure Firebase is initialized
+    if (!firebase.apps.length) {
+      try {
+        // Use config from your config.php
+        firebase.initializeApp({
+          apiKey: "AIzaSyAQszUApKHZ3lPrpc7HOINpdOWW3SgvUBM",
+          authDomain: "mannar-129a5.firebaseapp.com",
+          projectId: "mannar-129a5",
+          storageBucket: "mannar-129a5.firebasestorage.app",
+          messagingSenderId: "687710492532",
+          appId: "1:687710492532:web:c7b675da541271f8d83e21",
+          measurementId: "G-NXBLYJ5CXL"
+        });
+        console.log('Firebase initialized successfully');
+      } catch (error) {
+        console.error('Error initializing Firebase:', error);
+      }
+    }
+    
+    // Initialize PageEditor if available
+    if (typeof PageEditor !== 'undefined' && typeof PageEditor.init === 'function') {
+      console.log('Initializing PageEditor...');
+      setTimeout(() => {
+        PageEditor.init();
+      }, 500);
+    }
+  });
+  // Verbesserte Tab-Steuerung mit Fehlerbehebung
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('Initialisiere verbesserte Tab-Steuerung...');
+  
+  // Tab-Controller-Klasse für bessere Organisation
+  class TabController {
+    constructor() {
+      this.tabs = document.querySelectorAll('.tab-btn');
+      this.contents = document.querySelectorAll('.tab-content');
+      this.activeTab = null;
+      this.setupEventListeners();
+      this.fixTabDisplay();
+    }
+    
+    // Event-Listener für Tab-Buttons
+    setupEventListeners() {
+      this.tabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+          e.preventDefault();
+          const tabName = tab.getAttribute('data-tab');
+          this.activateTab(tabName, tab);
+        });
+      });
+      
+      console.log('Tab-Eventlistener eingerichtet');
+    }
+    
+    // Tab aktivieren
+    activateTab(tabName, tabButton) {
+      console.log('Aktiviere Tab:', tabName);
+      
+      // Alle Tabs deaktivieren
+      this.tabs.forEach(t => t.classList.remove('active'));
+      this.contents.forEach(c => {
+        c.style.display = 'none';
+        c.classList.remove('active');
+      });
+      
+      // Aktiven Tab setzen
+      tabButton.classList.add('active');
+      const content = document.getElementById(`${tabName}-tab`);
+      
+      if (content) {
+        content.style.display = 'block';
+        content.classList.add('active');
+        this.activeTab = tabName;
+        
+        // Spezielle Aktionen für bestimmte Tabs
+        if (tabName === 'pages') {
+          this.initializePageEditor();
+        } else if (tabName === 'preview') {
+          this.refreshPreview();
+        }
+      } else {
+        console.error(`Tab-Inhalt mit ID "${tabName}-tab" nicht gefunden`);
+      }
+    }
+    
+    // Tabs korrigieren - beim Start werden wir sicherstellen,
+    // dass nur ein Tab aktiv ist
+    fixTabDisplay() {
+      console.log('Korrigiere Tab-Anzeige...');
+      
+      // Prüfen, ob ein Tab bereits aktiv ist
+      const activeTabButton = document.querySelector('.tab-btn.active');
+      
+      if (activeTabButton) {
+        const tabName = activeTabButton.getAttribute('data-tab');
+        this.activateTab(tabName, activeTabButton);
+      } else {
+        // Standardmäßig ersten Tab aktivieren
+        const firstTab = this.tabs[0];
+        if (firstTab) {
+          const tabName = firstTab.getAttribute('data-tab');
+          this.activateTab(tabName, firstTab);
+        }
+      }
+    }
+    
+    // PageEditor initialisieren
+    initializePageEditor() {
+      console.log('Initialisiere PageEditor...');
+      
+      // Verzögerung hinzufügen, um sicherzustellen, dass Firebase geladen ist
+      setTimeout(() => {
+        if (typeof PageEditor !== 'undefined') {
+          // Zuerst überprüfen, ob PageEditor bereits initialisiert wurde
+          if (typeof PageEditor.init === 'function') {
+            console.log('PageEditor.init aufrufen...');
+            PageEditor.init();
+          }
+          
+          // Dann Seiten laden
+          if (typeof PageEditor.loadPages === 'function') {
+            console.log('PageEditor.loadPages aufrufen...');
+            PageEditor.loadPages();
+          } else {
+            console.error('PageEditor.loadPages ist nicht verfügbar!');
+          }
+        } else {
+          console.error('PageEditor ist nicht definiert!');
+          
+          // Fehlermeldung anzeigen
+          const pagesTab = document.getElementById('pages-tab');
+          if (pagesTab) {
+            pagesTab.innerHTML = `
+              <div class="w3-panel w3-red">
+                <h3>Fehler: PageEditor nicht geladen</h3>
+                <p>Der PageEditor konnte nicht geladen werden. Bitte aktualisieren Sie die Seite und versuchen Sie es erneut.</p>
+                <button class="w3-button w3-white" onclick="location.reload()">Seite neu laden</button>
+              </div>
+            `;
+          }
+        }
+      }, 500);
+    }
+    
+    // Preview aktualisieren
+    refreshPreview() {
+      const previewFrame = document.getElementById('previewFrame');
+      const previewTypeRadios = document.getElementsByName('previewType');
+      
+      if (previewFrame) {
+        const isDraft = Array.from(previewTypeRadios)
+          .find(radio => radio.checked)?.value === 'draft';
+        
+        previewFrame.src = `preview.html?draft=${isDraft}&t=${Date.now()}`;
+      }
+    }
+    
+    // Manuell einen Tab aktivieren (kann von außen aufgerufen werden)
+    switchToTab(tabName) {
+      const tab = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+      if (tab) {
+        this.activateTab(tabName, tab);
+      } else {
+        console.error(`Tab mit Name "${tabName}" nicht gefunden`);
+      }
+    }
+  }
+  
+  // TabController initialisieren und global verfügbar machen
+  window.tabController = new TabController();
+});
+
+// Debug-Helfer zum Anzeigen von Firebase/PageEditor-Status und zum Beheben von Problemen
+document.addEventListener('DOMContentLoaded', function() {
+  // Debug-Funktion zum Ausgeben des Status aller wichtigen Komponenten
+  function debugStatus() {
+    console.group('Admin-Panel Diagnose');
+    
+    // Firebase-Status prüfen
+    console.log('Firebase vorhanden:', typeof firebase !== 'undefined');
+    if (typeof firebase !== 'undefined') {
+      console.log('Firebase initialisiert:', firebase.apps.length > 0);
+      console.log('Firestore verfügbar:', typeof firebase.firestore === 'function');
+      console.log('Auth verfügbar:', typeof firebase.auth === 'function');
+      
+      if (firebase.apps.length > 0) {
+        try {
+          // Testen, ob die Firestore-Verbindung funktioniert
+          firebase.firestore().collection('test').limit(1).get()
+            .then(() => console.log('Firestore-Verbindung erfolgreich'))
+            .catch(err => console.error('Firestore-Verbindungsfehler:', err));
+        } catch (e) {
+          console.error('Fehler beim Testen der Firestore-Verbindung:', e);
+        }
+      }
+    }
+    
+    // PageEditor-Status prüfen
+    console.log('PageEditor vorhanden:', typeof PageEditor !== 'undefined');
+    if (typeof PageEditor !== 'undefined') {
+      console.log('PageEditor-Methoden:', 
+        Object.keys(PageEditor).filter(k => typeof PageEditor[k] === 'function'));
+    }
+    
+    // DOM-Elemente prüfen
+    console.log('Tab-Buttons:', document.querySelectorAll('.tab-btn').length);
+    console.log('Tab-Inhalte:', document.querySelectorAll('.tab-content').length);
+    console.log('Pages-Tab:', document.getElementById('pages-tab') ? 'gefunden' : 'nicht gefunden');
+    console.log('Pages-Container:', document.getElementById('pagesContainer') ? 'gefunden' : 'nicht gefunden');
+    
+    // Tab-Status prüfen
+    const activeTabBtn = document.querySelector('.tab-btn.active');
+    const activeTabContent = document.querySelector('.tab-content.active');
+    console.log('Aktiver Tab-Button:', activeTabBtn ? activeTabBtn.getAttribute('data-tab') : 'keiner');
+    console.log('Aktiver Tab-Inhalt:', activeTabContent ? activeTabContent.id : 'keiner');
+    
+    // Sichtbarkeit der Tabs prüfen
+    document.querySelectorAll('.tab-content').forEach(tab => {
+      console.log(`Tab ${tab.id} Display:`, window.getComputedStyle(tab).display);
+    });
+    
+    console.groupEnd();
+  }
+  
+  // Debug-Button zur Seite hinzufügen
+  function addDebugButton() {
+    const debugBtn = document.createElement('button');
+    debugBtn.textContent = '🔍 Debug';
+    debugBtn.style.position = 'fixed';
+    debugBtn.style.bottom = '10px';
+    debugBtn.style.left = '10px';
+    debugBtn.style.zIndex = '9999';
+    debugBtn.style.backgroundColor = '#f44336';
+    debugBtn.style.color = 'white';
+    debugBtn.style.border = 'none';
+    debugBtn.style.borderRadius = '4px';
+    debugBtn.style.padding = '8px 12px';
+    debugBtn.style.cursor = 'pointer';
+    
+    debugBtn.addEventListener('click', function() {
+      debugStatus();
+      
+      // Zusätzliche Aktionen für Tab-Debugging
+      const tabController = window.tabController;
+      if (tabController) {
+        console.log('TabController aktiv');
+        tabController.fixTabDisplay();
+      } else {
+        console.log('TabController nicht gefunden');
+      }
+      
+      // PageEditor initialisieren/neu laden
+      if (typeof PageEditor !== 'undefined') {
+        if (typeof PageEditor.init === 'function') {
+          console.log('PageEditor neu initialisieren...');
+          PageEditor.init();
+        }
+        
+        if (typeof PageEditor.loadPages === 'function') {
+          console.log('Pages neu laden...');
+          PageEditor.loadPages();
+        }
+      }
+      
+      // Popup mit Debug-Info
+      alert('Debug-Info in der Konsole ausgegeben. Bitte öffnen Sie die Browser-Konsole (F12).');
+    });
+    
+    document.body.appendChild(debugBtn);
+  }
+  
+  // Probleme mit der CSS-Anzeige beheben
+  function fixCssDisplay() {
+    // Stelle sicher, dass nur ein Tab aktiv ist
+    const activeTabContents = document.querySelectorAll('.tab-content.active');
+    if (activeTabContents.length > 1) {
+      console.warn('Mehrere aktive Tabs gefunden!', activeTabContents);
+      
+      // Alle außer dem ersten deaktivieren
+      for (let i = 1; i < activeTabContents.length; i++) {
+        activeTabContents[i].classList.remove('active');
+        activeTabContents[i].style.display = 'none';
+      }
+    }
+    
+    // Stelle sicher, dass alle Tab-Inhalte korrekte Anzeigestile haben
+    document.querySelectorAll('.tab-content').forEach(tab => {
+      if (tab.classList.contains('active')) {
+        tab.style.display = 'block';
+      } else {
+        tab.style.display = 'none';
+      }
+    });
+    
+    // Stelle sicher, dass der Content-Tab nicht mehr aktiv ist, wenn ein anderer Tab aktiv ist
+    const activeTabButton = document.querySelector('.tab-btn.active');
+    if (activeTabButton && activeTabButton.getAttribute('data-tab') !== 'content') {
+      const contentTab = document.getElementById('content-tab');
+      if (contentTab && contentTab.classList.contains('active')) {
+        contentTab.classList.remove('active');
+        contentTab.style.display = 'none';
+      }
+    }
+  }
+  
+  // Force-Fix-Button zur Seite hinzufügen
+  function addFixButton() {
+    const fixBtn = document.createElement('button');
+    fixBtn.textContent = '🔧 Fix Tabs';
+    fixBtn.style.position = 'fixed';
+    fixBtn.style.bottom = '10px';
+    fixBtn.style.left = '100px';
+    fixBtn.style.zIndex = '9999';
+    fixBtn.style.backgroundColor = '#4CAF50';
+    fixBtn.style.color = 'white';
+    fixBtn.style.border = 'none';
+    fixBtn.style.borderRadius = '4px';
+    fixBtn.style.padding = '8px 12px';
+    fixBtn.style.cursor = 'pointer';
+    
+    fixBtn.addEventListener('click', function() {
+      fixCssDisplay();
+      
+      // Wechsle zum Pages-Tab
+      const tabController = window.tabController;
+      if (tabController) {
+        tabController.switchToTab('pages');
+      } else {
+        // Manuelles Umschalten, wenn kein TabController
+        const pagesTabBtn = document.querySelector('.tab-btn[data-tab="pages"]');
+        if (pagesTabBtn) {
+          pagesTabBtn.click();
+        }
+      }
+      
+      // PageEditor initialisieren/neu laden
+      if (typeof PageEditor !== 'undefined') {
+        if (typeof PageEditor.loadPages === 'function') {
+          console.log('Pages neu laden...');
+          PageEditor.loadPages();
+        }
+      }
+      
+      alert('Tabs wurden repariert. Der Pages-Tab sollte jetzt angezeigt werden.');
+    });
+    
+    document.body.appendChild(fixBtn);
+  }
+  
+  // Füge die Debug-Buttons nach einer kurzen Verzögerung hinzu
+  setTimeout(() => {
+    addDebugButton();
+    addFixButton();
+    
+    // Führe eine erste Diagnose durch
+    debugStatus();
+    
+    // Versuche, CSS-Anzeige zu reparieren
+    fixCssDisplay();
+  }, 2000);
+});
 </script>
 </body>
 </html>

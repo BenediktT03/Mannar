@@ -5,8 +5,17 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Firebase should already be initialized in the HTML
-    const db = firebase.firestore();
-    const auth = firebase.auth();
+    let db;
+    let auth;
+
+    // Initialize Firebase if available
+    if (typeof firebase !== 'undefined') {
+        db = firebase.firestore();
+        auth = firebase.auth();
+        console.log("Firebase initialized successfully");
+    } else {
+        console.error("Firebase is not available! Check script loading.");
+    }
     
     // Global state
     const state = {
@@ -150,6 +159,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }, timeout);
       }
     };
+    
+    // Make showStatus globally available
+    window.showStatus = showStatus;
 
     // Function to handle successful image upload
     const handleImageUploadSuccess = (url, publicId, uploadContext = null) => {
@@ -251,8 +263,13 @@ document.addEventListener('DOMContentLoaded', () => {
           // Tab-specific initialization
           if (tabName === 'preview') {
             refreshPreview();
-          } 
-          // Note: Pages tab is now handled by the PageEditor module
+          } else if (tabName === 'pages') {
+            // Initialize PageEditor if not already initialized
+            if (typeof PageEditor !== 'undefined' && typeof PageEditor.loadPages === 'function') {
+              console.log('Reloading pages...');
+              PageEditor.loadPages();
+            }
+          }
         } else {
           console.error(`Tab content with ID "${tabName}-tab" not found`);
         }
@@ -411,7 +428,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       try {
         const docSnap = await db.collection("content").doc("wordCloud").get();
-        if (docSnap.exists) {
+        if (docSnap.exists && docSnap.data().words) {
           state.wordCloudData = docSnap.data().words || [];
         } else {
           // Initialize with default values
@@ -809,48 +826,67 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     };
 
-    // Auth state monitoring
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        // User is logged in
-        console.log("User logged in:", user.email);
-        
-        if (elements.loginDiv) elements.loginDiv.style.display = 'none';
-        if (elements.adminDiv) elements.adminDiv.style.display = 'block';
-        
-        // Initialize Quill editors (replacing TinyMCE)
-        if (window.quillEditor && window.quillEditor.convertTextareas) {
-          window.quillEditor.convertTextareas();
-        }
-        
-        // Load content
-        loadContentData();
-        
-        // Load word cloud
-        loadWordCloudData();
-        
-        // Setup image uploads
-        setupImageUploads();
-        
-        // Setup size sliders
-        setupSizeSliders();
-        
-        // Setup preview controls
-        setupPreviewControls();
-        
-        // Setup save buttons
-        setupSaveButtons();
-        
-        // Setup change tracking
-        setupChangeTracking();
+    // Initialize Firebase PageEditor
+    const initializePageEditor = () => {
+      if (typeof PageEditor !== 'undefined' && typeof PageEditor.init === 'function') {
+        console.log('Initializing PageEditor...');
+        setTimeout(() => {
+          PageEditor.init();
+        }, 500);
       } else {
-        // User is not logged in
-        console.log("User not logged in");
-        
-        if (elements.adminDiv) elements.adminDiv.style.display = 'none';
-        if (elements.loginDiv) elements.loginDiv.style.display = 'block';
+        console.warn('PageEditor not available or missing init function');
       }
-    });
+    };
+
+    // Auth state monitoring
+    if (auth) {
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          // User is logged in
+          console.log("User logged in:", user.email);
+          
+          if (elements.loginDiv) elements.loginDiv.style.display = 'none';
+          if (elements.adminDiv) elements.adminDiv.style.display = 'block';
+          
+          // Initialize Quill editors (replacing TinyMCE)
+          if (window.quillEditor && window.quillEditor.convertTextareas) {
+            window.quillEditor.convertTextareas();
+          }
+          
+          // Initialize PageEditor if available
+          initializePageEditor();
+          
+          // Load content
+          loadContentData();
+          
+          // Load word cloud
+          loadWordCloudData();
+          
+          // Setup image uploads
+          setupImageUploads();
+          
+          // Setup size sliders
+          setupSizeSliders();
+          
+          // Setup preview controls
+          setupPreviewControls();
+          
+          // Setup save buttons
+          setupSaveButtons();
+          
+          // Setup change tracking
+          setupChangeTracking();
+        } else {
+          // User is not logged in
+          console.log("User not logged in");
+          
+          if (elements.adminDiv) elements.adminDiv.style.display = 'none';
+          if (elements.loginDiv) elements.loginDiv.style.display = 'block';
+        }
+      });
+    } else {
+      console.error("Firebase Auth not available");
+    }
 
     // Login button event
     if (elements.loginBtn) {
@@ -872,8 +908,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (elements.loginError) elements.loginError.textContent = "";
         
         // Make sure we're using the correct auth method
-        if (firebase && firebase.auth) {
-          firebase.auth().signInWithEmailAndPassword(email, pass)
+        if (auth) {
+          auth.signInWithEmailAndPassword(email, pass)
             .then(userCredential => {
               console.log("Login successful:", userCredential.user.email);
               // Explicitly update UI
@@ -910,12 +946,17 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
         
-        auth.signOut().then(() => {
-          showStatus("Logged out successfully");
-        }).catch(err => {
-          console.error("Logout error:", err);
-          showStatus("Error during logout: " + err.message, true);
-        });
+        if (auth) {
+          auth.signOut().then(() => {
+            showStatus("Logged out successfully");
+          }).catch(err => {
+            console.error("Logout error:", err);
+            showStatus("Error during logout: " + err.message, true);
+          });
+        } else {
+          console.error("Firebase auth not available");
+          showStatus("Firebase authentication not available", true);
+        }
       });
     }
 
@@ -931,4 +972,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Call sortable initialization
     initSortable();
+    
+    // Make sure PageEditor is initialized when Firebase loads
+    if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+      initializePageEditor();
+    }
 });
+
+// Add debugging helpers
+const debugAdminPanel = () => {
+  console.log('Admin Panel Debug Info:');
+  console.log('Firebase available:', typeof firebase !== 'undefined');
+  if (typeof firebase !== 'undefined') {
+    console.log('Firebase initialized:', firebase.apps.length > 0);
+    console.log('Firestore available:', typeof firebase.firestore === 'function');
+    console.log('Auth available:', typeof firebase.auth === 'function');
+  }
+  
+  console.log('PageEditor available:', typeof PageEditor !== 'undefined');
+  if (typeof PageEditor !== 'undefined') {
+    console.log('PageEditor methods:', Object.keys(PageEditor).filter(k => typeof PageEditor[k] === 'function'));
+  }
+  
+  console.log('Elements available:');
+  console.log('- pagesContainer:', document.getElementById('pagesContainer'));
+  console.log('- pagesList:', document.getElementById('pagesList'));
+  console.log('- pages-tab:', document.getElementById('pages-tab'));
+};
+
+// Run debug on page load
+setTimeout(debugAdminPanel, 2000);

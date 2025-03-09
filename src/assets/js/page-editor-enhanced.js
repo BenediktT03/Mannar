@@ -1,4 +1,4 @@
- /**
+/**
  * Enhanced Page Editor (page-editor-enhanced.js)
  * 
  * A complete rewrite of the page editing functionality that fixes the "No Page Currently edited" bug
@@ -163,6 +163,20 @@ const PageEditor = (function() {
     }
   }
 
+  // Log element status for debugging
+  function logElementStatus() {
+    console.log('Element status check:');
+    console.log('pages container:', elements.pagesContainer ? 'found' : 'missing');
+    console.log('pages list column:', elements.pagesListCol ? 'found' : 'missing');
+    console.log('pages editor column:', elements.pagesEditorCol ? 'found' : 'missing');
+    console.log('pages list:', elements.pagesList ? 'found' : 'missing');
+    console.log('create page button:', elements.createPageBtn ? 'found' : 'missing');
+    
+    // Check if elements are actually in the DOM
+    console.log('pagesContainer in DOM:', document.getElementById('pagesContainer') ? true : false);
+    console.log('pagesList in DOM:', document.getElementById('pagesList') ? true : false);
+  }
+
   // Initialization function
   function init() {
     // Initialize Firebase
@@ -183,6 +197,9 @@ const PageEditor = (function() {
     
     // Cache DOM elements
     cacheElements();
+    
+    // Log element status for debugging
+    logElementStatus();
     
     // Attach event listeners
     attachEvents();
@@ -660,58 +677,94 @@ const PageEditor = (function() {
     // Show loading indicator
     elements.pagesList.innerHTML = '<div class="w3-center"><i class="fas fa-spinner fa-spin"></i> Loading pages...</div>';
     
+    // Load pages from Firestore
     db.collection('pages').get()
       .then(snapshot => {
         // Clear list
         elements.pagesList.innerHTML = '';
         pageCache = {}; // Reset cache
         
-        if (snapshot.empty) {
-          // No pages found
-          elements.pagesList.innerHTML = `
-            <div class="w3-panel w3-pale-yellow w3-center">
-              <p>No pages found. Create your first page to get started.</p>
-            </div>
-          `;
-          return;
-        }
+        // Add special entry for main content (index.php)
+        const mainPageItem = document.createElement('div');
+        mainPageItem.className = 'page-item w3-bar w3-hover-light-grey w3-margin-bottom w3-pale-yellow';
+        mainPageItem.innerHTML = `
+          <div class="w3-bar-item w3-padding">
+            <span class="page-title"><i class="fas fa-home"></i> Homepage (index.php)</span><br>
+            <small class="w3-text-grey">Main Website Content</small>
+          </div>
+          <div class="w3-bar-item w3-right">
+            <a href="index.php" target="_blank" class="w3-button w3-small w3-blue">
+              <i class="fas fa-eye"></i>
+            </a>
+          </div>
+        `;
         
-        // Add pages to the list
-        snapshot.forEach(doc => {
-          const pageData = doc.data();
-          const pageId = doc.id;
+        // Add click event for main page
+        mainPageItem.addEventListener('click', function(e) {
+          // Ignore if the click was on the view button
+          if (e.target.closest('a')) return;
           
-          // Cache the page data
-          pageCache[pageId] = pageData;
-          
-          // Create page list item
-          const pageItem = document.createElement('div');
-          pageItem.className = 'page-item w3-bar w3-hover-light-grey w3-margin-bottom';
-          pageItem.dataset.id = pageId;
-          pageItem.innerHTML = `
-            <div class="w3-bar-item w3-padding">
-              <span class="page-title">${pageData.title || 'Untitled Page'}</span><br>
-              <small class="w3-text-grey">${templates[pageData.template]?.name || pageData.template}</small>
-            </div>
-            <div class="w3-bar-item w3-right">
-              <a href="page.php?id=${pageId}" target="_blank" class="w3-button w3-small w3-blue">
-                <i class="fas fa-eye"></i>
-              </a>
-            </div>
-          `;
-          
-          // Add click event to open editor
-          pageItem.addEventListener('click', function(e) {
-            // Ignore if the click was on the view button
-            if (e.target.closest('a')) return;
-            
-            const pageId = this.dataset.id;
-            openEditor(pageId);
-          });
-          
-          elements.pagesList.appendChild(pageItem);
+          // Switch to content tab
+          const contentTabBtn = document.querySelector('.tab-btn[data-tab="content"]');
+          if (contentTabBtn) {
+            contentTabBtn.click();
+          }
         });
         
+        // Add to the list
+        elements.pagesList.appendChild(mainPageItem);
+        
+        // Create a divider
+        const divider = document.createElement('div');
+        divider.className = 'w3-panel w3-border-bottom';
+        divider.innerHTML = '<p class="w3-small w3-text-grey">Additional Pages</p>';
+        elements.pagesList.appendChild(divider);
+        
+        if (snapshot.empty) {
+          // No additional pages found
+          const noPages = document.createElement('div');
+          noPages.className = 'w3-panel w3-pale-yellow w3-center';
+          noPages.innerHTML = '<p>No additional pages found. Create your first page to get started.</p>';
+          elements.pagesList.appendChild(noPages);
+        } else {
+          // Add pages to the list
+          snapshot.forEach(doc => {
+            const pageData = doc.data();
+            const pageId = doc.id;
+            
+            // Cache the page data
+            pageCache[pageId] = pageData;
+            
+            // Create page list item
+            const pageItem = document.createElement('div');
+            pageItem.className = 'page-item w3-bar w3-hover-light-grey w3-margin-bottom';
+            pageItem.dataset.id = pageId;
+            pageItem.innerHTML = `
+              <div class="w3-bar-item w3-padding">
+                <span class="page-title">${pageData.title || 'Untitled Page'}</span><br>
+                <small class="w3-text-grey">${templates[pageData.template]?.name || pageData.template || 'Unknown Template'}</small>
+              </div>
+              <div class="w3-bar-item w3-right">
+                <a href="page.php?id=${pageId}" target="_blank" class="w3-button w3-small w3-blue">
+                  <i class="fas fa-eye"></i>
+                </a>
+              </div>
+            `;
+            
+            // Add click event to open editor
+            pageItem.addEventListener('click', function(e) {
+              // Ignore if the click was on the view button
+              if (e.target.closest('a')) return;
+              
+              const pageId = this.dataset.id;
+              openEditor(pageId);
+            });
+            
+            elements.pagesList.appendChild(pageItem);
+          });
+        }
+        
+        console.log('Pages loaded successfully', snapshot.size, 'pages found');
         showStatus('Pages loaded successfully');
       })
       .catch(error => {
@@ -887,7 +940,26 @@ const PageEditor = (function() {
 
   // Open the editor for a specific page
   function openEditor(pageId) {
-    if (!db || !pageId || !elements.pageEditorContainer || !elements.pageWelcomeContainer) return;
+    // Ensure db is initialized
+    if (!db) {
+      console.error('Firebase DB not initialized. Attempting to initialize...');
+      try {
+        if (firebase && firebase.firestore) {
+          db = firebase.firestore();
+          console.log('Firebase DB initialized successfully');
+        } else {
+          console.error('Firebase or Firestore not available');
+          showStatus('Database connection error. Please refresh the page and try again.', true);
+          return;
+        }
+      } catch (error) {
+        console.error('Error initializing Firestore:', error);
+        showStatus('Error connecting to database: ' + error.message, true);
+        return;
+      }
+    }
+    
+    if (!pageId || !elements.pageEditorContainer || !elements.pageWelcomeContainer) return;
     
     // Set current editing page
     currentEditingPage = pageId;
@@ -948,7 +1020,19 @@ const PageEditor = (function() {
     
     // Set template selector
     if (elements.templateSelector) {
-      elements.templateSelector.value = pageData.template || '';
+      try {
+        elements.templateSelector.value = pageData.template || '';
+      } catch (e) {
+        console.error('Error setting template selector value:', e);
+        // If the template doesn't exist in the dropdown, add it
+        if (pageData.template && !Array.from(elements.templateSelector.options).find(opt => opt.value === pageData.template)) {
+          const option = document.createElement('option');
+          option.value = pageData.template;
+          option.textContent = pageData.template + ' (Unknown)';
+          elements.templateSelector.appendChild(option);
+          elements.templateSelector.value = pageData.template;
+        }
+      }
     }
     
     // Set style controls
@@ -2056,6 +2140,23 @@ const PageEditor = (function() {
     // Update cache
     pageCache[currentEditingPage] = pageData;
     
+    // Update template in the UI
+    if (elements.templateSelector) {
+      try {
+        elements.templateSelector.value = templateId;
+      } catch (e) {
+        console.error('Error setting template selector value:', e);
+        // If the template doesn't exist in the dropdown, add it
+        if (templateId && !Array.from(elements.templateSelector.options).find(opt => opt.value === templateId)) {
+          const option = document.createElement('option');
+          option.value = templateId;
+          option.textContent = templateId + ' (Unknown)';
+          elements.templateSelector.appendChild(option);
+          elements.templateSelector.value = templateId;
+        }
+      }
+    }
+    
     // Generate template fields
     generateTemplateFields(templateId, templateData);
     
@@ -2338,7 +2439,7 @@ const PageEditor = (function() {
         `;
         break;
         
-      case 'gallery':
+  case 'gallery':
        // Generate gallery items HTML
         let galleryItemsHtml = '';
         if (data.images && Array.isArray(data.images) && data.images.length > 0) {
@@ -2422,21 +2523,23 @@ const PageEditor = (function() {
             if (project) {
               projectsHtml += `
                 <div class="w3-col m6 l4 w3-padding">
-                  <div class="w3-card">
+                  <div class="w3-card portfolio-item">
                     ${project.thumbnail && project.thumbnail.url ? 
-                      `<img src="${project.thumbnail.url}" alt="${project.thumbnail.alt || ''}" style="width:100%;">` : 
-                      '<div class="w3-pale-blue w3-padding w3-center" style="height: 150px;">Project Image</div>'
+                      `<img src="${project.thumbnail.url}" alt="${project.title || 'Project'}" class="w3-image" style="width:100%">` : 
+                      '<div class="w3-pale-blue w3-padding-32 w3-center"><i class="fas fa-image"></i><p>Project Image</p></div>'
                     }
-                    <div class="w3-padding">
+                    <div class="w3-container">
                       <h3>${project.title || 'Project Title'}</h3>
-                      <p>${project.description || 'Project description'}</p>
-                      ${project.link ? `<a href="${project.link}" class="w3-button w3-blue">View Project</a>` : ''}
+                      <p>${project.description || ''}</p>
+                      ${project.link ? `<a href="${project.link}" class="w3-button w3-margin-bottom">More Info</a>` : ''}
                     </div>
                   </div>
                 </div>
               `;
             }
           });
+        } else {
+          projectsHtml = '<div class="w3-panel w3-pale-yellow w3-center">No projects defined</div>';
         }
         
         templateHtml = `
@@ -2446,7 +2549,7 @@ const PageEditor = (function() {
             ${data.subtitle ? `<h2 class="preview-subtitle">${data.subtitle}</h2>` : ''}
             <div class="preview-content">${data.introduction || ''}</div>
             <div class="w3-row">
-              ${projectsHtml || '<div class="w3-pale-blue w3-padding w3-center w3-col s12">No projects added</div>'}
+              ${projectsHtml}
             </div>
           </div>
         `;
@@ -2461,41 +2564,54 @@ const PageEditor = (function() {
             <div class="preview-content">${data.introduction || ''}</div>
             
             <div class="w3-row">
-              <div class="w3-col m6">
-                <div class="preview-contact-info">
-                  ${data.address ? `<p><i class="fas fa-map-marker-alt"></i> ${data.address}</p>` : ''}
-                  ${data.email ? `<p><i class="fas fa-envelope"></i> ${data.email}</p>` : ''}
-                  ${data.phone ? `<p><i class="fas fa-phone"></i> ${data.phone}</p>` : ''}
+              ${data.contactImage && data.contactImage.url ? 
+                `<div class="w3-col m4">
+                  <img src="${data.contactImage.url}" alt="${data.contactImage.alt || 'Contact'}" class="preview-image w3-round">
+                </div>` : 
+                ''
+              }
+              
+              <div class="w3-col ${data.contactImage && data.contactImage.url ? 'm8' : 's12'}">
+                <div class="w3-large">
+                  ${data.address ? `<p><i class="fas fa-map-marker-alt fa-fw"></i> ${data.address}</p>` : ''}
+                  ${data.email ? `<p><i class="fas fa-envelope fa-fw"></i> ${data.email}</p>` : ''}
+                  ${data.phone ? `<p><i class="fas fa-phone fa-fw"></i> ${data.phone}</p>` : ''}
                 </div>
-              </div>
-              <div class="w3-col m6">
-                ${data.contactImage && data.contactImage.url ? 
-                  `<img src="${data.contactImage.url}" alt="${data.contactImage.alt || ''}" class="preview-image">` : 
-                  '<div class="w3-pale-blue w3-padding w3-center" style="height: 150px;">Map/Contact Image</div>'
+                
+                ${data.showForm ? 
+                  `<div class="preview-form w3-margin-top">
+                    <h3>Contact Form</h3>
+                    <div class="w3-row-padding">
+                      <div class="w3-half w3-margin-bottom">
+                        <input class="w3-input w3-border" type="text" placeholder="Name" disabled>
+                      </div>
+                      <div class="w3-half w3-margin-bottom">
+                        <input class="w3-input w3-border" type="text" placeholder="Email" disabled>
+                      </div>
+                    </div>
+                    <textarea class="w3-input w3-border w3-margin-bottom" placeholder="Message" disabled></textarea>
+                    <button class="preview-button" disabled>Send Message</button>
+                  </div>` : 
+                  ''
                 }
               </div>
             </div>
-            
-            ${data.showForm ? `
-              <div class="preview-form">
-                <h3>Contact Form</h3>
-                <div class="w3-row-padding">
-                  <div class="w3-half">
-                    <input class="w3-input w3-border" type="text" placeholder="Name" disabled>
-                  </div>
-                  <div class="w3-half">
-                    <input class="w3-input w3-border" type="text" placeholder="Email" disabled>
-                  </div>
-                </div>
-                <textarea class="w3-input w3-border" placeholder="Message" style="margin-top: 10px;" disabled></textarea>
-                <button class="w3-button w3-blue w3-margin-top" disabled>Send Message</button>
-              </div>
-            ` : ''}
           </div>
         `;
         break;
         
       case 'blog':
+        // Format categories
+        let categoriesHtml = '';
+        if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
+          categoriesHtml = `
+            <div class="w3-section">
+              <i class="fas fa-tags"></i> 
+              ${data.categories.map(cat => `<span class="w3-tag w3-small w3-margin-right">${cat}</span>`).join('')}
+            </div>
+          `;
+        }
+        
         templateHtml = `
           <div class="preview-container">
             ${previewCss}
@@ -2505,16 +2621,21 @@ const PageEditor = (function() {
             <div class="w3-bar w3-light-grey w3-padding-small">
               ${data.date ? `<span class="w3-bar-item"><i class="far fa-calendar-alt"></i> ${data.date}</span>` : ''}
               ${data.author ? `<span class="w3-bar-item"><i class="far fa-user"></i> ${data.author}</span>` : ''}
-              ${data.categories && Array.isArray(data.categories) && data.categories.length > 0 ? 
-                `<span class="w3-bar-item"><i class="fas fa-tags"></i> ${data.categories.join(', ')}</span>` : ''}
             </div>
             
+            ${categoriesHtml}
+            
             ${data.featuredImage && data.featuredImage.url ? 
-              `<img src="${data.featuredImage.url}" alt="${data.featuredImage.alt || ''}" class="preview-image">` : 
-              '<div class="w3-pale-blue w3-padding w3-center" style="height: 200px;">Featured Image</div>'
+              `<img src="${data.featuredImage.url}" alt="${data.featuredImage.alt || data.title || 'Blog Post'}" class="preview-image">` : 
+              '<div class="w3-pale-blue w3-padding w3-center" style="height: 200px;">Featured Image Placeholder</div>'
             }
             
-            ${data.excerpt ? `<div class="w3-panel w3-light-grey w3-leftbar w3-border-blue"><p><em>${data.excerpt}</em></p></div>` : ''}
+            ${data.excerpt ? 
+              `<div class="w3-panel w3-pale-blue w3-leftbar w3-border-blue">
+                <p><em>${data.excerpt}</em></p>
+              </div>` : 
+              ''
+            }
             
             <div class="preview-content">${data.content || ''}</div>
           </div>
@@ -2734,7 +2855,8 @@ const PageEditor = (function() {
     savePage,
     deletePage,
     openCreatePageDialog,
-    closeCreatePageDialog
+    closeCreatePageDialog,
+    logElementStatus
   };
 })();
 
@@ -2742,4 +2864,4 @@ const PageEditor = (function() {
 document.addEventListener('DOMContentLoaded', function() {
   // Initialize PageEditor
   PageEditor.init();
-});
+}); 
