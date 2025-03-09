@@ -13,8 +13,13 @@
   <!-- Enhanced Admin Panel CSS -->
   <link rel="stylesheet" href="./assets/css/admin.css" />
   
-  <!-- TinyMCE -->
-  <script src="https://cdn.tiny.cloud/1/5pxzy8guun55o6z5mi0r8c4j8gk5hqeq3hpsotx123ak212k/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+<!-- Quill Editor CSS -->
+<link href="https://cdn.quilljs.com/2.0.0-dev.4/quill.snow.css" rel="stylesheet">
+<link href="https://cdn.quilljs.com/2.0.0-dev.4/quill.bubble.css" rel="stylesheet">
+<link href="./assets/css/quill-custom.css" rel="stylesheet">
+
+<!-- Quill Editor library -->
+<script src="https://cdn.quilljs.com/2.0.0-dev.4/quill.min.js"></script>
   
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-app-compat.js"></script>
@@ -526,15 +531,21 @@ const csrfToken = "<?php echo $csrf_token; ?>";
   });
 </script>
 <!-- Then load the admin panel script -->
+<!-- Quill integration script -->
+<script src="./assets/js/quill-integration.js"></script>
+<script src="./assets/js/quill-page-editor.js"></script>
 <script src="./assets/js/admin-panel.js"></script>
 <script src="./assets/js/page-editor-enhanced.js"></script>
 <script src="./assets/js/global-settings.js"></script>
 <script>
-  // Ensure this runs after everything else is loaded
+  // Initialize Quill for rich text editing
   document.addEventListener('DOMContentLoaded', function() {
+    // Make tinymce global API available for backwards compatibility
+    window.tinymce = window.quillEditor.initRichTextEditors();
+    
+    // Direct login handler
     const loginBtn = document.getElementById('loginBtn');
     if (loginBtn) {
-      console.log('Login button found, adding direct handler');
       loginBtn.addEventListener('click', function() {
         const emailField = document.getElementById('emailField');
         const passField = document.getElementById('passField');
@@ -553,8 +564,6 @@ const csrfToken = "<?php echo $csrf_token; ?>";
           return;
         }
         
-        console.log('Attempting login with:', email);
-        
         // Initialize Firebase if needed
         if (typeof firebase !== 'undefined') {
           firebase.auth().signInWithEmailAndPassword(email, pass)
@@ -572,8 +581,6 @@ const csrfToken = "<?php echo $csrf_token; ?>";
           if (loginError) loginError.textContent = "Error: Firebase not available";
         }
       });
-    } else {
-      console.error('Login button not found!');
     }
   });
 </script>

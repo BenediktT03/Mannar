@@ -1,6 +1,6 @@
 /**
  * Enhanced Admin Panel JavaScript
- * Complete rewrite with improved organization and error handling
+ * Modified to use Quill.js instead of TinyMCE
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -20,6 +20,9 @@ document.addEventListener('DOMContentLoaded', () => {
       wordCloudData: [],
       isDirty: false
     };
+    
+    // Make state available globally for Quill integration
+    window.state = state;
     
     // Initialize Cloudinary if available
     let cloudinaryWidget;
@@ -189,6 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
           const formData = new FormData();
           formData.append('image', file);
+          formData.append('csrf_token', window.csrfToken || '');
           
           const response = await fetch('./api/upload.php', {
               method: 'POST',
@@ -252,100 +256,97 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           console.error(`Tab content with ID "${tabName}-tab" not found`);
         }
-        
-        // Handle TinyMCE visibility when switching tabs
-        if (tabName !== 'content') {
-          if (typeof tinymce !== 'undefined' && tinymce.activeEditor) {
-            try {
-              tinymce.activeEditor.hide();
-            } catch (e) {
-              console.log("Error hiding TinyMCE editor", e);
-            }
-          }
-        } else if (tabName === 'content') {
-          if (typeof tinymce !== 'undefined') {
-            try {
-              tinymce.editors.forEach(editor => editor.show());
-            } catch (e) {
-              console.log("Error showing TinyMCE editors", e);
-            }
-          }
-        }
       });
     });
 
-    // TinyMCE Initialization with improved configuration
-    const initTinyMCE = (selector = '.tinymce-editor', inline = false) => {
-      // Remove any existing instances first for this selector
-      if (typeof tinymce !== 'undefined') {
-        tinymce.remove(selector);
-        
-        // Initialize with enhanced features
-        tinymce.init({
-          selector: selector,
-          height: inline ? 300 : 400,
-          menubar: !inline,
-          inline: inline,
-          plugins: [
-            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-            'insertdatetime', 'media', 'table', 'help', 'wordcount'
-          ],
-          toolbar: 'undo redo | formatselect | fontsizeselect | ' +
-            'bold italic backcolor forecolor | alignleft aligncenter ' +
-            'alignright alignjustify | bullist numlist outdent indent | ' +
-            'removeformat | link image | help',
-          content_style: 'body { font-family: "Lato", sans-serif; font-size: 16px; }',
-          font_size_formats: '8pt 10pt 12pt 14pt 16pt 18pt 20pt 24pt 36pt 48pt',
-          formats: {
-            alignleft: { selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li,table,img', classes: 'text-left' },
-            aligncenter: { selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li,table,img', classes: 'text-center' },
-            alignright: { selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li,table,img', classes: 'text-right' },
-            alignjustify: { selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li,table,img', classes: 'text-justify' }
-          },
-          setup: function(editor) {
-            editor.on('init', function() {
-              console.log('TinyMCE initialized for:', selector);
-            });
-            editor.on('change', function() {
-              state.isDirty = true;
-            });
+    // Load content data from Firestore
+    const loadContentData = async (isDraft = true) => {
+      showStatus("Loading content...", false, 0);
+      
+      try {
+        // Use the Firebase Helper
+        window.firebaseHelper.loadContent(`content/${isDraft ? "draft" : "main"}`, (data) => {
+          if (!data) {
+            showStatus("No content found. Please save some content first.", true);
+            return;
           }
+          
+          console.log("Loaded data:", data);
+          
+          // Fill text fields
+          if (elements.aboutTitle) elements.aboutTitle.value = data.aboutTitle || "";
+          if (elements.aboutSubtitle) elements.aboutSubtitle.value = data.aboutSubtitle || "";
+          
+          // Fill Quill editor content (replacing TinyMCE)
+          if (elements.aboutText) {
+            // For Quill - use our integration function
+            if (window.quillEditor && window.quillEditor.setContent) {
+              window.quillEditor.setContent('aboutText_quill', data.aboutText || "");
+            }
+          }
+          
+          // Offerings
+          if (elements.offeringsTitle) elements.offeringsTitle.value = data.offeringsTitle || "";
+          if (elements.offeringsSubtitle) elements.offeringsSubtitle.value = data.offeringsSubtitle || "";
+          
+          // Font size sliders
+          if (elements.offeringsTitleSize && data.offeringsTitleSize) {
+            elements.offeringsTitleSize.value = data.offeringsTitleSize;
+            if (elements.offeringsTitleSizeValue) {
+              elements.offeringsTitleSizeValue.textContent = data.offeringsTitleSize;
+            }
+          }
+          
+          if (elements.offeringsSubtitleSize && data.offeringsSubtitleSize) {
+            elements.offeringsSubtitleSize.value = data.offeringsSubtitleSize;
+            if (elements.offeringsSubtitleSizeValue) {
+              elements.offeringsSubtitleSizeValue.textContent = data.offeringsSubtitleSize;
+            }
+          }
+          
+          // Offerings titles
+          if (elements.offer1Title) elements.offer1Title.value = data.offer1Title || "";
+          if (elements.offer2Title) elements.offer2Title.value = data.offer2Title || "";
+          if (elements.offer3Title) elements.offer3Title.value = data.offer3Title || "";
+          
+          // Offerings descriptions - Quill editors
+          if (window.quillEditor && window.quillEditor.setContent) {
+            window.quillEditor.setContent('offer1Desc_quill', data.offer1Desc || "");
+            window.quillEditor.setContent('offer2Desc_quill', data.offer2Desc || "");
+            window.quillEditor.setContent('offer3Desc_quill', data.offer3Desc || "");
+          }
+          
+          // Contact
+          if (elements.contactTitle) elements.contactTitle.value = data.contactTitle || "";
+          if (elements.contactSubtitle) elements.contactSubtitle.value = data.contactSubtitle || "";
+          
+          if (elements.contactTitleSize && data.contactTitleSize) {
+            elements.contactTitleSize.value = data.contactTitleSize;
+            if (elements.contactTitleSizeValue) {
+              elements.contactTitleSizeValue.textContent = data.contactTitleSize;
+            }
+          }
+          
+          if (elements.contactSubtitleSize && data.contactSubtitleSize) {
+            elements.contactSubtitleSize.value = data.contactSubtitleSize;
+            if (elements.contactSubtitleSizeValue) {
+              elements.contactSubtitleSizeValue.textContent = data.contactSubtitleSize;
+            }
+          }
+          
+          // Update images
+          updateImagePreviews(data);
+          
+          // Reset dirty flag
+          state.isDirty = false;
+          
+          showStatus("Content loaded successfully");
         });
+      } catch (err) {
+        console.error("Error loading data:", err);
+        showStatus("Error loading data: " + err.message, true);
       }
     };
-
-    // Ersetze die loadContentData-Funktion
-const loadContentData = async (isDraft = true) => {
-  showStatus("Loading content...", false, 0);
-  
-  try {
-    // Benutze den Firebase Helper
-    window.firebaseHelper.loadContent(`content/${isDraft ? "draft" : "main"}`, (data) => {
-      if (!data) {
-        showStatus("No content found. Please save some content first.", true);
-        return;
-      }
-      
-      console.log("Loaded data:", data);
-      
-      // Fill text fields
-      if (elements.aboutTitle) elements.aboutTitle.value = data.aboutTitle || "";
-      if (elements.aboutSubtitle) elements.aboutSubtitle.value = data.aboutSubtitle || "";
-      
-      // Der Rest deiner Funktion bleibt gleich...
-      // ...
-      
-      // Reset dirty flag
-      state.isDirty = false;
-      
-      showStatus("Content loaded successfully");
-    });
-  } catch (err) {
-    console.error("Error loading data:", err);
-    showStatus("Error loading data: " + err.message, true);
-  }
-};
     
     // Update image previews based on loaded data
     const updateImagePreviews = (data) => {
@@ -565,52 +566,87 @@ const loadContentData = async (isDraft = true) => {
       });
     }
 
+    // Save content - using Quill editor instead of TinyMCE
     const saveContent = async (isPublish = false) => {
-  try {
-    showStatus(isPublish ? "Publishing content..." : "Saving draft...", false, 0);
-    
-    // Sammle Daten aus dem Formular...
-    // (Dein bestehender Code zum Sammeln der Daten bleibt unverändert)
-       const csrfToken = window.csrfToken || document.getElementById('csrfToken')?.value;
-    if (csrfToken) {
-      contentData.csrf_token = csrfToken;
-    }
-    console.log("Saving content:", contentData);
-    
-    // Speichere mit Firebase Helper
-    window.firebaseHelper.saveContent("content/draft", contentData, true, (success, error) => {
-      if (success) {
-        if (isPublish) {
-          // Kopiere nach "main", wenn veröffentlicht werden soll
-          window.firebaseHelper.saveContent("content/main", contentData, true, (success, error) => {
-            if (success) {
-              showStatus("Changes successfully published! 🚀");
+      try {
+        showStatus(isPublish ? "Publishing content..." : "Saving draft...", false, 0);
+        
+        // Collect data from the form
+        const contentData = {
+          aboutTitle: elements.aboutTitle ? elements.aboutTitle.value : "",
+          aboutSubtitle: elements.aboutSubtitle ? elements.aboutSubtitle.value : "",
+          // Get content from Quill
+          aboutText: window.quillEditor ? window.quillEditor.getContent('aboutText_quill') : (elements.aboutText ? elements.aboutText.value : ""),
+          
+          offeringsTitle: elements.offeringsTitle ? elements.offeringsTitle.value : "",
+          offeringsSubtitle: elements.offeringsSubtitle ? elements.offeringsSubtitle.value : "",
+          offeringsTitleSize: elements.offeringsTitleSize ? elements.offeringsTitleSize.value : 2.5,
+          offeringsSubtitleSize: elements.offeringsSubtitleSize ? elements.offeringsSubtitleSize.value : 1.2,
+          
+          offer1Title: elements.offer1Title ? elements.offer1Title.value : "",
+          offer1Desc: window.quillEditor ? window.quillEditor.getContent('offer1Desc_quill') : (elements.offer1Desc ? elements.offer1Desc.value : ""),
+          offer1_image: state.imageData.offer1_image,
+          
+          offer2Title: elements.offer2Title ? elements.offer2Title.value : "",
+          offer2Desc: window.quillEditor ? window.quillEditor.getContent('offer2Desc_quill') : (elements.offer2Desc ? elements.offer2Desc.value : ""),
+          offer2_image: state.imageData.offer2_image,
+          
+          offer3Title: elements.offer3Title ? elements.offer3Title.value : "",
+          offer3Desc: window.quillEditor ? window.quillEditor.getContent('offer3Desc_quill') : (elements.offer3Desc ? elements.offer3Desc.value : ""),
+          offer3_image: state.imageData.offer3_image,
+          
+          contactTitle: elements.contactTitle ? elements.contactTitle.value : "",
+          contactSubtitle: elements.contactSubtitle ? elements.contactSubtitle.value : "",
+          contactTitleSize: elements.contactTitleSize ? elements.contactTitleSize.value : 2.5,
+          contactSubtitleSize: elements.contactSubtitleSize ? elements.contactSubtitleSize.value : 1.2,
+          contact_image: state.imageData.contact_image,
+          
+          // Add timestamp
+          lastUpdated: new Date().toISOString()
+        };
+        
+        // Add CSRF token if available
+        const csrfToken = window.csrfToken || document.getElementById('csrfToken')?.value;
+        if (csrfToken) {
+          contentData.csrf_token = csrfToken;
+        }
+        
+        console.log("Saving content:", contentData);
+        
+        // Save with Firebase Helper
+        window.firebaseHelper.saveContent("content/draft", contentData, true, (success, error) => {
+          if (success) {
+            if (isPublish) {
+              // Copy to "main" when publishing
+              window.firebaseHelper.saveContent("content/main", contentData, true, (success, error) => {
+                if (success) {
+                  showStatus("Changes successfully published! 🚀");
+                } else {
+                  console.error("Error publishing:", error);
+                  showStatus(`Error publishing: ${error.message}`, true);
+                }
+              });
             } else {
-              console.error("Error publishing:", error);
-              showStatus(`Error publishing: ${error.message}`, true);
+              showStatus("Draft successfully saved! 💾");
             }
-          });
-        } else {
-          showStatus("Draft successfully saved! 💾");
-        }
-        
-        // Reset dirty flag
-        state.isDirty = false;
-        
-        // Refresh preview if visible
-        if (document.getElementById('preview-tab').classList.contains('active')) {
-          refreshPreview();
-        }
-      } else {
-        console.error("Error saving:", error);
-        showStatus(`Error saving: ${error.message}`, true);
+            
+            // Reset dirty flag
+            state.isDirty = false;
+            
+            // Refresh preview if visible
+            if (document.getElementById('preview-tab').classList.contains('active')) {
+              refreshPreview();
+            }
+          } else {
+            console.error("Error saving:", error);
+            showStatus(`Error saving: ${error.message}`, true);
+          }
+        });
+      } catch (err) {
+        console.error("Error saving:", err);
+        showStatus(`Error ${isPublish ? 'publishing' : 'saving'}: ${err.message}`, true);
       }
-    });
-  } catch (err) {
-    console.error("Error saving:", err);
-    showStatus(`Error ${isPublish ? 'publishing' : 'saving'}: ${err.message}`, true);
-  }
-};
+    };
     
     // Set up image upload handlers
     const setupImageUploads = () => {
@@ -761,14 +797,7 @@ const loadContentData = async (isDraft = true) => {
         }
       });
       
-      // Track TinyMCE changes
-      if (typeof tinymce !== 'undefined') {
-        tinymce.on('AddEditor', function(e) {
-          e.editor.on('change', function() {
-            state.isDirty = true;
-          });
-        });
-      }
+      // Quill editor change tracking is handled in the Quill initialization
       
       // Warn about unsaved changes
       window.addEventListener('beforeunload', function(e) {
@@ -789,84 +818,79 @@ const loadContentData = async (isDraft = true) => {
         if (elements.loginDiv) elements.loginDiv.style.display = 'none';
         if (elements.adminDiv) elements.adminDiv.style.display = 'block';
         
-        // Initialize TinyMCE
-        initTinyMCE();
+        // Initialize Quill editors (replacing TinyMCE)
+        if (window.quillEditor && window.quillEditor.convertTextareas) {
+          window.quillEditor.convertTextareas();
+        }
         
-        // Wait for TinyMCE to initialize
-        setTimeout(() => {
-          // Load content
-          loadContentData();
-          
-          // Load word cloud
-          loadWordCloudData();
-          
-          // Setup image uploads
-          setupImageUploads();
-          
-          // Setup size sliders
-          setupSizeSliders();
-          
-          // Setup preview controls
-          setupPreviewControls();
-          
-          // Setup save buttons
-          setupSaveButtons();
-          
-          // Setup change tracking
-          setupChangeTracking();
-        }, 1000);
+        // Load content
+        loadContentData();
+        
+        // Load word cloud
+        loadWordCloudData();
+        
+        // Setup image uploads
+        setupImageUploads();
+        
+        // Setup size sliders
+        setupSizeSliders();
+        
+        // Setup preview controls
+        setupPreviewControls();
+        
+        // Setup save buttons
+        setupSaveButtons();
+        
+        // Setup change tracking
+        setupChangeTracking();
       } else {
         // User is not logged in
         console.log("User not logged in");
         
         if (elements.adminDiv) elements.adminDiv.style.display = 'none';
         if (elements.loginDiv) elements.loginDiv.style.display = 'block';
-        
-        // Clean up TinyMCE
-        if (typeof tinymce !== 'undefined') {
-          tinymce.remove();
-        }
       }
     });
 
     // Login button event
     if (elements.loginBtn) {
-  elements.loginBtn.addEventListener('click', () => {
-    if (!elements.emailField || !elements.passField) {
-      console.error("Email or password field not found");
-      return;
+      elements.loginBtn.addEventListener('click', () => {
+        if (!elements.emailField || !elements.passField) {
+          console.error("Email or password field not found");
+          return;
+        }
+        
+        const email = elements.emailField.value.trim();
+        const pass = elements.passField.value;
+        
+        if (!email || !pass) {
+          if (elements.loginError) elements.loginError.textContent = "Please enter email and password";
+          return;
+        }
+        
+        console.log("Login attempt with:", email);
+        if (elements.loginError) elements.loginError.textContent = "";
+        
+        // Make sure we're using the correct auth method
+        if (firebase && firebase.auth) {
+          firebase.auth().signInWithEmailAndPassword(email, pass)
+            .then(userCredential => {
+              console.log("Login successful:", userCredential.user.email);
+              // Explicitly update UI
+              if (elements.loginDiv) elements.loginDiv.style.display = 'none';
+              if (elements.adminDiv) elements.adminDiv.style.display = 'block';
+            })
+            .catch(err => {
+              console.error("Login error:", err);
+              if (elements.loginError) elements.loginError.textContent = "Login failed: " + err.message;
+            });
+        } else {
+          console.error("Firebase auth not available");
+          if (elements.loginError) elements.loginError.textContent = "Firebase authentication not available";
+        }
+      });
     }
     
-    const email = elements.emailField.value.trim();
-    const pass = elements.passField.value;
-    
-    if (!email || !pass) {
-      if (elements.loginError) elements.loginError.textContent = "Please enter email and password";
-      return;
-    }
-    
-    console.log("Login attempt with:", email);
-    if (elements.loginError) elements.loginError.textContent = "";
-    
-    // Make sure we're using the correct auth method
-    if (firebase && firebase.auth) {
-      firebase.auth().signInWithEmailAndPassword(email, pass)
-        .then(userCredential => {
-          console.log("Login successful:", userCredential.user.email);
-          // Explicitly update UI
-          if (elements.loginDiv) elements.loginDiv.style.display = 'none';
-          if (elements.adminDiv) elements.adminDiv.style.display = 'block';
-        })
-        .catch(err => {
-          console.error("Login error:", err);
-          if (elements.loginError) elements.loginError.textContent = "Login failed: " + err.message;
-        });
-    } else {
-      console.error("Firebase auth not available");
-      if (elements.loginError) elements.loginError.textContent = "Firebase authentication not available";
-    }
-  });
-}
     // Login with Enter key
     if (elements.passField) {
       elements.passField.addEventListener('keyup', (e) => {
@@ -902,19 +926,6 @@ const loadContentData = async (isDraft = true) => {
           handle: '.draggable-handle',
           animation: 150
         });
-      } else {
-        // Load Sortable.js dynamically if not available
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js';
-        script.onload = () => {
-          if (elements.wordCloudContainer) {
-            Sortable.create(elements.wordCloudContainer, {
-              handle: '.draggable-handle',
-              animation: 150
-            });
-          }
-        };
-        document.head.appendChild(script);
       }
     };
 
