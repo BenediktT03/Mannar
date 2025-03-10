@@ -880,7 +880,7 @@ const PageEditor = (function() {
         console.error('Error deleting page:', error);
         showStatus('Error deleting page: ' + error.message, true);
       });
-  } Private variables
+  } //Private variables
   let db;
   let currentEditingPage = null;
   let isEditingMainContent = false; // Flag to indicate editing main content
@@ -3177,4 +3177,4 @@ const PageEditor = (function() {
     }
   }
 
-  //
+ })(); 
