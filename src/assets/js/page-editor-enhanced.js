@@ -1,16 +1,891 @@
 /**
  * Enhanced Page Editor (page-editor-enhanced.js)
  * 
- * A complete rewrite of the page editing functionality that fixes the "No Page Currently edited" bug
- * and implements template selection, live preview, and enhanced editing capabilities.
+ * Integrated version that handles both regular pages and the main content (index.php)
  */
 
 // Use module pattern to avoid global scope pollution
 const PageEditor = (function() {
-  // Private variables
+  // Update the live preview
+  function updatePreview() {
+    if (!elements.livePreview || (!currentEditingPage && !isEditingMainContent)) return;
+    
+    // Get form data
+    const formData = getFormData();
+    
+    // Create preview HTML
+    let previewHtml;
+    
+    if (isEditingMainContent) {
+      // For main content, create a simplified home page preview
+      previewHtml = generateMainContentPreview(formData);
+    } else {
+      // For regular pages, generate preview based on template
+      const pageData = pageCache[currentEditingPage];
+      if (!pageData) return;
+      
+      previewHtml = generatePreviewHtml(pageData.template, formData);
+    }
+    
+    // Update preview container
+    elements.livePreview.innerHTML = previewHtml;
+  }
+
+  // Generate preview HTML for main content
+  function generateMainContentPreview(data) {
+    // Create preview CSS
+    const previewCSS = `
+      <style>
+        .preview-container {
+          font-family: 'Lato', sans-serif;
+          color: #333;
+          padding: 15px;
+        }
+        .preview-section {
+          margin-bottom: 20px;
+          padding: 15px;
+          border: 1px dashed #ccc;
+          border-radius: 4px;
+        }
+        .preview-section-title {
+          margin-top: 0;
+          padding-bottom: 5px;
+          border-bottom: 1px solid #eee;
+          font-weight: bold;
+          color: #555;
+        }
+        .preview-content img {
+          max-width: 100%;
+          height: auto;
+        }
+      </style>
+    `;
+    
+    // Create preview HTML
+    return `
+      <div class="preview-container">
+        ${previewCSS}
+        
+        <!-- About section preview -->
+        <div class="preview-section">
+          <h4 class="preview-section-title">About Section</h4>
+          <div class="preview-content">
+            <h2>${data.aboutTitle || 'About Title'}</h2>
+            <h3>${data.aboutSubtitle || 'About Subtitle'}</h3>
+            <div>${data.aboutText || ''}</div>
+          </div>
+        </div>
+        
+        <!-- Offerings section preview -->
+        <div class="preview-section">
+          <h4 class="preview-section-title">Offerings Section</h4>
+          <div class="preview-content">
+            <h2>${data.offeringsTitle || 'Offerings Title'}</h2>
+            <h3>${data.offeringsSubtitle || 'Offerings Subtitle'}</h3>
+            
+            <div class="w3-row">
+              <!-- Offering 1 -->
+              <div class="w3-col s12 m4 w3-padding">
+                <h4>${data.offer1Title || 'Offering 1'}</h4>
+                ${data.offer1_image && data.offer1_image.url ? 
+                  `<img src="${data.offer1_image.url}" alt="${data.offer1_image.alt || 'Offering 1'}" style="width:100%">` : 
+                  '<div style="height:100px;background:#eee;text-align:center;line-height:100px;">Image</div>'}
+                <div>${data.offer1Desc || ''}</div>
+              </div>
+              
+              <!-- Offering 2 -->
+              <div class="w3-col s12 m4 w3-padding">
+                <h4>${data.offer2Title || 'Offering 2'}</h4>
+                ${data.offer2_image && data.offer2_image.url ? 
+                  `<img src="${data.offer2_image.url}" alt="${data.offer2_image.alt || 'Offering 2'}" style="width:100%">` : 
+                  '<div style="height:100px;background:#eee;text-align:center;line-height:100px;">Image</div>'}
+                <div>${data.offer2Desc || ''}</div>
+              </div>
+              
+              <!-- Offering 3 -->
+              <div class="w3-col s12 m4 w3-padding">
+                <h4>${data.offer3Title || 'Offering 3'}</h4>
+                ${data.offer3_image && data.offer3_image.url ? 
+                  `<img src="${data.offer3_image.url}" alt="${data.offer3_image.alt || 'Offering 3'}" style="width:100%">` : 
+                  '<div style="height:100px;background:#eee;text-align:center;line-height:100px;">Image</div>'}
+                <div>${data.offer3Desc || ''}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Contact section preview -->
+        <div class="preview-section">
+          <h4 class="preview-section-title">Contact Section</h4>
+          <div class="preview-content">
+            <h2>${data.contactTitle || 'Contact Title'}</h2>
+            <h3>${data.contactSubtitle || 'Contact Subtitle'}</h3>
+            ${data.contact_image && data.contact_image.url ? 
+              `<img src="${data.contact_image.url}" alt="${data.contact_image.alt || 'Contact'}" style="max-width:300px">` : 
+              '<div style="height:100px;width:300px;background:#eee;text-align:center;line-height:100px;">Contact Image</div>'}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Generate preview HTML based on template and data
+  function generatePreviewHtml(templateId, data) {
+    if (!templates[templateId]) return '<div class="w3-panel w3-pale-red">Invalid template</div>';
+    
+    // Get page title from page title field
+    const pageTitle = elements.pageTitle ? elements.pageTitle.value : '';
+    
+    // Generate CSS for preview
+    const previewCss = `
+      <style>
+        .preview-container {
+          font-family: 'Lato', sans-serif;
+          color: #333;
+          padding: 15px;
+        }
+        .preview-title {
+          font-size: 2em;
+          color: #2980b9;
+          margin-bottom: 10px;
+        }
+        .preview-subtitle {
+          font-size: 1.2em;
+          color: #555;
+          margin-bottom: 20px;
+        }
+        .preview-content {
+          line-height: 1.6;
+        }
+        .preview-image {
+          max-width: 100%;
+          height: auto;
+          display: block;
+          margin: 15px 0;
+        }
+        .preview-gallery {
+          display: flex;
+          flex-wrap: wrap;
+          margin: 0 -5px;
+        }
+        .preview-gallery-item {
+          width: 33.33%;
+          padding: 5px;
+          box-sizing: border-box;
+        }
+        .preview-gallery-item img {
+          width: 100%;
+          height: auto;
+          display: block;
+        }
+        .preview-features {
+          display: flex;
+          flex-wrap: wrap;
+          margin: 0 -10px;
+        }
+        .preview-feature {
+          width: 33.33%;
+          padding: 10px;
+          box-sizing: border-box;
+        }
+        .preview-cta {
+          background-color: #2c3e50;
+          color: white;
+          padding: 15px;
+          text-align: center;
+          margin-top: 20px;
+        }
+        .preview-button {
+          display: inline-block;
+          background-color: #3498db;
+          color: white;
+          padding: 10px 20px;
+          text-decoration: none;
+          font-weight: bold;
+          border-radius: 4px;
+        }
+        .preview-contact-info {
+          margin: 20px 0;
+        }
+        .preview-form {
+          background-color: #f9f9f9;
+          padding: 15px;
+          border-radius: 4px;
+        }
+      </style>
+    `;
+    
+    // Generate template-specific HTML
+    let templateHtml = '';
+    
+    switch (templateId) {
+      case 'basic':
+        templateHtml = `
+          <div class="preview-container">
+            ${previewCss}
+            <h1 class="preview-title">${data.title || pageTitle}</h1>
+            ${data.subtitle ? `<h2 class="preview-subtitle">${data.subtitle}</h2>` : ''}
+            <div class="preview-content">${data.content || ''}</div>
+          </div>
+        `;
+        break;
+        
+      case 'text-image':
+        templateHtml = `
+          <div class="preview-container">
+            ${previewCss}
+            <h1 class="preview-title">${data.title || pageTitle}</h1>
+            ${data.subtitle ? `<h2 class="preview-subtitle">${data.subtitle}</h2>` : ''}
+            <div class="w3-row">
+              <div class="w3-col m8">
+                <div class="preview-content">${data.content || ''}</div>
+              </div>
+              <div class="w3-col m4">
+                ${data.featuredImage && data.featuredImage.url ? 
+                  `<img src="${data.featuredImage.url}" alt="${data.featuredImage.alt || ''}" class="preview-image">` : 
+                  '<div class="w3-pale-blue w3-padding w3-center">Featured Image Placeholder</div>'
+                }
+              </div>
+            </div>
+          </div>
+        `;
+        break;
+        
+      case 'image-text':
+        templateHtml = `
+          <div class="preview-container">
+            ${previewCss}
+            <h1 class="preview-title">${data.title || pageTitle}</h1>
+            ${data.subtitle ? `<h2 class="preview-subtitle">${data.subtitle}</h2>` : ''}
+            <div class="w3-row">
+              <div class="w3-col m4">
+                ${data.featuredImage && data.featuredImage.url ? 
+                  `<img src="${data.featuredImage.url}" alt="${data.featuredImage.alt || ''}" class="preview-image">` : 
+                  '<div class="w3-pale-blue w3-padding w3-center">Featured Image Placeholder</div>'
+                }
+              </div>
+              <div class="w3-col m8">
+                <div class="preview-content">${data.content || ''}</div>
+              </div>
+            </div>
+          </div>
+        `;
+        break;
+        
+      case 'gallery':
+       // Generate gallery items HTML
+        let galleryItemsHtml = '';
+        if (data.images && Array.isArray(data.images) && data.images.length > 0) {
+          data.images.forEach(image => {
+            if (image && image.url) {
+              galleryItemsHtml += `
+                <div class="preview-gallery-item">
+                  <img src="${image.url}" alt="${image.alt || ''}" class="w3-image">
+                  ${image.caption ? `<div class="w3-padding-small w3-light-grey">${image.caption}</div>` : ''}
+                </div>
+              `;
+            }
+          });
+        }
+        
+        templateHtml = `
+          <div class="preview-container">
+            ${previewCss}
+            <h1 class="preview-title">${data.title || pageTitle}</h1>
+            ${data.subtitle ? `<h2 class="preview-subtitle">${data.subtitle}</h2>` : ''}
+            <div class="preview-content">${data.description || ''}</div>
+            <div class="preview-gallery">
+              ${galleryItemsHtml || '<div class="w3-pale-blue w3-padding w3-center w3-col s12">No gallery images added</div>'}
+            </div>
+          </div>
+        `;
+        break;
+        
+      case 'landing':
+        // Generate features HTML
+        let featuresHtml = '';
+        if (data.features && Array.isArray(data.features) && data.features.length > 0) {
+          data.features.forEach(feature => {
+            if (feature) {
+              featuresHtml += `
+                <div class="preview-feature">
+                  <div class="w3-card w3-padding">
+                    ${feature.icon && feature.icon.url ? 
+                      `<img src="${feature.icon.url}" alt="${feature.icon.alt || ''}" style="width:64px; height:64px; margin:0 auto; display:block;">` : 
+                      '<div class="w3-circle w3-light-grey w3-padding w3-center" style="width:64px; height:64px; margin:0 auto; display:flex; align-items:center; justify-content:center;"><i class="fas fa-star"></i></div>'
+                    }
+                    <h3 class="w3-center">${feature.title || 'Feature Title'}</h3>
+                    <p>${feature.description || 'Feature description goes here.'}</p>
+                  </div>
+                </div>
+              `;
+            }
+          });
+        }
+        
+        templateHtml = `
+          <div class="preview-container">
+            ${previewCss}
+            <div class="w3-padding-32 w3-center" style="background-color: #3498db; color: white;">
+              <h1 class="preview-title" style="color: white;">${data.title || pageTitle}</h1>
+              ${data.subtitle ? `<h2 class="preview-subtitle" style="color: white;">${data.subtitle}</h2>` : ''}
+              ${data.heroImage && data.heroImage.url ? 
+                `<img src="${data.heroImage.url}" alt="${data.heroImage.alt || ''}" class="preview-image" style="margin: 20px auto;">` : 
+                '<div class="w3-pale-blue w3-padding w3-center" style="margin: 20px auto; max-width: 80%;">Hero Image Placeholder</div>'
+              }
+            </div>
+            
+            ${data.featuresTitle ? `<h2 class="w3-center" style="margin: 30px 0;">${data.featuresTitle}</h2>` : ''}
+            <div class="preview-features">
+              ${featuresHtml || '<div class="w3-pale-blue w3-padding w3-center w3-col s12">No features added</div>'}
+            </div>
+            
+            <div class="preview-cta">
+              <h2>${data.ctaText || 'Call to Action'}</h2>
+              <a href="${data.ctaButtonLink || '#'}" class="preview-button">${data.ctaButtonText || 'Learn More'}</a>
+            </div>
+          </div>
+        `;
+        break;
+        
+      case 'portfolio':
+        // Generate projects HTML
+        let projectsHtml = '';
+        if (data.projects && Array.isArray(data.projects) && data.projects.length > 0) {
+          data.projects.forEach(project => {
+            if (project) {
+              projectsHtml += `
+                <div class="w3-col m6 l4 w3-padding">
+                  <div class="w3-card portfolio-item">
+                    ${project.thumbnail && project.thumbnail.url ? 
+                      `<img src="${project.thumbnail.url}" alt="${project.title || 'Project'}" class="w3-image" style="width:100%">` : 
+                      '<div class="w3-pale-blue w3-padding-32 w3-center"><i class="fas fa-image"></i><p>Project Image</p></div>'
+                    }
+                    <div class="w3-container">
+                      <h3>${project.title || 'Project Title'}</h3>
+                      <p>${project.description || ''}</p>
+                      ${project.link ? `<a href="${project.link}" class="w3-button w3-margin-bottom">More Info</a>` : ''}
+                    </div>
+                  </div>
+                </div>
+              `;
+            }
+          });
+        } else {
+          projectsHtml = '<div class="w3-panel w3-pale-yellow w3-center">No projects defined</div>';
+        }
+        
+        templateHtml = `
+          <div class="preview-container">
+            ${previewCss}
+            <h1 class="preview-title">${data.title || pageTitle}</h1>
+            ${data.subtitle ? `<h2 class="preview-subtitle">${data.subtitle}</h2>` : ''}
+            <div class="preview-content">${data.introduction || ''}</div>
+            <div class="w3-row">
+              ${projectsHtml}
+            </div>
+          </div>
+        `;
+        break;
+        
+      case 'contact':
+        templateHtml = `
+          <div class="preview-container">
+            ${previewCss}
+            <h1 class="preview-title">${data.title || pageTitle}</h1>
+            ${data.subtitle ? `<h2 class="preview-subtitle">${data.subtitle}</h2>` : ''}
+            <div class="preview-content">${data.introduction || ''}</div>
+            
+            <div class="w3-row">
+              ${data.contactImage && data.contactImage.url ? 
+                `<div class="w3-col m4">
+                  <img src="${data.contactImage.url}" alt="${data.contactImage.alt || 'Contact'}" class="preview-image w3-round">
+                </div>` : 
+                ''
+              }
+              
+              <div class="w3-col ${data.contactImage && data.contactImage.url ? 'm8' : 's12'}">
+                <div class="w3-large">
+                  ${data.address ? `<p><i class="fas fa-map-marker-alt fa-fw"></i> ${data.address}</p>` : ''}
+                  ${data.email ? `<p><i class="fas fa-envelope fa-fw"></i> ${data.email}</p>` : ''}
+                  ${data.phone ? `<p><i class="fas fa-phone fa-fw"></i> ${data.phone}</p>` : ''}
+                </div>
+                
+                ${data.showForm ? 
+                  `<div class="preview-form w3-margin-top">
+                    <h3>Contact Form</h3>
+                    <div class="w3-row-padding">
+                      <div class="w3-half w3-margin-bottom">
+                        <input class="w3-input w3-border" type="text" placeholder="Name" disabled>
+                      </div>
+                      <div class="w3-half w3-margin-bottom">
+                        <input class="w3-input w3-border" type="text" placeholder="Email" disabled>
+                      </div>
+                    </div>
+                    <textarea class="w3-input w3-border w3-margin-bottom" placeholder="Message" disabled></textarea>
+                    <button class="preview-button" disabled>Send Message</button>
+                  </div>` : 
+                  ''
+                }
+              </div>
+            </div>
+          </div>
+        `;
+        break;
+        
+      case 'blog':
+        // Format categories
+        let categoriesHtml = '';
+        if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
+          categoriesHtml = `
+            <div class="w3-section">
+              <i class="fas fa-tags"></i> 
+              ${data.categories.map(cat => `<span class="w3-tag w3-small w3-margin-right">${cat}</span>`).join('')}
+            </div>
+          `;
+        }
+        
+        templateHtml = `
+          <div class="preview-container">
+            ${previewCss}
+            <h1 class="preview-title">${data.title || pageTitle}</h1>
+            ${data.subtitle ? `<h2 class="preview-subtitle">${data.subtitle}</h2>` : ''}
+            
+            <div class="w3-bar w3-light-grey w3-padding-small">
+              ${data.date ? `<span class="w3-bar-item"><i class="far fa-calendar-alt"></i> ${data.date}</span>` : ''}
+              ${data.author ? `<span class="w3-bar-item"><i class="far fa-user"></i> ${data.author}</span>` : ''}
+            </div>
+            
+            ${categoriesHtml}
+            
+            ${data.featuredImage && data.featuredImage.url ? 
+              `<img src="${data.featuredImage.url}" alt="${data.featuredImage.alt || data.title || 'Blog Post'}" class="preview-image">` : 
+              '<div class="w3-pale-blue w3-padding w3-center" style="height: 200px;">Featured Image Placeholder</div>'
+            }
+            
+            ${data.excerpt ? 
+              `<div class="w3-panel w3-pale-blue w3-leftbar w3-border-blue">
+                <p><em>${data.excerpt}</em></p>
+              </div>` : 
+              ''
+            }
+            
+            <div class="preview-content">${data.content || ''}</div>
+          </div>
+        `;
+        break;
+        
+      default:
+        templateHtml = `
+          <div class="preview-container">
+            ${previewCss}
+            <div class="w3-panel w3-pale-red">
+              <h3>Invalid Template</h3>
+              <p>The selected template "${templateId}" is not supported.</p>
+            </div>
+          </div>
+        `;
+    }
+    
+    return templateHtml;
+  }
+
+  // Get form data
+  function getFormData() {
+    // Collect form data from all fields including Quill editors
+    const formData = {};
+    
+    // Process all field containers
+    const fieldContainers = elements.templateFields.querySelectorAll('.field-container');
+    fieldContainers.forEach(container => {
+      const fieldName = container.dataset.fieldName;
+      const fieldType = container.dataset.fieldType;
+      
+      if (!fieldName || !fieldType) return;
+      
+      switch (fieldType) {
+        case 'text':
+          // Check if it's a Quill editor or standard text input
+          const quillContainer = container.querySelector(`#field_${fieldName}_quill`);
+          if (quillContainer) {
+            // Get content from Quill editor
+            const hiddenInput = document.getElementById(`field_${fieldName}`);
+            if (hiddenInput) {
+              formData[fieldName] = hiddenInput.value;
+            }
+          } else {
+            // Standard text input
+            const input = document.getElementById(`field_${fieldName}`);
+            if (input) {
+              formData[fieldName] = input.value;
+            }
+          }
+          break;
+          
+        case 'textarea':
+          // Check if it's a Quill editor or standard textarea
+          const editorContainer = container.querySelector(`#field_${fieldName}_quill`);
+          if (editorContainer) {
+            // Get content from Quill editor
+            const hiddenInput = document.getElementById(`field_${fieldName}`);
+            if (hiddenInput) {
+              formData[fieldName] = hiddenInput.value;
+            }
+          } else {
+            // Standard textarea
+            const textarea = document.getElementById(`field_${fieldName}`);
+            if (textarea) {
+              formData[fieldName] = textarea.value;
+            }
+          }
+          break;
+          
+        case 'checkbox':
+          const checkbox = document.getElementById(`field_${fieldName}`);
+          if (checkbox) {
+            formData[fieldName] = checkbox.checked;
+          }
+          break;
+          
+        case 'image':
+          const imageInput = document.getElementById(`field_${fieldName}`);
+          if (imageInput) {
+            try {
+              formData[fieldName] = JSON.parse(imageInput.value);
+            } catch (error) {
+              console.error('Error parsing image data:', error);
+              formData[fieldName] = { url: '', alt: '' };
+            }
+          }
+          break;
+          
+        case 'gallery':
+          const galleryInput = document.getElementById(`field_${fieldName}`);
+          if (galleryInput) {
+            try {
+              formData[fieldName] = JSON.parse(galleryInput.value);
+            } catch (error) {
+              console.error('Error parsing gallery data:', error);
+              formData[fieldName] = [];
+            }
+          }
+          break;
+          
+        case 'date':
+          const dateInput = document.getElementById(`field_${fieldName}`);
+          if (dateInput) {
+            formData[fieldName] = dateInput.value;
+          }
+          break;
+          
+        case 'tags':
+          const tagsInput = document.getElementById(`field_${fieldName}`);
+          if (tagsInput) {
+            formData[fieldName] = tagsInput.value.split(',').map(tag => tag.trim()).filter(tag => tag);
+          }
+          break;
+          
+        case 'repeater':
+          const repeaterInput = document.getElementById(`field_${fieldName}`);
+          if (repeaterInput) {
+            try {
+              formData[fieldName] = JSON.parse(repeaterInput.value);
+            } catch (error) {
+              console.error('Error parsing repeater data:', error);
+              formData[fieldName] = [];
+            }
+          }
+          break;
+      }
+    });
+    
+    return formData;
+  }
+
+  // Open page preview in a new tab
+  function openPagePreview() {
+    if (!currentEditingPage && !isEditingMainContent) {
+      showStatus('No page currently being edited', true);
+      return;
+    }
+    
+    // Check if there are unsaved changes
+    if (isDirty) {
+      if (!confirm('You have unsaved changes. Save before previewing?')) {
+        // If main content
+        if (isEditingMainContent) {
+          window.open('index.php', '_blank');
+        } else {
+          // Regular page
+          window.open(`page.php?id=${currentEditingPage}`, '_blank');
+        }
+        return;
+      }
+      
+      // Save first, then open preview
+      savePage(true);
+    } else {
+      // No unsaved changes, just open preview
+      if (isEditingMainContent) {
+        window.open('index.php', '_blank');
+      } else {
+        window.open(`page.php?id=${currentEditingPage}`, '_blank');
+      }
+    }
+  }
+
+  // Close the editor and return to the welcome screen
+  function closeEditor() {
+    // Check for unsaved changes
+    if (isDirty) {
+      if (!confirm('You have unsaved changes. Are you sure you want to close the editor?')) {
+        return;
+      }
+    }
+    
+    // Reset current editing page and flags
+    currentEditingPage = null;
+    isEditingMainContent = false;
+    
+    // Hide editor and show welcome screen
+    if (elements.pageEditorContainer) {
+      elements.pageEditorContainer.style.display = 'none';
+    }
+    
+    if (elements.pageWelcomeContainer) {
+      elements.pageWelcomeContainer.style.display = 'block';
+    }
+    
+    // Enable template selector (it might have been disabled for main content)
+    if (elements.templateSelector) {
+      elements.templateSelector.disabled = false;
+    }
+  }
+
+  // Save the current page
+  function savePage(openPreviewAfterSave = false) {
+    if (!db) {
+      showStatus('No database connection', true);
+      return;
+    }
+    
+    if (!currentEditingPage && !isEditingMainContent) {
+      showStatus('No page currently being edited', true);
+      return;
+    }
+    
+    // Show loading status
+    showStatus('Saving...', false, 0);
+    
+    // Get form data
+    const formData = getFormData();
+    
+    if (isEditingMainContent) {
+      // Save main content
+      saveMainContent(formData, openPreviewAfterSave);
+    } else {
+      // Save regular page
+      saveRegularPage(formData, openPreviewAfterSave);
+    }
+  }
+
+  // Save main content
+  function saveMainContent(formData, openPreviewAfterSave) {
+    const pageTitle = elements.pageTitle ? elements.pageTitle.value : 'Homepage';
+    
+    // Add timestamp
+    const contentData = {
+      ...formData,
+      lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    
+    // Save to draft
+    db.collection('content').doc('draft').set(contentData, { merge: true })
+      .then(() => {
+        console.log('Main content draft saved successfully');
+        
+        // Update cache
+        mainContentCache = { ...contentData };
+        
+        // Reset dirty flag
+        isDirty = false;
+        
+        // Show status
+        showStatus('Draft saved successfully!');
+        
+        // Open preview if requested
+        if (openPreviewAfterSave) {
+          window.open('index.php', '_blank');
+        }
+      })
+      .catch(error => {
+        console.error('Error saving main content draft:', error);
+        showStatus('Error saving draft: ' + error.message, true);
+      });
+  }
+
+  // Save regular page
+  function saveRegularPage(formData, openPreviewAfterSave) {
+    const pageTitle = elements.pageTitle ? elements.pageTitle.value : '';
+    const templateId = elements.templateSelector ? elements.templateSelector.value : '';
+    
+    // Validation
+    if (!pageTitle) {
+      showStatus('Please enter a page title', true);
+      return;
+    }
+    
+    if (!templateId || !templates[templateId]) {
+      showStatus('Please select a valid template', true);
+      return;
+    }
+    
+    // Get current page data
+    const pageData = pageCache[currentEditingPage];
+    if (!pageData) {
+      showStatus('Error: Page data not found', true);
+      return;
+    }
+    
+    // Update page data
+    const updatedPageData = {
+      ...pageData,
+      title: pageTitle,
+      template: templateId,
+      data: formData,
+      updated: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    
+    // Save to Firestore
+    db.collection('pages').doc(currentEditingPage).update(updatedPageData)
+      .then(() => {
+        // Update cache
+        pageCache[currentEditingPage] = updatedPageData;
+        
+        // Update page list item
+        const pageItem = document.querySelector(`.page-item[data-id="${currentEditingPage}"] .page-title`);
+        if (pageItem) {
+          pageItem.textContent = pageTitle;
+        }
+        
+        // Reset dirty flag
+        isDirty = false;
+        
+        showStatus('Page saved successfully');
+        
+        // Open preview if requested
+        if (openPreviewAfterSave) {
+          window.open(`page.php?id=${currentEditingPage}`, '_blank');
+        }
+      })
+      .catch(error => {
+        console.error('Error saving page:', error);
+        showStatus('Error saving page: ' + error.message, true);
+      });
+  }
+
+  // Publish main content
+  function publishMainContent() {
+    if (!db || !isEditingMainContent) {
+      showStatus('Cannot publish: Not editing main content', true);
+      return;
+    }
+    
+    // Show loading status
+    showStatus('Publishing...', false, 0);
+    
+    // Get draft content
+    db.collection('content').doc('draft').get()
+      .then(doc => {
+        if (!doc.exists) {
+          showStatus('No draft content found to publish', true);
+          return Promise.reject(new Error('No draft content'));
+        }
+        
+        const draftData = doc.data();
+        
+        // Copy to main
+        return db.collection('content').doc('main').set(draftData);
+      })
+      .then(() => {
+        console.log('Main content published successfully');
+        showStatus('Main content published successfully! 🚀');
+      })
+      .catch(error => {
+        console.error('Error publishing main content:', error);
+        showStatus('Error publishing: ' + error.message, true);
+      });
+  }
+
+  // Delete the current page
+  function deletePage() {
+    if (!db || !currentEditingPage) {
+      showStatus('No page currently being edited', true);
+      return;
+    }
+    
+    // Cannot delete main content
+    if (isEditingMainContent) {
+      showStatus('Cannot delete the main homepage content', true);
+      return;
+    }
+    
+    // Get page data
+    const pageData = pageCache[currentEditingPage];
+    if (!pageData) {
+      showStatus('Error: Page data not found', true);
+      return;
+    }
+    
+    // Confirm deletion
+    if (!confirm(`Are you sure you want to delete the page "${pageData.title}"? This action cannot be undone.`)) {
+      return;
+    }
+    
+    // Show loading status
+    showStatus('Deleting page...', false, 0);
+    
+    // Delete from Firestore
+    db.collection('pages').doc(currentEditingPage).delete()
+      .then(() => {
+        // Remove from cache
+        delete pageCache[currentEditingPage];
+        
+        // Remove from page list
+        const pageItem = document.querySelector(`.page-item[data-id="${currentEditingPage}"]`);
+        if (pageItem) {
+          pageItem.remove();
+        }
+        
+        // Reset current editing page
+        currentEditingPage = null;
+        
+        // Close editor
+        closeEditor();
+        
+        showStatus('Page deleted successfully');
+        
+        // If no pages left, show message
+        if (Object.keys(pageCache).length === 0) {
+          if (elements.pagesList) {
+            elements.pagesList.innerHTML = `
+              <div class="w3-panel w3-pale-yellow w3-center">
+                <p>No pages found. Create your first page to get started.</p>
+              </div>
+            `;
+          }
+        }
+      })
+      .catch(error => {
+        console.error('Error deleting page:', error);
+        showStatus('Error deleting page: ' + error.message, true);
+      });
+  } Private variables
   let db;
   let currentEditingPage = null;
+  let isEditingMainContent = false; // Flag to indicate editing main content
   let pageCache = {};
+  let mainContentCache = null; // Cache for main content
   let isDirty = false;
   let previewTimer = null;
   let editorState = {
@@ -28,13 +903,48 @@ const PageEditor = (function() {
 
   // Template definitions with expanded options
   const templates = {
+    'main-content': {
+      name: 'Homepage (index.php)',
+      description: 'Main Website Content',
+      preview: '<div class="tp-header"></div><div class="tp-hero"></div><div class="tp-content"></div>',
+      fields: [
+        // About section
+        { type: 'text', name: 'aboutTitle', label: 'About Section Title', required: true, quill: true },
+        { type: 'text', name: 'aboutSubtitle', label: 'About Section Subtitle', required: false, quill: true },
+        { type: 'textarea', name: 'aboutText', label: 'About Section Content', editor: true, required: false },
+        
+        // Offerings section
+        { type: 'text', name: 'offeringsTitle', label: 'Offerings Section Title', required: true, quill: true },
+        { type: 'text', name: 'offeringsSubtitle', label: 'Offerings Section Subtitle', required: false, quill: true },
+        
+        // Offering 1
+        { type: 'text', name: 'offer1Title', label: 'Offering 1 Title', required: false },
+        { type: 'textarea', name: 'offer1Desc', label: 'Offering 1 Description', editor: true, required: false },
+        { type: 'image', name: 'offer1_image', label: 'Offering 1 Image', required: false },
+        
+        // Offering 2
+        { type: 'text', name: 'offer2Title', label: 'Offering 2 Title', required: false },
+        { type: 'textarea', name: 'offer2Desc', label: 'Offering 2 Description', editor: true, required: false },
+        { type: 'image', name: 'offer2_image', label: 'Offering 2 Image', required: false },
+        
+        // Offering 3
+        { type: 'text', name: 'offer3Title', label: 'Offering 3 Title', required: false },
+        { type: 'textarea', name: 'offer3Desc', label: 'Offering 3 Description', editor: true, required: false },
+        { type: 'image', name: 'offer3_image', label: 'Offering 3 Image', required: false },
+        
+        // Contact section
+        { type: 'text', name: 'contactTitle', label: 'Contact Section Title', required: true, quill: true },
+        { type: 'text', name: 'contactSubtitle', label: 'Contact Section Subtitle', required: false, quill: true },
+        { type: 'image', name: 'contact_image', label: 'Contact Image (Map)', required: false }
+      ]
+    },
     'basic': {
       name: 'Basic Page',
       description: 'Simple page with title, subtitle, and content',
       preview: '<div class="tp-header"></div><div class="tp-content"></div>',
       fields: [
-        { type: 'text', name: 'title', label: 'Page Title', required: true },
-        { type: 'text', name: 'subtitle', label: 'Subtitle', required: false },
+        { type: 'text', name: 'title', label: 'Page Title', required: true, quill: true },
+        { type: 'text', name: 'subtitle', label: 'Subtitle', required: false, quill: true },
         { type: 'textarea', name: 'content', label: 'Main Content', editor: true, required: false }
       ]
     },
@@ -43,8 +953,8 @@ const PageEditor = (function() {
       description: 'Text on the left, image on the right',
       preview: '<div class="tp-text-col"></div><div class="tp-image-col"></div>',
       fields: [
-        { type: 'text', name: 'title', label: 'Page Title', required: true },
-        { type: 'text', name: 'subtitle', label: 'Subtitle', required: false },
+        { type: 'text', name: 'title', label: 'Page Title', required: true, quill: true },
+        { type: 'text', name: 'subtitle', label: 'Subtitle', required: false, quill: true },
         { type: 'textarea', name: 'content', label: 'Main Content', editor: true, required: false },
         { type: 'image', name: 'featuredImage', label: 'Featured Image', required: false }
       ]
@@ -54,8 +964,8 @@ const PageEditor = (function() {
       description: 'Image on the left, text on the right',
       preview: '<div class="tp-image-col"></div><div class="tp-text-col"></div>',
       fields: [
-        { type: 'text', name: 'title', label: 'Page Title', required: true },
-        { type: 'text', name: 'subtitle', label: 'Subtitle', required: false },
+        { type: 'text', name: 'title', label: 'Page Title', required: true, quill: true },
+        { type: 'text', name: 'subtitle', label: 'Subtitle', required: false, quill: true },
         { type: 'image', name: 'featuredImage', label: 'Featured Image', required: false },
         { type: 'textarea', name: 'content', label: 'Main Content', editor: true, required: false }
       ]
@@ -65,8 +975,8 @@ const PageEditor = (function() {
       description: 'Display a collection of images in a gallery format',
       preview: '<div class="tp-header"></div><div class="tp-gallery"></div>',
       fields: [
-        { type: 'text', name: 'title', label: 'Gallery Title', required: true },
-        { type: 'text', name: 'subtitle', label: 'Gallery Subtitle', required: false },
+        { type: 'text', name: 'title', label: 'Gallery Title', required: true, quill: true },
+        { type: 'text', name: 'subtitle', label: 'Gallery Subtitle', required: false, quill: true },
         { type: 'textarea', name: 'description', label: 'Gallery Description', editor: true, required: false },
         { type: 'gallery', name: 'images', label: 'Gallery Images', required: false }
       ]
@@ -76,13 +986,13 @@ const PageEditor = (function() {
       description: 'Full-featured landing page with hero image, features, and call to action',
       preview: '<div class="tp-hero"></div><div class="tp-features"></div><div class="tp-cta"></div>',
       fields: [
-        { type: 'text', name: 'title', label: 'Hero Title', required: true },
-        { type: 'text', name: 'subtitle', label: 'Hero Subtitle', required: false },
+        { type: 'text', name: 'title', label: 'Hero Title', required: true, quill: true },
+        { type: 'text', name: 'subtitle', label: 'Hero Subtitle', required: false, quill: true },
         { type: 'image', name: 'heroImage', label: 'Hero Background Image', required: false },
-        { type: 'text', name: 'ctaText', label: 'Call to Action Text', required: false },
+        { type: 'text', name: 'ctaText', label: 'Call to Action Text', required: false, quill: true },
         { type: 'text', name: 'ctaButtonText', label: 'Button Text', required: false },
         { type: 'text', name: 'ctaButtonLink', label: 'Button Link', required: false },
-        { type: 'text', name: 'featuresTitle', label: 'Features Section Title', required: false },
+        { type: 'text', name: 'featuresTitle', label: 'Features Section Title', required: false, quill: true },
         { type: 'repeater', name: 'features', label: 'Features', required: false, subfields: [
           { type: 'text', name: 'title', label: 'Feature Title' },
           { type: 'textarea', name: 'description', label: 'Feature Description', editor: false },
@@ -95,8 +1005,8 @@ const PageEditor = (function() {
       description: 'Showcase your work with projects and descriptions',
       preview: '<div class="tp-header"></div><div class="tp-portfolio"></div>',
       fields: [
-        { type: 'text', name: 'title', label: 'Portfolio Title', required: true },
-        { type: 'text', name: 'subtitle', label: 'Portfolio Subtitle', required: false },
+        { type: 'text', name: 'title', label: 'Portfolio Title', required: true, quill: true },
+        { type: 'text', name: 'subtitle', label: 'Portfolio Subtitle', required: false, quill: true },
         { type: 'textarea', name: 'introduction', label: 'Introduction Text', editor: true, required: false },
         { type: 'repeater', name: 'projects', label: 'Portfolio Projects', required: false, subfields: [
           { type: 'text', name: 'title', label: 'Project Title' },
@@ -111,8 +1021,8 @@ const PageEditor = (function() {
       description: 'Contact information with a contact form',
       preview: '<div class="tp-header"></div><div class="tp-contact-info"></div><div class="tp-form"></div>',
       fields: [
-        { type: 'text', name: 'title', label: 'Contact Page Title', required: true },
-        { type: 'text', name: 'subtitle', label: 'Contact Page Subtitle', required: false },
+        { type: 'text', name: 'title', label: 'Contact Page Title', required: true, quill: true },
+        { type: 'text', name: 'subtitle', label: 'Contact Page Subtitle', required: false, quill: true },
         { type: 'textarea', name: 'introduction', label: 'Introduction Text', editor: true, required: false },
         { type: 'text', name: 'address', label: 'Address', required: false },
         { type: 'text', name: 'email', label: 'Email Address', required: false },
@@ -126,8 +1036,8 @@ const PageEditor = (function() {
       description: 'A blog post with featured image and content sections',
       preview: '<div class="tp-header"></div><div class="tp-featured"></div><div class="tp-content"></div>',
       fields: [
-        { type: 'text', name: 'title', label: 'Post Title', required: true },
-        { type: 'text', name: 'subtitle', label: 'Post Subtitle', required: false },
+        { type: 'text', name: 'title', label: 'Post Title', required: true, quill: true },
+        { type: 'text', name: 'subtitle', label: 'Post Subtitle', required: false, quill: true },
         { type: 'date', name: 'date', label: 'Post Date', required: false },
         { type: 'text', name: 'author', label: 'Author', required: false },
         { type: 'image', name: 'featuredImage', label: 'Featured Image', required: false },
@@ -336,41 +1246,6 @@ const PageEditor = (function() {
           
           <div class="w3-col m5 l4">
             <div class="w3-padding">
-              <div class="style-editor w3-card w3-padding w3-margin-bottom">
-                <h4>Style Options</h4>
-                
-                <div class="w3-margin-bottom">
-                  <label><strong>Title Font Size:</strong> <span id="titleSizeValue">2.5</span>em</label>
-                  <input type="range" id="titleSizeSlider" class="w3-input" min="1.5" max="4" step="0.1" value="2.5" />
-                </div>
-                
-                <div class="w3-margin-bottom">
-                  <label><strong>Subtitle Font Size:</strong> <span id="subtitleSizeValue">1.8</span>em</label>
-                  <input type="range" id="subtitleSizeSlider" class="w3-input" min="1" max="3" step="0.1" value="1.8" />
-                </div>
-                
-                <div class="w3-margin-bottom">
-                  <label><strong>Primary Color:</strong></label>
-                  <input type="color" id="primaryColor" class="w3-input" value="#007bff" />
-                </div>
-                
-                <div class="w3-margin-bottom">
-                  <label><strong>Secondary Color:</strong></label>
-                  <input type="color" id="secondaryColor" class="w3-input" value="#6c757d" />
-                </div>
-                
-                <div class="w3-margin-bottom">
-                  <label><strong>Font Family:</strong></label>
-                  <select id="fontSelector" class="w3-select w3-border">
-                    <option value="Lato, sans-serif">Lato (Default)</option>
-                    <option value="'Roboto', sans-serif">Roboto</option>
-                    <option value="'Open Sans', sans-serif">Open Sans</option>
-                    <option value="'Montserrat', sans-serif">Montserrat</option>
-                    <option value="'PT Sans', sans-serif">PT Sans</option>
-                  </select>
-                </div>
-              </div>
-              
               <div class="preview-container w3-card w3-padding">
                 <h4>Live Preview</h4>
                 <div id="livePreview" class="live-preview w3-white w3-border">
@@ -454,13 +1329,6 @@ const PageEditor = (function() {
     elements.deletePageBtn = document.getElementById('deletePageBtn');
     elements.savePageBtn = document.getElementById('savePageBtn');
     elements.livePreview = document.getElementById('livePreview');
-    elements.titleSizeSlider = document.getElementById('titleSizeSlider');
-    elements.titleSizeValue = document.getElementById('titleSizeValue');
-    elements.subtitleSizeSlider = document.getElementById('subtitleSizeSlider');
-    elements.subtitleSizeValue = document.getElementById('subtitleSizeValue');
-    elements.primaryColor = document.getElementById('primaryColor');
-    elements.secondaryColor = document.getElementById('secondaryColor');
-    elements.fontSelector = document.getElementById('fontSelector');
     
     // Create page dialog elements
     elements.createPageDialog = document.getElementById('createPageDialog');
@@ -492,6 +1360,9 @@ const PageEditor = (function() {
       dialogSelector.remove(1);
     }
     
+    // Don't add main-content template to the new page dialog
+    // since it's reserved for index.php
+    
     // Add template options
     for (const [id, template] of Object.entries(templates)) {
       const option1 = document.createElement('option');
@@ -499,10 +1370,13 @@ const PageEditor = (function() {
       option1.textContent = template.name;
       mainSelector.appendChild(option1);
       
-      const option2 = document.createElement('option');
-      option2.value = id;
-      option2.textContent = template.name;
-      dialogSelector.appendChild(option2);
+      // Skip main-content template for new page dialog
+      if (id !== 'main-content') {
+        const option2 = document.createElement('option');
+        option2.value = id;
+        option2.textContent = template.name;
+        dialogSelector.appendChild(option2);
+      }
     }
   }
 
@@ -545,48 +1419,6 @@ const PageEditor = (function() {
         if (selectedTemplate) {
           changeTemplate(selectedTemplate);
         }
-      });
-    }
-    
-    // Style controls
-    if (elements.titleSizeSlider) {
-      elements.titleSizeSlider.addEventListener('input', function() {
-        if (elements.titleSizeValue) {
-          elements.titleSizeValue.textContent = this.value;
-        }
-        editorState.globalSettings.titleSize = parseFloat(this.value);
-        updatePreview();
-      });
-    }
-    
-    if (elements.subtitleSizeSlider) {
-      elements.subtitleSizeSlider.addEventListener('input', function() {
-        if (elements.subtitleSizeValue) {
-          elements.subtitleSizeValue.textContent = this.value;
-        }
-        editorState.globalSettings.subtitleSize = parseFloat(this.value);
-        updatePreview();
-      });
-    }
-    
-    if (elements.primaryColor) {
-      elements.primaryColor.addEventListener('input', function() {
-        editorState.globalSettings.primaryColor = this.value;
-        updatePreview();
-      });
-    }
-    
-    if (elements.secondaryColor) {
-      elements.secondaryColor.addEventListener('input', function() {
-        editorState.globalSettings.secondaryColor = this.value;
-        updatePreview();
-      });
-    }
-    
-    if (elements.fontSelector) {
-      elements.fontSelector.addEventListener('change', function() {
-        editorState.globalSettings.bodyFont = this.value;
-        updatePreview();
       });
     }
     
@@ -704,11 +1536,8 @@ const PageEditor = (function() {
           // Ignore if the click was on the view button
           if (e.target.closest('a')) return;
           
-          // Switch to content tab
-          const contentTabBtn = document.querySelector('.tab-btn[data-tab="content"]');
-          if (contentTabBtn) {
-            contentTabBtn.click();
-          }
+          // Edit the main content
+          editMainContent();
         });
         
         // Add to the list
@@ -777,6 +1606,132 @@ const PageEditor = (function() {
         `;
         showStatus('Error loading pages', true);
       });
+  }
+
+  // Edit main website content (index.php)
+  function editMainContent() {
+    if (!db || !elements.pageEditorContainer || !elements.pageWelcomeContainer) return;
+    
+    // Set flags
+    currentEditingPage = null;
+    isEditingMainContent = true;
+    
+    // Show loading status
+    showStatus('Loading main content...', false, 0);
+    
+    // Load main content from the "content/draft" document in Firestore
+    if (mainContentCache) {
+      // Use cached data
+      displayMainContentEditor(mainContentCache);
+      showStatus('Main content loaded', false, 2000);
+    } else {
+      // Load from Firestore
+      db.collection('content').doc('draft').get()
+        .then(doc => {
+          if (!doc.exists) {
+            // Try to create default content
+            showStatus(`No main content found, creating default...`, false);
+            return createDefaultMainContent();
+          }
+          
+          const contentData = doc.data();
+          
+          // Cache the content data
+          mainContentCache = contentData;
+          
+          // Display the editor
+          displayMainContentEditor(contentData);
+          
+          showStatus('Main content loaded', false, 2000);
+        })
+        .catch(error => {
+          console.error('Error loading main content:', error);
+          showStatus('Error loading main content: ' + error.message, true);
+          isEditingMainContent = false;
+        });
+    }
+  }
+
+  // Create default main content if it doesn't exist
+  function createDefaultMainContent() {
+    const defaultContent = {
+      aboutTitle: "ÜBER MICH",
+      aboutSubtitle: "Peer und Genesungsbegleiter",
+      aboutText: "<p>Willkommen auf meiner Website. Ich bin als Peer und Genesungsbegleiter tätig und unterstütze Menschen auf ihrem Weg zu psychischer Gesundheit und persönlichem Wachstum.</p>",
+      
+      offeringsTitle: "MEINE ANGEBOTE",
+      offeringsSubtitle: "Hier sind einige meiner Leistungen und Angebote",
+      
+      offer1Title: "Einzelgespräche",
+      offer1Desc: "<p>Persönliche Begleitung auf Ihrem Weg zu mehr Bewusstsein und Selbsterkenntnis.</p>",
+      
+      offer2Title: "Gruppenworkshops",
+      offer2Desc: "<p>Gemeinsame Erfahrungsräume für Austausch und Wachstum in der Gemeinschaft.</p>",
+      
+      offer3Title: "Meditation",
+      offer3Desc: "<p>Anleitungen und Übungen zur Stärkung von Achtsamkeit und innerem Frieden.</p>",
+      
+      contactTitle: "KONTAKT",
+      contactSubtitle: "Ich freue mich auf Ihre Nachricht!",
+      
+      lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    
+    // Save to Firestore
+    return db.collection('content').doc('draft').set(defaultContent)
+      .then(() => {
+        console.log('Created default main content');
+        
+        // Cache the content data
+        mainContentCache = defaultContent;
+        
+        // Display the editor
+        displayMainContentEditor(defaultContent);
+        
+        showStatus('Default main content created', false, 2000);
+        return defaultContent;
+      })
+      .catch(error => {
+        console.error('Error creating default content:', error);
+        showStatus('Error creating default content: ' + error.message, true);
+        isEditingMainContent = false;
+        throw error;
+      });
+  }
+
+  // Display the editor for main content
+  function displayMainContentEditor(contentData) {
+    if (!elements.pageEditorContainer || !elements.pageWelcomeContainer) return;
+    
+    console.log('Displaying editor for main content:', contentData);
+    
+    // Hide welcome message and show editor
+    elements.pageWelcomeContainer.style.display = 'none';
+    elements.pageEditorContainer.style.display = 'block';
+    
+    // Set editor title
+    if (elements.editorPageTitle) {
+      elements.editorPageTitle.textContent = 'Editing: Homepage (index.php)';
+    }
+    
+    // Set form values
+    if (elements.pageId) elements.pageId.value = 'index.php';
+    if (elements.pageTitle) elements.pageTitle.value = 'Homepage';
+    
+    // Set template selector to 'main-content'
+    if (elements.templateSelector) {
+      elements.templateSelector.value = 'main-content';
+      elements.templateSelector.disabled = true; // Disable changing template for main content
+    }
+    
+    // Generate template fields 
+    generateTemplateFields('main-content', contentData);
+    
+    // Reset dirty flag
+    isDirty = false;
+    
+    // Update preview
+    updatePreview();
   }
 
   // Open the create page dialog
@@ -961,6 +1916,9 @@ const PageEditor = (function() {
     
     if (!pageId || !elements.pageEditorContainer || !elements.pageWelcomeContainer) return;
     
+    // Reset main content editing flag
+    isEditingMainContent = false;
+    
     // Set current editing page
     currentEditingPage = pageId;
     
@@ -1022,6 +1980,7 @@ const PageEditor = (function() {
     if (elements.templateSelector) {
       try {
         elements.templateSelector.value = pageData.template || '';
+        elements.templateSelector.disabled = false; // Enable changing template for regular pages
       } catch (e) {
         console.error('Error setting template selector value:', e);
         // If the template doesn't exist in the dropdown, add it
@@ -1032,36 +1991,6 @@ const PageEditor = (function() {
           elements.templateSelector.appendChild(option);
           elements.templateSelector.value = pageData.template;
         }
-      }
-    }
-    
-    // Set style controls
-    if (pageData.settings) {
-      if (elements.titleSizeSlider && pageData.settings.titleSize) {
-        elements.titleSizeSlider.value = pageData.settings.titleSize;
-        if (elements.titleSizeValue) elements.titleSizeValue.textContent = pageData.settings.titleSize;
-        editorState.globalSettings.titleSize = parseFloat(pageData.settings.titleSize);
-      }
-      
-      if (elements.subtitleSizeSlider && pageData.settings.subtitleSize) {
-        elements.subtitleSizeSlider.value = pageData.settings.subtitleSize;
-        if (elements.subtitleSizeValue) elements.subtitleSizeValue.textContent = pageData.settings.subtitleSize;
-        editorState.globalSettings.subtitleSize = parseFloat(pageData.settings.subtitleSize);
-      }
-      
-      if (elements.primaryColor && pageData.settings.primaryColor) {
-        elements.primaryColor.value = pageData.settings.primaryColor;
-        editorState.globalSettings.primaryColor = pageData.settings.primaryColor;
-      }
-      
-      if (elements.secondaryColor && pageData.settings.secondaryColor) {
-        elements.secondaryColor.value = pageData.settings.secondaryColor;
-        editorState.globalSettings.secondaryColor = pageData.settings.secondaryColor;
-      }
-      
-      if (elements.fontSelector && pageData.settings.bodyFont) {
-        elements.fontSelector.value = pageData.settings.bodyFont;
-        editorState.globalSettings.bodyFont = pageData.settings.bodyFont;
       }
     }
     
@@ -1091,13 +2020,13 @@ const PageEditor = (function() {
       createField(field, data, elements.templateFields);
     });
     
-    // Initialize TinyMCE for rich text editors
-    initializeTinyMCE();
+    // Initialize Quill editors
+    initializeQuillEditors();
   }
 
   // Create a form field based on field type
   function createField(field, data, container) {
-    const fieldValue = data[field.name] !== undefined ? data[field.name] : '';
+    const fieldValue = data && data[field.name] !== undefined ? data[field.name] : '';
     const fieldId = `field_${field.name}`;
     
     const fieldContainer = document.createElement('div');
@@ -1116,29 +2045,56 @@ const PageEditor = (function() {
     // Create field input based on type
     switch (field.type) {
       case 'text':
-        const textInput = document.createElement('input');
-        textInput.type = 'text';
-        textInput.id = fieldId;
-        textInput.className = 'w3-input w3-border';
-        textInput.value = fieldValue || '';
-        textInput.required = field.required || false;
-        fieldContainer.appendChild(textInput);
+        if (field.quill) {
+          // Use Quill for rich text formatting
+          const editorContainer = document.createElement('div');
+          editorContainer.className = 'quill-text-container';
+          
+          const quillContainer = document.createElement('div');
+          quillContainer.id = fieldId + '_quill';
+          quillContainer.className = 'quill-editor';
+          quillContainer.innerHTML = fieldValue || '';
+          quillContainer.style.minHeight = '80px';
+          
+          const hiddenInput = document.createElement('input');
+          hiddenInput.type = 'hidden';
+          hiddenInput.id = fieldId;
+          hiddenInput.value = fieldValue || '';
+          
+          editorContainer.appendChild(quillContainer);
+          editorContainer.appendChild(hiddenInput);
+          fieldContainer.appendChild(editorContainer);
+        } else {
+          // Standard text input
+          const textInput = document.createElement('input');
+          textInput.type = 'text';
+          textInput.id = fieldId;
+          textInput.className = 'w3-input w3-border';
+          textInput.value = fieldValue || '';
+          textInput.required = field.required || false;
+          fieldContainer.appendChild(textInput);
+        }
         break;
         
       case 'textarea':
         if (field.editor) {
-          // Rich text editor (TinyMCE)
+          // Rich text editor (using Quill)
           const editorContainer = document.createElement('div');
           editorContainer.className = 'editor-container';
           
-          const textarea = document.createElement('textarea');
-          textarea.id = fieldId;
-          textarea.className = 'tinymce-editor';
-          textarea.rows = 8;
-          textarea.value = fieldValue || '';
-          textarea.required = field.required || false;
+          const quillContainer = document.createElement('div');
+          quillContainer.id = fieldId + '_quill';
+          quillContainer.className = 'quill-editor';
+          quillContainer.innerHTML = fieldValue || '';
+          quillContainer.style.minHeight = '150px';
           
-          editorContainer.appendChild(textarea);
+          const hiddenInput = document.createElement('input');
+          hiddenInput.type = 'hidden';
+          hiddenInput.id = fieldId;
+          hiddenInput.value = fieldValue || '';
+          
+          editorContainer.appendChild(quillContainer);
+          editorContainer.appendChild(hiddenInput);
           fieldContainer.appendChild(editorContainer);
         } else {
           // Simple textarea
@@ -2045,43 +3001,89 @@ const PageEditor = (function() {
     previewTimer = setTimeout(updatePreview, 500);
   }
 
-  // Initialize TinyMCE for rich text editors
-  function initializeTinyMCE() {
-    // Remove existing instances
-    if (typeof tinymce !== 'undefined') {
-      tinymce.remove('.tinymce-editor');
+  // Initialize Quill editors
+  function initializeQuillEditors() {
+    // Initialize all quill-editor elements
+    const quillEditors = document.querySelectorAll('.quill-editor');
+    quillEditors.forEach(editor => {
+      const fieldId = editor.id.replace('_quill', '');
+      const hiddenInput = document.getElementById(fieldId);
       
-      // Initialize for all rich text editors
-      tinymce.init({
-        selector: '.tinymce-editor',
-        height: 300,
-        menubar: true,
-        plugins: [
-          'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-          'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-          'insertdatetime', 'media', 'table', 'help', 'wordcount'
-        ],
-        toolbar: 'undo redo | formatselect | fontsizeselect | ' +
-          'bold italic backcolor forecolor | alignleft aligncenter ' +
-          'alignright alignjustify | bullist numlist outdent indent | ' +
-          'removeformat | link image | help',
-        content_style: 'body { font-family: "Lato", sans-serif; font-size: 16px; }',
-        font_size_formats: '8pt 10pt 12pt 14pt 16pt 18pt 20pt 24pt 36pt 48pt',
-        // Update preview when content changes
-        setup: function(editor) {
-          editor.on('Change', function() {
-            isDirty = true;
-            if (previewTimer) clearTimeout(previewTimer);
-            previewTimer = setTimeout(updatePreview, 500);
-          });
+      // Skip if already initialized
+      if (editor.querySelector('.ql-editor')) return;
+      
+      // Determine toolbar options based on field type
+      let isHeadingField = editor.closest('.field-container')?.dataset.fieldType === 'text';
+      
+      // Configure Quill with different toolbars based on field type
+      const quillOptions = {
+        theme: 'snow',
+        placeholder: 'Write content here...',
+        modules: {
+          toolbar: isHeadingField ? 
+            [
+              ['bold', 'italic', 'underline'],
+              [{ 'header': [1, 2, 3, false] }],
+              [{ 'size': ['small', false, 'large', 'huge'] }],
+              [{ 'color': [] }, { 'background': [] }],
+              [{ 'align': [] }],
+              ['clean']
+            ] :
+            [
+              ['bold', 'italic', 'underline', 'strike'],
+              ['blockquote', 'code-block'],
+              [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+              [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+              [{ 'indent': '-1' }, { 'indent': '+1' }],
+              [{ 'size': ['small', false, 'large', 'huge'] }],
+              [{ 'color': [] }, { 'background': [] }],
+              [{ 'font': [] }],
+              [{ 'align': [] }],
+              ['link', 'image'],
+              ['clean']
+            ]
+        }
+      };
+      
+      // Create Quill instance
+      const quill = new Quill(editor, quillOptions);
+      
+      // Set initial content
+      if (hiddenInput && hiddenInput.value) {
+        quill.clipboard.dangerouslyPasteHTML(hiddenInput.value);
+      }
+      
+      // Update hidden input on text change
+      quill.on('text-change', () => {
+        if (hiddenInput) {
+          hiddenInput.value = editor.querySelector('.ql-editor').innerHTML;
+          
+          // Mark as dirty
+          isDirty = true;
+          
+          // Update preview
+          if (previewTimer) clearTimeout(previewTimer);
+          previewTimer = setTimeout(updatePreview, 500);
         }
       });
-    }
+    });
   }
 
   // Change the template of the current page
   function changeTemplate(templateId) {
-    if (!currentEditingPage || !templates[templateId]) return;
+    if (!currentEditingPage && !isEditingMainContent) return;
+    
+    // Don't allow changing template for main content
+    if (isEditingMainContent && templateId !== 'main-content') {
+      showStatus('Cannot change template for main content', true);
+      elements.templateSelector.value = 'main-content';
+      return;
+    }
+    
+    if (!templates[templateId]) {
+      showStatus('Invalid template selected', true);
+      return;
+    }
     
     // Confirm template change
     if (isDirty) {
@@ -2097,771 +3099,82 @@ const PageEditor = (function() {
     // Show loading status
     showStatus('Changing template...', false, 0);
     
-    // Get current page data
-    const pageData = pageCache[currentEditingPage];
-    if (!pageData) return;
-    
-    // Create new data object based on template
-    const templateData = {};
-    const template = templates[templateId];
-    
-    template.fields.forEach(field => {
-      if (field.type === 'repeater' && field.subfields) {
-        // Initialize repeater fields with empty array
-        templateData[field.name] = [];
-      } else {
-        // Check if field exists in current data
-        if (pageData.data && pageData.data[field.name] !== undefined) {
-          // Use existing data
-          templateData[field.name] = pageData.data[field.name];
-        } else {
-          // Initialize with empty values
-          switch (field.type) {
-            case 'checkbox':
-              templateData[field.name] = false;
-              break;
-            case 'gallery':
-              templateData[field.name] = [];
-              break;
-            case 'image':
-              templateData[field.name] = { url: '', alt: '' };
-              break;
-            default:
-              templateData[field.name] = '';
-          }
-        }
-      }
-    });
-    
-    // Update page data
-    pageData.template = templateId;
-    pageData.data = templateData;
-    
-    // Update cache
-    pageCache[currentEditingPage] = pageData;
-    
-    // Update template in the UI
-    if (elements.templateSelector) {
-      try {
-        elements.templateSelector.value = templateId;
-      } catch (e) {
-        console.error('Error setting template selector value:', e);
-        // If the template doesn't exist in the dropdown, add it
-        if (templateId && !Array.from(elements.templateSelector.options).find(opt => opt.value === templateId)) {
-          const option = document.createElement('option');
-          option.value = templateId;
-          option.textContent = templateId + ' (Unknown)';
-          elements.templateSelector.appendChild(option);
-          elements.templateSelector.value = templateId;
-        }
-      }
-    }
-    
-    // Generate template fields
-    generateTemplateFields(templateId, templateData);
-    
-    // Reset dirty flag
-    isDirty = false;
-    
-    // Update preview
-    updatePreview();
-    
-    showStatus('Template changed successfully');
-  }
-
-  // Update the live preview
-  function updatePreview() {
-    if (!elements.livePreview || !currentEditingPage) return;
-    
-    // Get page data
-    const pageData = pageCache[currentEditingPage];
-    if (!pageData) return;
-    
-    // Get form data
-    const formData = getFormData();
-    
-    // Create preview HTML
-    const previewHtml = generatePreviewHtml(pageData.template, formData);
-    
-    // Update preview container
-    elements.livePreview.innerHTML = previewHtml;
-  }
-
-  // Get form data
-  function getFormData() {
-    if (!elements.templateFields) return {};
-    
-    // Get TinyMCE content first
-    let tinymceContent = {};
-    if (typeof tinymce !== 'undefined') {
-      const editors = tinymce.editors;
-      for (let i = 0; i < editors.length; i++) {
-        const editor = editors[i];
-        const fieldName = editor.id.replace('field_', '');
-        tinymceContent[fieldName] = editor.getContent();
-      }
-    }
-    
-    // Collect form data
-    const formData = {};
-    
-    // Process all field containers
-    const fieldContainers = elements.templateFields.querySelectorAll('.field-container');
-    fieldContainers.forEach(container => {
-      const fieldName = container.dataset.fieldName;
-      const fieldType = container.dataset.fieldType;
-      
-      if (!fieldName || !fieldType) return;
-      
-      switch (fieldType) {
-        case 'text':
-        case 'textarea':
-          const input = document.getElementById(`field_${fieldName}`);
-          if (input) {
-            formData[fieldName] = input.value;
-          }
-          break;
-          
-        case 'checkbox':
-          const checkbox = document.getElementById(`field_${fieldName}`);
-          if (checkbox) {
-            formData[fieldName] = checkbox.checked;
-          }
-          break;
-          
-        case 'image':
-          const imageInput = document.getElementById(`field_${fieldName}`);
-          if (imageInput) {
-            try {
-              formData[fieldName] = JSON.parse(imageInput.value);
-            } catch (error) {
-              console.error('Error parsing image data:', error);
-              formData[fieldName] = { url: '', alt: '' };
-            }
-          }
-          break;
-          
-        case 'gallery':
-          const galleryInput = document.getElementById(`field_${fieldName}`);
-          if (galleryInput) {
-            try {
-              formData[fieldName] = JSON.parse(galleryInput.value);
-            } catch (error) {
-              console.error('Error parsing gallery data:', error);
-              formData[fieldName] = [];
-            }
-          }
-          break;
-          
-        case 'date':
-          const dateInput = document.getElementById(`field_${fieldName}`);
-          if (dateInput) {
-            formData[fieldName] = dateInput.value;
-          }
-          break;
-          
-        case 'tags':
-          const tagsInput = document.getElementById(`field_${fieldName}`);
-          if (tagsInput) {
-            formData[fieldName] = tagsInput.value.split(',').map(tag => tag.trim()).filter(tag => tag);
-          }
-          break;
-          
-        case 'repeater':
-          const repeaterInput = document.getElementById(`field_${fieldName}`);
-          if (repeaterInput) {
-            try {
-              formData[fieldName] = JSON.parse(repeaterInput.value);
-            } catch (error) {
-              console.error('Error parsing repeater data:', error);
-              formData[fieldName] = [];
-            }
-          }
-          break;
-      }
-    });
-    
-    // Add TinyMCE content
-    Object.assign(formData, tinymceContent);
-    
-    return formData;
-  }
-
-  // Generate preview HTML based on template and data
-  function generatePreviewHtml(templateId, data) {
-    if (!templates[templateId]) return '<div class="w3-panel w3-pale-red">Invalid template</div>';
-    
-    // Get title from page title field
-    const pageTitle = elements.pageTitle ? elements.pageTitle.value : '';
-    
-    // Get style settings
-    const settings = {
-      titleSize: editorState.globalSettings.titleSize,
-      subtitleSize: editorState.globalSettings.subtitleSize,
-      primaryColor: editorState.globalSettings.primaryColor,
-      secondaryColor: editorState.globalSettings.secondaryColor,
-      bodyFont: editorState.globalSettings.bodyFont
-    };
-    
-    // Generate CSS for preview
-    const previewCss = `
-      <style>
-        .preview-container {
-          font-family: ${settings.bodyFont};
-          color: #333;
-          padding: 15px;
-        }
-        .preview-title {
-          font-size: ${settings.titleSize}em;
-          color: ${settings.primaryColor};
-          margin-bottom: 10px;
-        }
-        .preview-subtitle {
-          font-size: ${settings.subtitleSize}em;
-          color: ${settings.secondaryColor};
-          margin-bottom: 20px;
-        }
-        .preview-content {
-          line-height: 1.6;
-        }
-        .preview-image {
-          max-width: 100%;
-          height: auto;
-          display: block;
-          margin: 15px 0;
-        }
-        .preview-gallery {
-          display: flex;
-          flex-wrap: wrap;
-          margin: 0 -5px;
-        }
-        .preview-gallery-item {
-          width: 33.33%;
-          padding: 5px;
-          box-sizing: border-box;
-        }
-        .preview-gallery-item img {
-          width: 100%;
-          height: auto;
-          display: block;
-        }
-        .preview-features {
-          display: flex;
-          flex-wrap: wrap;
-          margin: 0 -10px;
-        }
-        .preview-feature {
-          width: 33.33%;
-          padding: 10px;
-          box-sizing: border-box;
-        }
-        .preview-cta {
-          background-color: ${settings.secondaryColor};
-          color: white;
-          padding: 15px;
-          text-align: center;
-          margin-top: 20px;
-        }
-        .preview-button {
-          display: inline-block;
-          background-color: ${settings.primaryColor};
-          color: white;
-          padding: 10px 20px;
-          text-decoration: none;
-          font-weight: bold;
-          border-radius: 4px;
-        }
-        .preview-contact-info {
-          margin: 20px 0;
-        }
-        .preview-form {
-          background-color: #f9f9f9;
-          padding: 15px;
-          border-radius: 4px;
-        }
-      </style>
-    `;
-    
-    // Generate template-specific HTML
-    let templateHtml = '';
-    
-    switch (templateId) {
-      case 'basic':
-        templateHtml = `
-          <div class="preview-container">
-            ${previewCss}
-            <h1 class="preview-title">${data.title || pageTitle}</h1>
-            ${data.subtitle ? `<h2 class="preview-subtitle">${data.subtitle}</h2>` : ''}
-            <div class="preview-content">${data.content || ''}</div>
-          </div>
-        `;
-        break;
-        
-      case 'text-image':
-        templateHtml = `
-          <div class="preview-container">
-            ${previewCss}
-            <h1 class="preview-title">${data.title || pageTitle}</h1>
-            ${data.subtitle ? `<h2 class="preview-subtitle">${data.subtitle}</h2>` : ''}
-            <div class="w3-row">
-              <div class="w3-col m8">
-                <div class="preview-content">${data.content || ''}</div>
-              </div>
-              <div class="w3-col m4">
-                ${data.featuredImage && data.featuredImage.url ? 
-                  `<img src="${data.featuredImage.url}" alt="${data.featuredImage.alt || ''}" class="preview-image">` : 
-                  '<div class="w3-pale-blue w3-padding w3-center">Featured Image Placeholder</div>'
-                }
-              </div>
-            </div>
-          </div>
-        `;
-        break;
-        
-      case 'image-text':
-        templateHtml = `
-          <div class="preview-container">
-            ${previewCss}
-            <h1 class="preview-title">${data.title || pageTitle}</h1>
-            ${data.subtitle ? `<h2 class="preview-subtitle">${data.subtitle}</h2>` : ''}
-            <div class="w3-row">
-              <div class="w3-col m4">
-                ${data.featuredImage && data.featuredImage.url ? 
-                  `<img src="${data.featuredImage.url}" alt="${data.featuredImage.alt || ''}" class="preview-image">` : 
-                  '<div class="w3-pale-blue w3-padding w3-center">Featured Image Placeholder</div>'
-                }
-              </div>
-              <div class="w3-col m8">
-                <div class="preview-content">${data.content || ''}</div>
-              </div>
-            </div>
-          </div>
-        `;
-        break;
-        
-  case 'gallery':
-       // Generate gallery items HTML
-        let galleryItemsHtml = '';
-        if (data.images && Array.isArray(data.images) && data.images.length > 0) {
-          data.images.forEach(image => {
-            if (image && image.url) {
-              galleryItemsHtml += `
-                <div class="preview-gallery-item">
-                  <img src="${image.url}" alt="${image.alt || ''}" class="w3-image">
-                  ${image.caption ? `<div class="w3-padding-small w3-light-grey">${image.caption}</div>` : ''}
-                </div>
-              `;
-            }
-          });
-        }
-        
-        templateHtml = `
-          <div class="preview-container">
-            ${previewCss}
-            <h1 class="preview-title">${data.title || pageTitle}</h1>
-            ${data.subtitle ? `<h2 class="preview-subtitle">${data.subtitle}</h2>` : ''}
-            <div class="preview-content">${data.description || ''}</div>
-            <div class="preview-gallery">
-              ${galleryItemsHtml || '<div class="w3-pale-blue w3-padding w3-center w3-col s12">No gallery images added</div>'}
-            </div>
-          </div>
-        `;
-        break;
-        
-      case 'landing':
-        // Generate features HTML
-        let featuresHtml = '';
-        if (data.features && Array.isArray(data.features) && data.features.length > 0) {
-          data.features.forEach(feature => {
-            if (feature) {
-              featuresHtml += `
-                <div class="preview-feature">
-                  <div class="w3-card w3-padding">
-                    ${feature.icon && feature.icon.url ? 
-                      `<img src="${feature.icon.url}" alt="${feature.icon.alt || ''}" style="width:64px; height:64px; margin:0 auto; display:block;">` : 
-                      '<div class="w3-circle w3-light-grey w3-padding w3-center" style="width:64px; height:64px; margin:0 auto; display:flex; align-items:center; justify-content:center;"><i class="fas fa-star"></i></div>'
-                    }
-                    <h3 class="w3-center">${feature.title || 'Feature Title'}</h3>
-                    <p>${feature.description || 'Feature description goes here.'}</p>
-                  </div>
-                </div>
-              `;
-            }
-          });
-        }
-        
-        templateHtml = `
-          <div class="preview-container">
-            ${previewCss}
-            <div class="w3-padding-32 w3-center" style="background-color: ${settings.primaryColor}; color: white;">
-              <h1 class="preview-title" style="color: white;">${data.title || pageTitle}</h1>
-              ${data.subtitle ? `<h2 class="preview-subtitle" style="color: white;">${data.subtitle}</h2>` : ''}
-              ${data.heroImage && data.heroImage.url ? 
-                `<img src="${data.heroImage.url}" alt="${data.heroImage.alt || ''}" class="preview-image" style="margin: 20px auto;">` : 
-                '<div class="w3-pale-blue w3-padding w3-center" style="margin: 20px auto; max-width: 80%;">Hero Image Placeholder</div>'
-              }
-            </div>
-            
-            ${data.featuresTitle ? `<h2 class="w3-center" style="margin: 30px 0;">${data.featuresTitle}</h2>` : ''}
-            <div class="preview-features">
-              ${featuresHtml || '<div class="w3-pale-blue w3-padding w3-center w3-col s12">No features added</div>'}
-            </div>
-            
-            <div class="preview-cta">
-              <h2>${data.ctaText || 'Call to Action'}</h2>
-              <a href="${data.ctaButtonLink || '#'}" class="preview-button">${data.ctaButtonText || 'Learn More'}</a>
-            </div>
-          </div>
-        `;
-        break;
-        
-      case 'portfolio':
-        // Generate projects HTML
-        let projectsHtml = '';
-        if (data.projects && Array.isArray(data.projects) && data.projects.length > 0) {
-          data.projects.forEach(project => {
-            if (project) {
-              projectsHtml += `
-                <div class="w3-col m6 l4 w3-padding">
-                  <div class="w3-card portfolio-item">
-                    ${project.thumbnail && project.thumbnail.url ? 
-                      `<img src="${project.thumbnail.url}" alt="${project.title || 'Project'}" class="w3-image" style="width:100%">` : 
-                      '<div class="w3-pale-blue w3-padding-32 w3-center"><i class="fas fa-image"></i><p>Project Image</p></div>'
-                    }
-                    <div class="w3-container">
-                      <h3>${project.title || 'Project Title'}</h3>
-                      <p>${project.description || ''}</p>
-                      ${project.link ? `<a href="${project.link}" class="w3-button w3-margin-bottom">More Info</a>` : ''}
-                    </div>
-                  </div>
-                </div>
-              `;
-            }
-          });
-        } else {
-          projectsHtml = '<div class="w3-panel w3-pale-yellow w3-center">No projects defined</div>';
-        }
-        
-        templateHtml = `
-          <div class="preview-container">
-            ${previewCss}
-            <h1 class="preview-title">${data.title || pageTitle}</h1>
-            ${data.subtitle ? `<h2 class="preview-subtitle">${data.subtitle}</h2>` : ''}
-            <div class="preview-content">${data.introduction || ''}</div>
-            <div class="w3-row">
-              ${projectsHtml}
-            </div>
-          </div>
-        `;
-        break;
-        
-      case 'contact':
-        templateHtml = `
-          <div class="preview-container">
-            ${previewCss}
-            <h1 class="preview-title">${data.title || pageTitle}</h1>
-            ${data.subtitle ? `<h2 class="preview-subtitle">${data.subtitle}</h2>` : ''}
-            <div class="preview-content">${data.introduction || ''}</div>
-            
-            <div class="w3-row">
-              ${data.contactImage && data.contactImage.url ? 
-                `<div class="w3-col m4">
-                  <img src="${data.contactImage.url}" alt="${data.contactImage.alt || 'Contact'}" class="preview-image w3-round">
-                </div>` : 
-                ''
-              }
-              
-              <div class="w3-col ${data.contactImage && data.contactImage.url ? 'm8' : 's12'}">
-                <div class="w3-large">
-                  ${data.address ? `<p><i class="fas fa-map-marker-alt fa-fw"></i> ${data.address}</p>` : ''}
-                  ${data.email ? `<p><i class="fas fa-envelope fa-fw"></i> ${data.email}</p>` : ''}
-                  ${data.phone ? `<p><i class="fas fa-phone fa-fw"></i> ${data.phone}</p>` : ''}
-                </div>
-                
-                ${data.showForm ? 
-                  `<div class="preview-form w3-margin-top">
-                    <h3>Contact Form</h3>
-                    <div class="w3-row-padding">
-                      <div class="w3-half w3-margin-bottom">
-                        <input class="w3-input w3-border" type="text" placeholder="Name" disabled>
-                      </div>
-                      <div class="w3-half w3-margin-bottom">
-                        <input class="w3-input w3-border" type="text" placeholder="Email" disabled>
-                      </div>
-                    </div>
-                    <textarea class="w3-input w3-border w3-margin-bottom" placeholder="Message" disabled></textarea>
-                    <button class="preview-button" disabled>Send Message</button>
-                  </div>` : 
-                  ''
-                }
-              </div>
-            </div>
-          </div>
-        `;
-        break;
-        
-      case 'blog':
-        // Format categories
-        let categoriesHtml = '';
-        if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
-          categoriesHtml = `
-            <div class="w3-section">
-              <i class="fas fa-tags"></i> 
-              ${data.categories.map(cat => `<span class="w3-tag w3-small w3-margin-right">${cat}</span>`).join('')}
-            </div>
-          `;
-        }
-        
-        templateHtml = `
-          <div class="preview-container">
-            ${previewCss}
-            <h1 class="preview-title">${data.title || pageTitle}</h1>
-            ${data.subtitle ? `<h2 class="preview-subtitle">${data.subtitle}</h2>` : ''}
-            
-            <div class="w3-bar w3-light-grey w3-padding-small">
-              ${data.date ? `<span class="w3-bar-item"><i class="far fa-calendar-alt"></i> ${data.date}</span>` : ''}
-              ${data.author ? `<span class="w3-bar-item"><i class="far fa-user"></i> ${data.author}</span>` : ''}
-            </div>
-            
-            ${categoriesHtml}
-            
-            ${data.featuredImage && data.featuredImage.url ? 
-              `<img src="${data.featuredImage.url}" alt="${data.featuredImage.alt || data.title || 'Blog Post'}" class="preview-image">` : 
-              '<div class="w3-pale-blue w3-padding w3-center" style="height: 200px;">Featured Image Placeholder</div>'
-            }
-            
-            ${data.excerpt ? 
-              `<div class="w3-panel w3-pale-blue w3-leftbar w3-border-blue">
-                <p><em>${data.excerpt}</em></p>
-              </div>` : 
-              ''
-            }
-            
-            <div class="preview-content">${data.content || ''}</div>
-          </div>
-        `;
-        break;
-        
-      default:
-        templateHtml = `
-          <div class="preview-container">
-            ${previewCss}
-            <div class="w3-panel w3-pale-red">
-              <h3>Invalid Template</h3>
-              <p>The selected template "${templateId}" is not supported.</p>
-            </div>
-          </div>
-        `;
-    }
-    
-    return templateHtml;
-  }
-
-  // Close the editor and return to the welcome screen
-  function closeEditor() {
-    // Check for unsaved changes
-    if (isDirty) {
-      if (!confirm('You have unsaved changes. Are you sure you want to close the editor?')) {
-        return;
-      }
-    }
-    
-    // Reset current editing page
-    currentEditingPage = null;
-    
-    // Hide editor and show welcome screen
-    if (elements.pageEditorContainer) {
-      elements.pageEditorContainer.style.display = 'none';
-    }
-    
-    if (elements.pageWelcomeContainer) {
-      elements.pageWelcomeContainer.style.display = 'block';
-    }
-    
-    // Clean up TinyMCE instances
-    if (typeof tinymce !== 'undefined') {
-      tinymce.remove('.tinymce-editor');
-    }
-  }
-
-  // Save the current page
-  function savePage() {
-    if (!db || !currentEditingPage) {
-      showStatus('No page currently being edited', true);
-      return;
-    }
-    
-    // Show loading status
-    showStatus('Saving page...', false, 0);
-    
-    // Get page data
-    const pageData = pageCache[currentEditingPage];
-    if (!pageData) {
-      showStatus('Error: Page data not found', true);
-      return;
-    }
-    
-    // Get form data
-    const formData = getFormData();
-    
-    // Get page title
-    const pageTitle = elements.pageTitle ? elements.pageTitle.value : pageData.title;
-    
-    // Get style settings
-    const settings = {
-      titleSize: editorState.globalSettings.titleSize,
-      subtitleSize: editorState.globalSettings.subtitleSize,
-      primaryColor: editorState.globalSettings.primaryColor,
-      secondaryColor: editorState.globalSettings.secondaryColor,
-      bodyFont: editorState.globalSettings.bodyFont
-    };
-    
-    // Update page data
-    const updatedPageData = {
-      ...pageData,
-      title: pageTitle,
-      data: formData,
-      settings: settings,
-      updated: firebase.firestore.FieldValue.serverTimestamp()
-    };
-    
-    // Save to Firestore
-    db.collection('pages').doc(currentEditingPage).update(updatedPageData)
-      .then(() => {
-        // Update cache
-        pageCache[currentEditingPage] = updatedPageData;
-        
-        // Update page list item
-        const pageItem = document.querySelector(`.page-item[data-id="${currentEditingPage}"] .page-title`);
-        if (pageItem) {
-          pageItem.textContent = pageTitle;
-        }
-        
-        // Reset dirty flag
-        isDirty = false;
-        
-        showStatus('Page saved successfully');
-      })
-      .catch(error => {
-        console.error('Error saving page:', error);
-        showStatus('Error saving page: ' + error.message, true);
-      });
-  }
-
-  // Open page preview in a new tab
-  function openPagePreview() {
-    if (!currentEditingPage) {
-      showStatus('No page currently being edited', true);
-      return;
-    }
-    
-    // Check if there are unsaved changes
-    if (isDirty) {
-      if (confirm('You have unsaved changes. Save before previewing?')) {
-        // Save first, then open preview
-        db.collection('pages').doc(currentEditingPage).get()
-          .then(doc => {
-            if (!doc.exists) {
-              showStatus('Error: Page not found', true);
-              return Promise.reject(new Error('Page not found'));
-            }
-            
-            savePage();
-            
-            // Open in new tab
-            setTimeout(() => {
-              window.open(`page.php?id=${currentEditingPage}`, '_blank');
-            }, 500);
-          })
-          .catch(error => {
-            console.error('Error opening preview:', error);
-            showStatus('Error opening preview: ' + error.message, true);
-          });
-      } else {
-        // Open without saving
-        window.open(`page.php?id=${currentEditingPage}`, '_blank');
-      }
+    if (isEditingMainContent) {
+      // For main content, just regenerate the fields
+      generateTemplateFields('main-content', mainContentCache || {});
+      showStatus('Template refreshed', false, 2000);
     } else {
-      // No unsaved changes, just open preview
-      window.open(`page.php?id=${currentEditingPage}`, '_blank');
-    }
-  }
-
-  // Delete the current page
-  function deletePage() {
-    if (!db || !currentEditingPage) {
-      showStatus('No page currently being edited', true);
-      return;
-    }
-    
-    // Get page data
-    const pageData = pageCache[currentEditingPage];
-    if (!pageData) {
-      showStatus('Error: Page data not found', true);
-      return;
-    }
-    
-    // Confirm deletion
-    if (!confirm(`Are you sure you want to delete the page "${pageData.title}"? This action cannot be undone.`)) {
-      return;
-    }
-    
-    // Show loading status
-    showStatus('Deleting page...', false, 0);
-    
-    // Delete from Firestore
-    db.collection('pages').doc(currentEditingPage).delete()
-      .then(() => {
-        // Remove from cache
-        delete pageCache[currentEditingPage];
-        
-        // Remove from page list
-        const pageItem = document.querySelector(`.page-item[data-id="${currentEditingPage}"]`);
-        if (pageItem) {
-          pageItem.remove();
-        }
-        
-        // Reset current editing page
-        currentEditingPage = null;
-        
-        // Close editor
-        closeEditor();
-        
-        showStatus('Page deleted successfully');
-        
-        // If no pages left, show message
-        if (Object.keys(pageCache).length === 0) {
-          if (elements.pagesList) {
-            elements.pagesList.innerHTML = `
-              <div class="w3-panel w3-pale-yellow w3-center">
-                <p>No pages found. Create your first page to get started.</p>
-              </div>
-            `;
+      // For regular pages, update the template
+      const pageData = pageCache[currentEditingPage];
+      if (!pageData) return;
+      
+      // Create new data object based on template
+      const templateData = {};
+      const template = templates[templateId];
+      
+      template.fields.forEach(field => {
+        if (field.type === 'repeater' && field.subfields) {
+          // Initialize repeater fields with empty array
+          templateData[field.name] = [];
+        } else {
+          // Check if field exists in current data
+          if (pageData.data && pageData.data[field.name] !== undefined) {
+            // Use existing data
+            templateData[field.name] = pageData.data[field.name];
+          } else {
+            // Initialize with empty values
+            switch (field.type) {
+              case 'checkbox':
+                templateData[field.name] = false;
+                break;
+              case 'gallery':
+                templateData[field.name] = [];
+                break;
+              case 'image':
+                templateData[field.name] = { url: '', alt: '' };
+                break;
+              default:
+                templateData[field.name] = '';
+            }
           }
         }
-      })
-      .catch(error => {
-        console.error('Error deleting page:', error);
-        showStatus('Error deleting page: ' + error.message, true);
       });
+      
+      // Update page data
+      pageData.template = templateId;
+      pageData.data = templateData;
+      
+      // Update cache
+      pageCache[currentEditingPage] = pageData;
+      
+      // Update template in the UI
+      if (elements.templateSelector) {
+        try {
+          elements.templateSelector.value = templateId;
+        } catch (e) {
+          console.error('Error setting template selector value:', e);
+          // If the template doesn't exist in the dropdown, add it
+          if (templateId && !Array.from(elements.templateSelector.options).find(opt => opt.value === templateId)) {
+            const option = document.createElement('option');
+            option.value = templateId;
+            option.textContent = templateId + ' (Unknown)';
+            elements.templateSelector.appendChild(option);
+            elements.templateSelector.value = templateId;
+          }
+        }
+      }
+      
+      // Generate template fields
+      generateTemplateFields(templateId, templateData);
+      
+      // Reset dirty flag
+      isDirty = false;
+      
+      // Update preview
+      updatePreview();
+      
+      showStatus('Template changed successfully');
+    }
   }
 
-  // Public API
-  return {
-    init,
-    loadPages,
-    openEditor,
-    closeEditor,
-    savePage,
-    deletePage,
-    openCreatePageDialog,
-    closeCreatePageDialog,
-    logElementStatus
-  };
-})();
-
-// Initialize PageEditor when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-  // Initialize PageEditor
-  PageEditor.init();
-}); 
+  //
