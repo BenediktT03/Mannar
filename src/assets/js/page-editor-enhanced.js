@@ -5,36 +5,44 @@
  */
 // At the beginning of the file (before any other code)
 // Make PageEditor globally available immediately
-
+// At the very beginning of the file
 window.PageEditor = {};
 
-// Instead of using a local variable, directly modify window.PageEditor
+
+
 (function() {
-  // Private vars/functions here
+  // Define all variables and functions first
   
-  // Set properties on window.PageEditor
-  PageEditor.init = init;
-  PageEditor.loadPages = loadPages;
-  PageEditor.updatePreview = updatePreview;
-  PageEditor.setDirty = function(value) { isDirty = value; };
-  // etc.
+  // All your function definitions (init, loadPages, etc.) go here
+  function init() {
+    // init implementation
+  }
+  
+  function loadPages() {
+    // loadPages implementation
+  }
+  
+  // At the END of your IIFE, expose functions to the global object
+  window.PageEditor.init = init;
+  window.PageEditor.loadPages = loadPages;
+  // other methods you want to expose
 })();
 // Use module pattern to avoid global scope pollution
-const PageEditor = (function() {
+(function() {
   // Private variables
   let db;
   let currentEditingPage = null;
-  let isEditingMainContent = false; // Flag to indicate editing main content
+  let isEditingMainContent = false; 
   let pageCache = {};
-  let mainContentCache = null; // Cache for main content
+  let mainContentCache = null;
   let isDirty = false;
   let previewTimer = null;
   let editorState = {
     selectedTemplate: '',
     currentFields: [],
     globalSettings: {
-      titleSize: 2.5, // in em
-      subtitleSize: 1.8, // in em
+      titleSize: 2.5,
+      subtitleSize: 1.8,
       primaryColor: '#007bff',
       secondaryColor: '#6c757d',
       bodyFont: 'Lato, sans-serif',
@@ -237,6 +245,34 @@ const PageEditor = (function() {
     
     // Update preview container
     elements.livePreview.innerHTML = previewHtml;
+  }
+
+  function init() {
+    // Initialize Firebase
+    if (typeof firebase !== 'undefined') {
+      if (!firebase.apps.length) {
+        console.warn("Firebase not initialized, please ensure Firebase is initialized before using PageEditor");
+      } else {
+        db = firebase.firestore();
+      }
+    } else {
+      console.error("Firebase not found. Please include Firebase libraries before initializing PageEditor");
+      return;
+    }
+
+    // Create and insert necessary UI elements
+    ensureUIElements();
+    
+    // Cache DOM elements
+    cacheElements();
+    
+    // Attach event listeners
+    attachEvents();
+    
+    // Load initial data
+    loadPages();
+    
+    console.log("PageEditor initialized successfully");
   }
 
   // Generate preview HTML for main content
