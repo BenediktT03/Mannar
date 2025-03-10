@@ -357,7 +357,77 @@ $csrf_token = generateCsrfToken();
   <script src="./assets/js/admin-panel.js"></script>
   <script src="./assets/js/page-editor-enhanced.js"></script>
   <script src="./assets/js/global-settings.js"></script>
-  
+  <script>
+  // Create a global PageEditor object if it doesn't exist
+window.PageEditor = window.PageEditor || {};
+
+// Add required methods if missing
+if (typeof window.PageEditor.init !== 'function') {
+  console.log('Adding fallback PageEditor.init()');
+  window.PageEditor.init = function() {
+    console.log('PageEditor.init() fallback called');
+    
+    // Basic initialization - find pages container and show message
+    const pagesContainer = document.getElementById('pagesContainer');
+    if (pagesContainer) {
+      pagesContainer.innerHTML = `
+        <div class="w3-panel w3-yellow">
+          <h3>Admin Panel Recovery Mode</h3>
+          <p>The page editor encountered an initialization error. Basic functionality has been restored.</p>
+          <button class="w3-button w3-blue" onclick="location.reload()">Refresh Page</button>
+          <div id="pagesList" class="w3-margin-top"></div>
+        </div>
+      `;
+    }
+    
+    // Call loadPages to show some content
+    if (typeof this.loadPages === 'function') {
+      this.loadPages();
+    }
+  };
+}
+
+if (typeof window.PageEditor.loadPages !== 'function') {
+  console.log('Adding fallback PageEditor.loadPages()');
+  window.PageEditor.loadPages = function() {
+    console.log('PageEditor.loadPages() fallback called');
+    
+    // Find pages list container
+    const pagesList = document.getElementById('pagesList');
+    if (!pagesList) return;
+    
+    // Show placeholder content
+    pagesList.innerHTML = `
+      <div class="w3-card w3-padding w3-margin-bottom w3-pale-yellow">
+        <div class="w3-bar-item w3-padding">
+          <span class="page-title"><i class="fas fa-home"></i> Homepage (index.php)</span><br>
+          <small class="w3-text-grey">Main Website Content</small>
+        </div>
+        <div class="w3-bar-item w3-right">
+          <a href="index.php" target="_blank" class="w3-button w3-small w3-blue">
+            <i class="fas fa-eye"></i>
+          </a>
+        </div>
+      </div>
+      <p class="w3-center">Emergency mode active - limited functionality available</p>
+    `;
+  };
+}
+
+if (typeof window.PageEditor.setDirty !== 'function') {
+  window.PageEditor.setDirty = function(value) {
+    console.log('PageEditor.setDirty() fallback called with value:', value);
+  };
+}
+
+// Call init when the document is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('Emergency fix: calling PageEditor.init()');
+  if (typeof window.PageEditor.init === 'function') {
+    window.PageEditor.init();
+  }
+});
+</script>
   <!-- Initialize Firebase -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -596,6 +666,62 @@ $csrf_token = generateCsrfToken();
       // Run initial diagnostics
       setTimeout(debugStatus, 1000);
     });
+
+    document.addEventListener('DOMContentLoaded', function() {
+  console.log('Initializing Admin Panel...');
+  
+  // Make sure PageEditor is properly initialized after DOM is loaded
+  if (typeof PageEditor !== 'undefined') {
+    console.log('PageEditor is defined, initializing...');
+    
+    if (typeof PageEditor.init === 'function') {
+      console.log('Calling PageEditor.init()');
+      PageEditor.init();
+      
+      // Set up a fallback for loadPages if it's not properly exposed
+      if (typeof PageEditor.loadPages !== 'function') {
+        console.warn('PageEditor.loadPages is not available, creating fallback...');
+        
+        // Create a fallback function
+        PageEditor.loadPages = function() {
+          console.log('Using fallback loadPages function');
+          // Show a placeholder in the pages list
+          const pagesList = document.getElementById('pagesList');
+          if (pagesList) {
+            pagesList.innerHTML = `
+              <div class="w3-panel w3-pale-yellow w3-center">
+                <p>Page loading is temporarily unavailable. Please refresh the page.</p>
+                <button class="w3-button w3-blue" onclick="location.reload()">Refresh Page</button>
+              </div>
+            `;
+          }
+        };
+      }
+    } else {
+      console.error('PageEditor.init is not a function');
+    }
+  } else {
+    console.error('PageEditor is not defined');
+    
+    // Show error message on pages tab
+    const pagesTab = document.getElementById('pages-tab');
+    if (pagesTab) {
+      pagesTab.innerHTML = `
+        <div class="w3-panel w3-red">
+          <h3>Error: PageEditor not loaded</h3>
+          <p>The PageEditor could not be loaded. Please check the browser console for errors and refresh the page.</p>
+          <button class="w3-button w3-white" onclick="location.reload()">Reload Page</button>
+        </div>
+      `;
+    }
+  }
+  
+  // Initialize TabController
+  if (typeof window.tabController !== 'undefined' && typeof window.tabController.switchToTab === 'function') {
+    // Switch to pages tab by default
+    window.tabController.switchToTab('pages');
+  }
+});
   </script>
 </body>
 </html>

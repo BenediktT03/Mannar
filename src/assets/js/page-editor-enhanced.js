@@ -3,9 +3,217 @@
  * 
  * Integrated version that handles both regular pages and the main content (index.php)
  */
+// At the beginning of the file (before any other code)
+// Make PageEditor globally available immediately
 
+window.PageEditor = {};
+
+// Instead of using a local variable, directly modify window.PageEditor
+(function() {
+  // Private vars/functions here
+  
+  // Set properties on window.PageEditor
+  PageEditor.init = init;
+  PageEditor.loadPages = loadPages;
+  PageEditor.updatePreview = updatePreview;
+  PageEditor.setDirty = function(value) { isDirty = value; };
+  // etc.
+})();
 // Use module pattern to avoid global scope pollution
 const PageEditor = (function() {
+  // Private variables
+  let db;
+  let currentEditingPage = null;
+  let isEditingMainContent = false; // Flag to indicate editing main content
+  let pageCache = {};
+  let mainContentCache = null; // Cache for main content
+  let isDirty = false;
+  let previewTimer = null;
+  let editorState = {
+    selectedTemplate: '',
+    currentFields: [],
+    globalSettings: {
+      titleSize: 2.5, // in em
+      subtitleSize: 1.8, // in em
+      primaryColor: '#007bff',
+      secondaryColor: '#6c757d',
+      bodyFont: 'Lato, sans-serif',
+      headingFont: 'Lato, sans-serif'
+    }
+  };
+
+  // Template definitions with expanded options
+  const templates = {
+    'main-content': {
+      name: 'Homepage (index.php)',
+      description: 'Main Website Content',
+      preview: '<div class="tp-header"></div><div class="tp-hero"></div><div class="tp-content"></div>',
+      fields: [
+        // About section
+        { type: 'text', name: 'aboutTitle', label: 'About Section Title', required: true, quill: true },
+        { type: 'text', name: 'aboutSubtitle', label: 'About Section Subtitle', required: false, quill: true },
+        { type: 'textarea', name: 'aboutText', label: 'About Section Content', editor: true, required: false },
+        
+        // Offerings section
+        { type: 'text', name: 'offeringsTitle', label: 'Offerings Section Title', required: true, quill: true },
+        { type: 'text', name: 'offeringsSubtitle', label: 'Offerings Section Subtitle', required: false, quill: true },
+        
+        // Offering 1
+        { type: 'text', name: 'offer1Title', label: 'Offering 1 Title', required: false },
+        { type: 'textarea', name: 'offer1Desc', label: 'Offering 1 Description', editor: true, required: false },
+        { type: 'image', name: 'offer1_image', label: 'Offering 1 Image', required: false },
+        
+        // Offering 2
+        { type: 'text', name: 'offer2Title', label: 'Offering 2 Title', required: false },
+        { type: 'textarea', name: 'offer2Desc', label: 'Offering 2 Description', editor: true, required: false },
+        { type: 'image', name: 'offer2_image', label: 'Offering 2 Image', required: false },
+        
+        // Offering 3
+        { type: 'text', name: 'offer3Title', label: 'Offering 3 Title', required: false },
+        { type: 'textarea', name: 'offer3Desc', label: 'Offering 3 Description', editor: true, required: false },
+        { type: 'image', name: 'offer3_image', label: 'Offering 3 Image', required: false },
+        
+        // Contact section
+        { type: 'text', name: 'contactTitle', label: 'Contact Section Title', required: true, quill: true },
+        { type: 'text', name: 'contactSubtitle', label: 'Contact Section Subtitle', required: false, quill: true },
+        { type: 'image', name: 'contact_image', label: 'Contact Image (Map)', required: false }
+      ]
+    },
+    'basic': {
+      name: 'Basic Page',
+      description: 'Simple page with title, subtitle, and content',
+      preview: '<div class="tp-header"></div><div class="tp-content"></div>',
+      fields: [
+        { type: 'text', name: 'title', label: 'Page Title', required: true, quill: true },
+        { type: 'text', name: 'subtitle', label: 'Subtitle', required: false, quill: true },
+        { type: 'textarea', name: 'content', label: 'Main Content', editor: true, required: false }
+      ]
+    },
+    'text-image': {
+      name: 'Text with Image',
+      description: 'Text on the left, image on the right',
+      preview: '<div class="tp-text-col"></div><div class="tp-image-col"></div>',
+      fields: [
+        { type: 'text', name: 'title', label: 'Page Title', required: true, quill: true },
+        { type: 'text', name: 'subtitle', label: 'Subtitle', required: false, quill: true },
+        { type: 'textarea', name: 'content', label: 'Main Content', editor: true, required: false },
+        { type: 'image', name: 'featuredImage', label: 'Featured Image', required: false }
+      ]
+    },
+    'image-text': {
+      name: 'Image with Text',
+      description: 'Image on the left, text on the right',
+      preview: '<div class="tp-image-col"></div><div class="tp-text-col"></div>',
+      fields: [
+        { type: 'text', name: 'title', label: 'Page Title', required: true, quill: true },
+        { type: 'text', name: 'subtitle', label: 'Subtitle', required: false, quill: true },
+        { type: 'image', name: 'featuredImage', label: 'Featured Image', required: false },
+        { type: 'textarea', name: 'content', label: 'Main Content', editor: true, required: false }
+      ]
+    },
+    'gallery': {
+      name: 'Gallery Page',
+      description: 'Display a collection of images in a gallery format',
+      preview: '<div class="tp-header"></div><div class="tp-gallery"></div>',
+      fields: [
+        { type: 'text', name: 'title', label: 'Gallery Title', required: true, quill: true },
+        { type: 'text', name: 'subtitle', label: 'Gallery Subtitle', required: false, quill: true },
+        { type: 'textarea', name: 'description', label: 'Gallery Description', editor: true, required: false },
+        { type: 'gallery', name: 'images', label: 'Gallery Images', required: false }
+      ]
+    },
+    'landing': {
+      name: 'Landing Page',
+      description: 'Full-featured landing page with hero image, features, and call to action',
+      preview: '<div class="tp-hero"></div><div class="tp-features"></div><div class="tp-cta"></div>',
+      fields: [
+        { type: 'text', name: 'title', label: 'Hero Title', required: true, quill: true },
+        { type: 'text', name: 'subtitle', label: 'Hero Subtitle', required: false, quill: true },
+        { type: 'image', name: 'heroImage', label: 'Hero Background Image', required: false },
+        { type: 'text', name: 'ctaText', label: 'Call to Action Text', required: false, quill: true },
+        { type: 'text', name: 'ctaButtonText', label: 'Button Text', required: false },
+        { type: 'text', name: 'ctaButtonLink', label: 'Button Link', required: false },
+        { type: 'text', name: 'featuresTitle', label: 'Features Section Title', required: false, quill: true },
+        { type: 'repeater', name: 'features', label: 'Features', required: false, subfields: [
+          { type: 'text', name: 'title', label: 'Feature Title' },
+          { type: 'textarea', name: 'description', label: 'Feature Description', editor: false },
+          { type: 'image', name: 'icon', label: 'Feature Icon/Image' }
+        ]}
+      ]
+    },
+    'portfolio': {
+      name: 'Portfolio Page',
+      description: 'Showcase your work with projects and descriptions',
+      preview: '<div class="tp-header"></div><div class="tp-portfolio"></div>',
+      fields: [
+        { type: 'text', name: 'title', label: 'Portfolio Title', required: true, quill: true },
+        { type: 'text', name: 'subtitle', label: 'Portfolio Subtitle', required: false, quill: true },
+        { type: 'textarea', name: 'introduction', label: 'Introduction Text', editor: true, required: false },
+        { type: 'repeater', name: 'projects', label: 'Portfolio Projects', required: false, subfields: [
+          { type: 'text', name: 'title', label: 'Project Title' },
+          { type: 'textarea', name: 'description', label: 'Project Description', editor: false },
+          { type: 'image', name: 'thumbnail', label: 'Project Thumbnail' },
+          { type: 'text', name: 'link', label: 'Project Link (optional)' }
+        ]}
+      ]
+    },
+    'contact': {
+      name: 'Contact Page',
+      description: 'Contact information with a contact form',
+      preview: '<div class="tp-header"></div><div class="tp-contact-info"></div><div class="tp-form"></div>',
+      fields: [
+        { type: 'text', name: 'title', label: 'Contact Page Title', required: true, quill: true },
+        { type: 'text', name: 'subtitle', label: 'Contact Page Subtitle', required: false, quill: true },
+        { type: 'textarea', name: 'introduction', label: 'Introduction Text', editor: true, required: false },
+        { type: 'text', name: 'address', label: 'Address', required: false },
+        { type: 'text', name: 'email', label: 'Email Address', required: false },
+        { type: 'text', name: 'phone', label: 'Phone Number', required: false },
+        { type: 'checkbox', name: 'showForm', label: 'Show Contact Form', required: false },
+        { type: 'image', name: 'contactImage', label: 'Contact Image/Map', required: false }
+      ]
+    },
+    'blog': {
+      name: 'Blog Post',
+      description: 'A blog post with featured image and content sections',
+      preview: '<div class="tp-header"></div><div class="tp-featured"></div><div class="tp-content"></div>',
+      fields: [
+        { type: 'text', name: 'title', label: 'Post Title', required: true, quill: true },
+        { type: 'text', name: 'subtitle', label: 'Post Subtitle', required: false, quill: true },
+        { type: 'date', name: 'date', label: 'Post Date', required: false },
+        { type: 'text', name: 'author', label: 'Author', required: false },
+        { type: 'image', name: 'featuredImage', label: 'Featured Image', required: false },
+        { type: 'textarea', name: 'excerpt', label: 'Excerpt', editor: false, required: false },
+        { type: 'textarea', name: 'content', label: 'Post Content', editor: true, required: false },
+        { type: 'tags', name: 'categories', label: 'Categories', required: false }
+      ]
+    }
+  };
+
+  // DOM element cache
+  const elements = {
+    // Will be populated in init()
+  };
+
+  // Status message function
+  function showStatus(message, isError = false, timeout = 5000) {
+    const statusMsg = document.getElementById('statusMsg');
+    if (!statusMsg) return;
+    
+    statusMsg.textContent = message;
+    statusMsg.style.display = 'block';
+    statusMsg.className = isError ? 'status-msg error show' : 'status-msg success show';
+    
+    // Hide after timeout unless it's 0 (persistent)
+    if (timeout > 0) {
+      setTimeout(() => {
+        statusMsg.classList.remove('show');
+        setTimeout(() => {
+          statusMsg.style.display = 'none';
+        }, 300);
+      }, timeout);
+    }
+  }
+
   // Update the live preview
   function updatePreview() {
     if (!elements.livePreview || (!currentEditingPage && !isEditingMainContent)) return;
@@ -880,197 +1088,6 @@ const PageEditor = (function() {
         console.error('Error deleting page:', error);
         showStatus('Error deleting page: ' + error.message, true);
       });
-  } //Private variables
-  let db;
-  let currentEditingPage = null;
-  let isEditingMainContent = false; // Flag to indicate editing main content
-  let pageCache = {};
-  let mainContentCache = null; // Cache for main content
-  let isDirty = false;
-  let previewTimer = null;
-  let editorState = {
-    selectedTemplate: '',
-    currentFields: [],
-    globalSettings: {
-      titleSize: 2.5, // in em
-      subtitleSize: 1.8, // in em
-      primaryColor: '#007bff',
-      secondaryColor: '#6c757d',
-      bodyFont: 'Lato, sans-serif',
-      headingFont: 'Lato, sans-serif'
-    }
-  };
-
-  // Template definitions with expanded options
-  const templates = {
-    'main-content': {
-      name: 'Homepage (index.php)',
-      description: 'Main Website Content',
-      preview: '<div class="tp-header"></div><div class="tp-hero"></div><div class="tp-content"></div>',
-      fields: [
-        // About section
-        { type: 'text', name: 'aboutTitle', label: 'About Section Title', required: true, quill: true },
-        { type: 'text', name: 'aboutSubtitle', label: 'About Section Subtitle', required: false, quill: true },
-        { type: 'textarea', name: 'aboutText', label: 'About Section Content', editor: true, required: false },
-        
-        // Offerings section
-        { type: 'text', name: 'offeringsTitle', label: 'Offerings Section Title', required: true, quill: true },
-        { type: 'text', name: 'offeringsSubtitle', label: 'Offerings Section Subtitle', required: false, quill: true },
-        
-        // Offering 1
-        { type: 'text', name: 'offer1Title', label: 'Offering 1 Title', required: false },
-        { type: 'textarea', name: 'offer1Desc', label: 'Offering 1 Description', editor: true, required: false },
-        { type: 'image', name: 'offer1_image', label: 'Offering 1 Image', required: false },
-        
-        // Offering 2
-        { type: 'text', name: 'offer2Title', label: 'Offering 2 Title', required: false },
-        { type: 'textarea', name: 'offer2Desc', label: 'Offering 2 Description', editor: true, required: false },
-        { type: 'image', name: 'offer2_image', label: 'Offering 2 Image', required: false },
-        
-        // Offering 3
-        { type: 'text', name: 'offer3Title', label: 'Offering 3 Title', required: false },
-        { type: 'textarea', name: 'offer3Desc', label: 'Offering 3 Description', editor: true, required: false },
-        { type: 'image', name: 'offer3_image', label: 'Offering 3 Image', required: false },
-        
-        // Contact section
-        { type: 'text', name: 'contactTitle', label: 'Contact Section Title', required: true, quill: true },
-        { type: 'text', name: 'contactSubtitle', label: 'Contact Section Subtitle', required: false, quill: true },
-        { type: 'image', name: 'contact_image', label: 'Contact Image (Map)', required: false }
-      ]
-    },
-    'basic': {
-      name: 'Basic Page',
-      description: 'Simple page with title, subtitle, and content',
-      preview: '<div class="tp-header"></div><div class="tp-content"></div>',
-      fields: [
-        { type: 'text', name: 'title', label: 'Page Title', required: true, quill: true },
-        { type: 'text', name: 'subtitle', label: 'Subtitle', required: false, quill: true },
-        { type: 'textarea', name: 'content', label: 'Main Content', editor: true, required: false }
-      ]
-    },
-    'text-image': {
-      name: 'Text with Image',
-      description: 'Text on the left, image on the right',
-      preview: '<div class="tp-text-col"></div><div class="tp-image-col"></div>',
-      fields: [
-        { type: 'text', name: 'title', label: 'Page Title', required: true, quill: true },
-        { type: 'text', name: 'subtitle', label: 'Subtitle', required: false, quill: true },
-        { type: 'textarea', name: 'content', label: 'Main Content', editor: true, required: false },
-        { type: 'image', name: 'featuredImage', label: 'Featured Image', required: false }
-      ]
-    },
-    'image-text': {
-      name: 'Image with Text',
-      description: 'Image on the left, text on the right',
-      preview: '<div class="tp-image-col"></div><div class="tp-text-col"></div>',
-      fields: [
-        { type: 'text', name: 'title', label: 'Page Title', required: true, quill: true },
-        { type: 'text', name: 'subtitle', label: 'Subtitle', required: false, quill: true },
-        { type: 'image', name: 'featuredImage', label: 'Featured Image', required: false },
-        { type: 'textarea', name: 'content', label: 'Main Content', editor: true, required: false }
-      ]
-    },
-    'gallery': {
-      name: 'Gallery Page',
-      description: 'Display a collection of images in a gallery format',
-      preview: '<div class="tp-header"></div><div class="tp-gallery"></div>',
-      fields: [
-        { type: 'text', name: 'title', label: 'Gallery Title', required: true, quill: true },
-        { type: 'text', name: 'subtitle', label: 'Gallery Subtitle', required: false, quill: true },
-        { type: 'textarea', name: 'description', label: 'Gallery Description', editor: true, required: false },
-        { type: 'gallery', name: 'images', label: 'Gallery Images', required: false }
-      ]
-    },
-    'landing': {
-      name: 'Landing Page',
-      description: 'Full-featured landing page with hero image, features, and call to action',
-      preview: '<div class="tp-hero"></div><div class="tp-features"></div><div class="tp-cta"></div>',
-      fields: [
-        { type: 'text', name: 'title', label: 'Hero Title', required: true, quill: true },
-        { type: 'text', name: 'subtitle', label: 'Hero Subtitle', required: false, quill: true },
-        { type: 'image', name: 'heroImage', label: 'Hero Background Image', required: false },
-        { type: 'text', name: 'ctaText', label: 'Call to Action Text', required: false, quill: true },
-        { type: 'text', name: 'ctaButtonText', label: 'Button Text', required: false },
-        { type: 'text', name: 'ctaButtonLink', label: 'Button Link', required: false },
-        { type: 'text', name: 'featuresTitle', label: 'Features Section Title', required: false, quill: true },
-        { type: 'repeater', name: 'features', label: 'Features', required: false, subfields: [
-          { type: 'text', name: 'title', label: 'Feature Title' },
-          { type: 'textarea', name: 'description', label: 'Feature Description', editor: false },
-          { type: 'image', name: 'icon', label: 'Feature Icon/Image' }
-        ]}
-      ]
-    },
-    'portfolio': {
-      name: 'Portfolio Page',
-      description: 'Showcase your work with projects and descriptions',
-      preview: '<div class="tp-header"></div><div class="tp-portfolio"></div>',
-      fields: [
-        { type: 'text', name: 'title', label: 'Portfolio Title', required: true, quill: true },
-        { type: 'text', name: 'subtitle', label: 'Portfolio Subtitle', required: false, quill: true },
-        { type: 'textarea', name: 'introduction', label: 'Introduction Text', editor: true, required: false },
-        { type: 'repeater', name: 'projects', label: 'Portfolio Projects', required: false, subfields: [
-          { type: 'text', name: 'title', label: 'Project Title' },
-          { type: 'textarea', name: 'description', label: 'Project Description', editor: false },
-          { type: 'image', name: 'thumbnail', label: 'Project Thumbnail' },
-          { type: 'text', name: 'link', label: 'Project Link (optional)' }
-        ]}
-      ]
-    },
-    'contact': {
-      name: 'Contact Page',
-      description: 'Contact information with a contact form',
-      preview: '<div class="tp-header"></div><div class="tp-contact-info"></div><div class="tp-form"></div>',
-      fields: [
-        { type: 'text', name: 'title', label: 'Contact Page Title', required: true, quill: true },
-        { type: 'text', name: 'subtitle', label: 'Contact Page Subtitle', required: false, quill: true },
-        { type: 'textarea', name: 'introduction', label: 'Introduction Text', editor: true, required: false },
-        { type: 'text', name: 'address', label: 'Address', required: false },
-        { type: 'text', name: 'email', label: 'Email Address', required: false },
-        { type: 'text', name: 'phone', label: 'Phone Number', required: false },
-        { type: 'checkbox', name: 'showForm', label: 'Show Contact Form', required: false },
-        { type: 'image', name: 'contactImage', label: 'Contact Image/Map', required: false }
-      ]
-    },
-    'blog': {
-      name: 'Blog Post',
-      description: 'A blog post with featured image and content sections',
-      preview: '<div class="tp-header"></div><div class="tp-featured"></div><div class="tp-content"></div>',
-      fields: [
-        { type: 'text', name: 'title', label: 'Post Title', required: true, quill: true },
-        { type: 'text', name: 'subtitle', label: 'Post Subtitle', required: false, quill: true },
-        { type: 'date', name: 'date', label: 'Post Date', required: false },
-        { type: 'text', name: 'author', label: 'Author', required: false },
-        { type: 'image', name: 'featuredImage', label: 'Featured Image', required: false },
-        { type: 'textarea', name: 'excerpt', label: 'Excerpt', editor: false, required: false },
-        { type: 'textarea', name: 'content', label: 'Post Content', editor: true, required: false },
-        { type: 'tags', name: 'categories', label: 'Categories', required: false }
-      ]
-    }
-  };
-
-  // DOM element cache
-  const elements = {
-    // Will be populated in init()
-  };
-
-  // Status message function
-  function showStatus(message, isError = false, timeout = 5000) {
-    const statusMsg = document.getElementById('statusMsg');
-    if (!statusMsg) return;
-    
-    statusMsg.textContent = message;
-    statusMsg.style.display = 'block';
-    statusMsg.className = isError ? 'status-msg error show' : 'status-msg success show';
-    
-    // Hide after timeout unless it's 0 (persistent)
-    if (timeout > 0) {
-      setTimeout(() => {
-        statusMsg.classList.remove('show');
-        setTimeout(() => {
-          statusMsg.style.display = 'none';
-        }, 300);
-      }, timeout);
-    }
   }
 
   // Log element status for debugging
@@ -1359,9 +1376,6 @@ const PageEditor = (function() {
     while (dialogSelector.options.length > 1) {
       dialogSelector.remove(1);
     }
-    
-    // Don't add main-content template to the new page dialog
-    // since it's reserved for index.php
     
     // Add template options
     for (const [id, template] of Object.entries(templates)) {
@@ -2309,872 +2323,4 @@ const PageEditor = (function() {
     }
     
     container.appendChild(fieldContainer);
-  }
-
-  // Create a gallery image item
-  function createGalleryImageItem(fieldId, image, index) {
-    const imageCol = document.createElement('div');
-    imageCol.className = 'w3-col s6 m4 l3 w3-padding gallery-item';
-    imageCol.dataset.index = index;
-    
-    const imageCard = document.createElement('div');
-    imageCard.className = 'w3-card';
-    
-    const imageWrapper = document.createElement('div');
-    imageWrapper.className = 'image-wrapper';
-    imageWrapper.style.position = 'relative';
-    
-    const img = document.createElement('img');
-    img.src = image.url;
-    img.alt = image.alt || '';
-    img.style.width = '100%';
-    
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.className = 'w3-button w3-red w3-circle gallery-remove-btn';
-    removeBtn.innerHTML = '<i class="fas fa-times"></i>';
-    removeBtn.addEventListener('click', () => removeGalleryImage(fieldId, index));
-    
-    const captionInput = document.createElement('input');
-    captionInput.type = 'text';
-    captionInput.className = 'w3-input w3-border w3-small';
-    captionInput.value = image.caption || '';
-    captionInput.placeholder = 'Caption';
-    
-    // Event listener to update caption
-    captionInput.addEventListener('input', () => {
-      updateGalleryImageCaption(fieldId, index, captionInput.value);
-    });
-    
-    imageWrapper.appendChild(img);
-    imageWrapper.appendChild(removeBtn);
-    
-    imageCard.appendChild(imageWrapper);
-    imageCard.appendChild(captionInput);
-    
-    imageCol.appendChild(imageCard);
-    
-    return imageCol;
-  }
-
-  // Create a repeater item
-  function createRepeaterItem(field, itemData, index) {
-    const itemContainer = document.createElement('div');
-    itemContainer.className = 'repeater-item w3-card w3-margin-bottom';
-    itemContainer.dataset.index = index;
-    
-    const itemHeader = document.createElement('div');
-    itemHeader.className = 'repeater-item-header w3-bar w3-light-grey';
-    itemHeader.innerHTML = `
-      <div class="w3-bar-item">Item #${index + 1}</div>
-      <button type="button" class="w3-bar-item w3-button w3-red w3-right repeater-remove-btn">
-        <i class="fas fa-times"></i>
-      </button>
-    `;
-    
-    const itemContent = document.createElement('div');
-    itemContent.className = 'repeater-item-content w3-padding';
-    
-    // Add subfields
-    field.subfields.forEach(subfield => {
-      const subfieldValue = itemData[subfield.name] !== undefined ? itemData[subfield.name] : '';
-      const subfieldId = `${field.name}_${index}_${subfield.name}`;
-      
-      const subfieldContainer = document.createElement('div');
-      subfieldContainer.className = 'w3-margin-bottom';
-      
-      const label = document.createElement('label');
-      label.setAttribute('for', subfieldId);
-      label.innerHTML = `<strong>${subfield.label}:</strong>`;
-      subfieldContainer.appendChild(label);
-      
-      // Create subfield input based on type
-      switch (subfield.type) {
-        case 'text':
-          const textInput = document.createElement('input');
-          textInput.type = 'text';
-          textInput.id = subfieldId;
-          textInput.className = 'w3-input w3-border';
-          textInput.value = subfieldValue || '';
-          textInput.dataset.name = subfield.name;
-          
-          // Event listener to update repeater data
-          textInput.addEventListener('input', () => {
-            updateRepeaterItemData(field.name, index, subfield.name, textInput.value);
-          });
-          
-          subfieldContainer.appendChild(textInput);
-          break;
-          
-        case 'textarea':
-          const textarea = document.createElement('textarea');
-          textarea.id = subfieldId;
-          textarea.className = 'w3-input w3-border';
-          textarea.rows = 3;
-          textarea.value = subfieldValue || '';
-          textarea.dataset.name = subfield.name;
-          
-          // Event listener to update repeater data
-          textarea.addEventListener('input', () => {
-            updateRepeaterItemData(field.name, index, subfield.name, textarea.value);
-          });
-          
-          subfieldContainer.appendChild(textarea);
-          break;
-          
-        case 'image':
-          const imageContainer = document.createElement('div');
-          imageContainer.className = 'image-field-container';
-          
-          // Preview container
-          const previewContainer = document.createElement('div');
-          previewContainer.className = 'image-preview';
-          
-          // Preview image
-          const previewImg = document.createElement('img');
-          previewImg.src = subfieldValue && subfieldValue.url ? subfieldValue.url : '/api/placeholder/400/300';
-          previewImg.style.maxWidth = '100%';
-          previewImg.style.display = subfieldValue && subfieldValue.url ? 'block' : 'none';
-          
-          previewContainer.appendChild(previewImg);
-          
-          // Upload button
-          const uploadBtn = document.createElement('button');
-          uploadBtn.type = 'button';
-          uploadBtn.className = 'w3-button w3-blue w3-margin-top';
-          uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Choose Image';
-          uploadBtn.addEventListener('click', () => {
-            uploadRepeaterImage(field.name, index, subfield.name, uploadBtn, previewImg);
-          });
-          
-          // Hidden input for image data
-          const imageInput = document.createElement('input');
-          imageInput.type = 'hidden';
-          imageInput.id = subfieldId;
-          imageInput.value = JSON.stringify(subfieldValue || { url: '', alt: '' });
-          imageInput.dataset.name = subfield.name;
-          
-          imageContainer.appendChild(previewContainer);
-          imageContainer.appendChild(uploadBtn);
-          imageContainer.appendChild(imageInput);
-          
-          subfieldContainer.appendChild(imageContainer);
-          break;
-      }
-      
-      itemContent.appendChild(subfieldContainer);
-    });
-    
-    // Remove button event
-    itemHeader.querySelector('.repeater-remove-btn').addEventListener('click', () => {
-      removeRepeaterItem(field.name, index);
-    });
-    
-    itemContainer.appendChild(itemHeader);
-    itemContainer.appendChild(itemContent);
-    
-    return itemContainer;
-  }
-
-  // Add a new repeater item
-  function addRepeaterItem(field, container) {
-    // Get current items
-    const fieldId = `field_${field.name}`;
-    const input = document.getElementById(fieldId);
-    
-    if (!input) return;
-    
-    let items = [];
-    try {
-      items = JSON.parse(input.value) || [];
-    } catch (error) {
-      console.error('Error parsing repeater data:', error);
-      items = [];
-    }
-    
-    // Create empty item data
-    const newItem = {};
-    field.subfields.forEach(subfield => {
-      switch (subfield.type) {
-        case 'image':
-          newItem[subfield.name] = { url: '', alt: '' };
-          break;
-        default:
-          newItem[subfield.name] = '';
-      }
-    });
-    
-    // Add to items array
-    items.push(newItem);
-    
-    // Update input value
-    input.value = JSON.stringify(items);
-    
-    // Create and add item element
-    const itemContainer = createRepeaterItem(field, newItem, items.length - 1);
-    container.appendChild(itemContainer);
-    
-    // Mark as dirty
-    isDirty = true;
-    
-    // Update preview
-    updatePreview();
-  }
-
-  // Remove a repeater item
-  function removeRepeaterItem(fieldName, index) {
-    // Confirm deletion
-    if (!confirm('Are you sure you want to remove this item?')) {
-      return;
-    }
-    
-    const fieldId = `field_${fieldName}`;
-    const input = document.getElementById(fieldId);
-    const itemsContainer = document.getElementById(`${fieldId}_items`);
-    
-    if (!input || !itemsContainer) return;
-    
-    let items = [];
-    try {
-      items = JSON.parse(input.value) || [];
-    } catch (error) {
-      console.error('Error parsing repeater data:', error);
-      return;
-    }
-    
-    // Remove item from array
-    items.splice(index, 1);
-    
-    // Update input value
-    input.value = JSON.stringify(items);
-    
-    // Rebuild all items to update indexes
-    itemsContainer.innerHTML = '';
-    
-    items.forEach((item, idx) => {
-      const itemContainer = createRepeaterItem({ name: fieldName, subfields: getSubfields(fieldName) }, item, idx);
-      itemsContainer.appendChild(itemContainer);
-    });
-    
-    // Mark as dirty
-    isDirty = true;
-    
-    // Update preview
-    updatePreview();
-  }
-
-  // Get subfields for a repeater field
-  function getSubfields(fieldName) {
-    for (const field of editorState.currentFields) {
-      if (field.name === fieldName && field.type === 'repeater') {
-        return field.subfields || [];
-      }
-    }
-    
-    return [];
-  }
-
-  // Update repeater item data
-  function updateRepeaterItemData(fieldName, index, subfieldName, value) {
-    const fieldId = `field_${fieldName}`;
-    const input = document.getElementById(fieldId);
-    
-    if (!input) return;
-    
-    let items = [];
-    try {
-      items = JSON.parse(input.value) || [];
-    } catch (error) {
-      console.error('Error parsing repeater data:', error);
-      return;
-    }
-    
-    // Update item data
-    if (items[index]) {
-      items[index][subfieldName] = value;
-    }
-    
-    // Update input value
-    input.value = JSON.stringify(items);
-    
-    // Mark as dirty
-    isDirty = true;
-    
-    // Update preview (with delay)
-    if (previewTimer) clearTimeout(previewTimer);
-    previewTimer = setTimeout(updatePreview, 500);
-  }
-
-  // Upload an image for a repeater item
-  function uploadRepeaterImage(fieldName, index, subfieldName, button, previewImg) {
-    // Create file input
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = 'image/*';
-    fileInput.style.display = 'none';
-    document.body.appendChild(fileInput);
-    
-    // Handle file selection
-    fileInput.addEventListener('change', () => {
-      if (fileInput.files && fileInput.files[0]) {
-        // Show loading status
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
-        button.disabled = true;
-        
-        // Create form data
-        const formData = new FormData();
-        formData.append('image', fileInput.files[0]);
-        
-        // Upload image
-        fetch('./api/upload.php', {
-          method: 'POST',
-          body: formData
-        })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              // Get repeater item data
-              const fieldId = `field_${fieldName}`;
-              const input = document.getElementById(fieldId);
-              
-              if (!input) return;
-              
-              let items = [];
-              try {
-                items = JSON.parse(input.value) || [];
-              } catch (error) {
-                console.error('Error parsing repeater data:', error);
-                return;
-              }
-              
-              // Update image data
-              if (items[index]) {
-                items[index][subfieldName] = {
-                  url: data.url,
-                  alt: '',
-                  filename: data.filename
-                };
-              }
-              
-              // Update input value
-              input.value = JSON.stringify(items);
-              
-              // Update preview image
-              if (previewImg) {
-                previewImg.src = data.url;
-                previewImg.style.display = 'block';
-              }
-              
-              // Reset button
-              button.innerHTML = '<i class="fas fa-upload"></i> Choose Image';
-              button.disabled = false;
-              
-              // Mark as dirty
-              isDirty = true;
-              
-              // Update preview
-              updatePreview();
-              
-              showStatus('Image uploaded successfully');
-            } else {
-              console.error('Error uploading image:', data.error);
-              showStatus('Error uploading image: ' + data.error, true);
-              
-              // Reset button
-              button.innerHTML = '<i class="fas fa-upload"></i> Choose Image';
-              button.disabled = false;
-            }
-          })
-          .catch(error => {
-            console.error('Error uploading image:', error);
-            showStatus('Error uploading image', true);
-            
-            // Reset button
-            button.innerHTML = '<i class="fas fa-upload"></i> Choose Image';
-            button.disabled = false;
-          });
-        
-        // Remove file input
-        document.body.removeChild(fileInput);
-      }
-    });
-    
-    // Trigger file selection
-    fileInput.click();
-  }
-
-  // Upload an image
-  function uploadImage(fieldId) {
-    // Create file input
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = 'image/*';
-    fileInput.style.display = 'none';
-    document.body.appendChild(fileInput);
-    
-    // Handle file selection
-    fileInput.addEventListener('change', () => {
-      if (fileInput.files && fileInput.files[0]) {
-        // Show loading status
-        const uploadBtn = document.getElementById(`${fieldId}_upload`);
-        if (uploadBtn) {
-          uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
-          uploadBtn.disabled = true;
-        }
-        
-        showStatus('Uploading image...', false, 0);
-        
-        // Create form data
-        const formData = new FormData();
-        formData.append('image', fileInput.files[0]);
-        
-        // Upload image
-        fetch('./api/upload.php', {
-          method: 'POST',
-          body: formData
-        })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              // Update hidden input
-              const input = document.getElementById(fieldId);
-              const altInput = document.getElementById(`${fieldId}_alt`);
-              
-              if (input) {
-                // Get current image data
-                let imageData = { url: '', alt: '' };
-                try {
-                  imageData = JSON.parse(input.value);
-                } catch (error) {
-                  console.error('Error parsing image data:', error);
-                }
-                
-                // Update image data
-                imageData.url = data.url;
-                imageData.filename = data.filename;
-                
-                // Preserve alt text if available
-                if (altInput) {
-                  imageData.alt = altInput.value || '';
-                }
-                
-                // Update input value
-                input.value = JSON.stringify(imageData);
-              }
-              
-              // Update preview image
-              const previewImg = document.querySelector(`#${fieldId}_preview img`);
-              if (previewImg) {
-                previewImg.src = data.url;
-                previewImg.style.display = 'block';
-              }
-              
-              // Reset upload button
-              if (uploadBtn) {
-                uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Choose Image';
-                uploadBtn.disabled = false;
-              }
-              
-              // Mark as dirty
-              isDirty = true;
-              
-              // Update preview
-              updatePreview();
-              
-              showStatus('Image uploaded successfully');
-            } else {
-              console.error('Error uploading image:', data.error);
-              showStatus('Error uploading image: ' + data.error, true);
-              
-              // Reset upload button
-              if (uploadBtn) {
-                uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Choose Image';
-                uploadBtn.disabled = false;
-              }
-            }
-          })
-          .catch(error => {
-            console.error('Error uploading image:', error);
-            showStatus('Error uploading image', true);
-            
-            // Reset upload button
-            const uploadBtn = document.getElementById(`${fieldId}_upload`);
-            if (uploadBtn) {
-              uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Choose Image';
-              uploadBtn.disabled = false;
-            }
-          });
-        
-        // Remove file input
-        document.body.removeChild(fileInput);
-      }
-    });
-    
-    // Trigger file selection
-    fileInput.click();
-  }
-
-  // Add an image to a gallery
-  function addGalleryImage(fieldId) {
-    // Create file input
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = 'image/*';
-    fileInput.style.display = 'none';
-    document.body.appendChild(fileInput);
-    
-    // Handle file selection
-    fileInput.addEventListener('change', () => {
-      if (fileInput.files && fileInput.files[0]) {
-        // Show loading status
-        const addBtn = document.getElementById(`${fieldId}_add`);
-        if (addBtn) {
-          addBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
-          addBtn.disabled = true;
-        }
-        
-        showStatus('Uploading image...', false, 0);
-        
-        // Create form data
-        const formData = new FormData();
-        formData.append('image', fileInput.files[0]);
-        
-        // Upload image
-        fetch('./api/upload.php', {
-          method: 'POST',
-          body: formData
-        })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              // Get gallery input
-              const input = document.getElementById(fieldId);
-              const preview = document.getElementById(`${fieldId}_preview`);
-              
-              if (!input || !preview) return;
-              
-              // Get current gallery data
-              let gallery = [];
-              try {
-                gallery = JSON.parse(input.value) || [];
-              } catch (error) {
-                console.error('Error parsing gallery data:', error);
-                gallery = [];
-              }
-              
-              // Create new image object
-              const newImage = {
-                url: data.url,
-                alt: '',
-                caption: '',
-                filename: data.filename
-              };
-              
-              // Add to gallery
-              gallery.push(newImage);
-              
-              // Update input value
-              input.value = JSON.stringify(gallery);
-              
-              // Add image to preview
-              const imageCol = createGalleryImageItem(fieldId, newImage, gallery.length - 1);
-              preview.appendChild(imageCol);
-              
-              // Reset add button
-              if (addBtn) {
-                addBtn.innerHTML = '<i class="fas fa-plus"></i> Add Image';
-                addBtn.disabled = false;
-              }
-              
-              // Mark as dirty
-              isDirty = true;
-              
-              // Update preview
-              updatePreview();
-              
-              showStatus('Image added to gallery');
-            } else {
-              console.error('Error uploading image:', data.error);
-              showStatus('Error uploading image: ' + data.error, true);
-              
-              // Reset add button
-              if (addBtn) {
-                addBtn.innerHTML = '<i class="fas fa-plus"></i> Add Image';
-                addBtn.disabled = false;
-              }
-            }
-          })
-          .catch(error => {
-            console.error('Error uploading image:', error);
-            showStatus('Error uploading image', true);
-            
-            // Reset add button
-            const addBtn = document.getElementById(`${fieldId}_add`);
-            if (addBtn) {
-              addBtn.innerHTML = '<i class="fas fa-plus"></i> Add Image';
-              addBtn.disabled = false;
-            }
-          });
-        
-        // Remove file input
-        document.body.removeChild(fileInput);
-      }
-    });
-    
-    // Trigger file selection
-    fileInput.click();
-  }
-
-  // Remove an image from a gallery
-  function removeGalleryImage(fieldId, index) {
-    // Confirm deletion
-    if (!confirm('Are you sure you want to remove this image?')) {
-      return;
-    }
-    
-    // Get gallery input and preview
-    const input = document.getElementById(fieldId);
-    const preview = document.getElementById(`${fieldId}_preview`);
-    
-    if (!input || !preview) return;
-    
-    // Get current gallery data
-    let gallery = [];
-    try {
-      gallery = JSON.parse(input.value) || [];
-    } catch (error) {
-      console.error('Error parsing gallery data:', error);
-      return;
-    }
-    
-    // Remove image from gallery
-    gallery.splice(index, 1);
-    
-    // Update input value
-    input.value = JSON.stringify(gallery);
-    
-    // Rebuild gallery preview
-    preview.innerHTML = '';
-    gallery.forEach((image, idx) => {
-      const imageCol = createGalleryImageItem(fieldId, image, idx);
-      preview.appendChild(imageCol);
-    });
-    
-    // Mark as dirty
-    isDirty = true;
-    
-    // Update preview
-    updatePreview();
-    
-    showStatus('Image removed from gallery');
-  }
-
-  // Update a gallery image caption
-  function updateGalleryImageCaption(fieldId, index, caption) {
-    // Get gallery input
-    const input = document.getElementById(fieldId);
-    
-    if (!input) return;
-    
-    // Get current gallery data
-    let gallery = [];
-    try {
-      gallery = JSON.parse(input.value) || [];
-    } catch (error) {
-      console.error('Error parsing gallery data:', error);
-      return;
-    }
-    
-    // Update caption
-    if (gallery[index]) {
-      gallery[index].caption = caption;
-    }
-    
-    // Update input value
-    input.value = JSON.stringify(gallery);
-    
-    // Mark as dirty
-    isDirty = true;
-    
-    // Update preview (with delay)
-    if (previewTimer) clearTimeout(previewTimer);
-    previewTimer = setTimeout(updatePreview, 500);
-  }
-
-  // Initialize Quill editors
-  function initializeQuillEditors() {
-    // Initialize all quill-editor elements
-    const quillEditors = document.querySelectorAll('.quill-editor');
-    quillEditors.forEach(editor => {
-      const fieldId = editor.id.replace('_quill', '');
-      const hiddenInput = document.getElementById(fieldId);
-      
-      // Skip if already initialized
-      if (editor.querySelector('.ql-editor')) return;
-      
-      // Determine toolbar options based on field type
-      let isHeadingField = editor.closest('.field-container')?.dataset.fieldType === 'text';
-      
-      // Configure Quill with different toolbars based on field type
-      const quillOptions = {
-        theme: 'snow',
-        placeholder: 'Write content here...',
-        modules: {
-          toolbar: isHeadingField ? 
-            [
-              ['bold', 'italic', 'underline'],
-              [{ 'header': [1, 2, 3, false] }],
-              [{ 'size': ['small', false, 'large', 'huge'] }],
-              [{ 'color': [] }, { 'background': [] }],
-              [{ 'align': [] }],
-              ['clean']
-            ] :
-            [
-              ['bold', 'italic', 'underline', 'strike'],
-              ['blockquote', 'code-block'],
-              [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-              [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-              [{ 'indent': '-1' }, { 'indent': '+1' }],
-              [{ 'size': ['small', false, 'large', 'huge'] }],
-              [{ 'color': [] }, { 'background': [] }],
-              [{ 'font': [] }],
-              [{ 'align': [] }],
-              ['link', 'image'],
-              ['clean']
-            ]
-        }
-      };
-      
-      // Create Quill instance
-      const quill = new Quill(editor, quillOptions);
-      
-      // Set initial content
-      if (hiddenInput && hiddenInput.value) {
-        quill.clipboard.dangerouslyPasteHTML(hiddenInput.value);
-      }
-      
-      // Update hidden input on text change
-      quill.on('text-change', () => {
-        if (hiddenInput) {
-          hiddenInput.value = editor.querySelector('.ql-editor').innerHTML;
-          
-          // Mark as dirty
-          isDirty = true;
-          
-          // Update preview
-          if (previewTimer) clearTimeout(previewTimer);
-          previewTimer = setTimeout(updatePreview, 500);
-        }
-      });
-    });
-  }
-
-  // Change the template of the current page
-  function changeTemplate(templateId) {
-    if (!currentEditingPage && !isEditingMainContent) return;
-    
-    // Don't allow changing template for main content
-    if (isEditingMainContent && templateId !== 'main-content') {
-      showStatus('Cannot change template for main content', true);
-      elements.templateSelector.value = 'main-content';
-      return;
-    }
-    
-    if (!templates[templateId]) {
-      showStatus('Invalid template selected', true);
-      return;
-    }
-    
-    // Confirm template change
-    if (isDirty) {
-      if (!confirm('Changing the template will discard unsaved changes. Continue?')) {
-        // Reset the template selector
-        if (elements.templateSelector) {
-          elements.templateSelector.value = editorState.selectedTemplate;
-        }
-        return;
-      }
-    }
-    
-    // Show loading status
-    showStatus('Changing template...', false, 0);
-    
-    if (isEditingMainContent) {
-      // For main content, just regenerate the fields
-      generateTemplateFields('main-content', mainContentCache || {});
-      showStatus('Template refreshed', false, 2000);
-    } else {
-      // For regular pages, update the template
-      const pageData = pageCache[currentEditingPage];
-      if (!pageData) return;
-      
-      // Create new data object based on template
-      const templateData = {};
-      const template = templates[templateId];
-      
-      template.fields.forEach(field => {
-        if (field.type === 'repeater' && field.subfields) {
-          // Initialize repeater fields with empty array
-          templateData[field.name] = [];
-        } else {
-          // Check if field exists in current data
-          if (pageData.data && pageData.data[field.name] !== undefined) {
-            // Use existing data
-            templateData[field.name] = pageData.data[field.name];
-          } else {
-            // Initialize with empty values
-            switch (field.type) {
-              case 'checkbox':
-                templateData[field.name] = false;
-                break;
-              case 'gallery':
-                templateData[field.name] = [];
-                break;
-              case 'image':
-                templateData[field.name] = { url: '', alt: '' };
-                break;
-              default:
-                templateData[field.name] = '';
-            }
-          }
-        }
-      });
-      
-      // Update page data
-      pageData.template = templateId;
-      pageData.data = templateData;
-      
-      // Update cache
-      pageCache[currentEditingPage] = pageData;
-      
-      // Update template in the UI
-      if (elements.templateSelector) {
-        try {
-          elements.templateSelector.value = templateId;
-        } catch (e) {
-          console.error('Error setting template selector value:', e);
-          // If the template doesn't exist in the dropdown, add it
-          if (templateId && !Array.from(elements.templateSelector.options).find(opt => opt.value === templateId)) {
-            const option = document.createElement('option');
-            option.value = templateId;
-            option.textContent = templateId + ' (Unknown)';
-            elements.templateSelector.appendChild(option);
-            elements.templateSelector.value = templateId;
-          }
-        }
-      }
-      
-      // Generate template fields
-      generateTemplateFields(templateId, templateData);
-      
-      // Reset dirty flag
-      isDirty = false;
-      
-      // Update preview
-      updatePreview();
-      
-      showStatus('Template changed successfully');
-    }
-  }
-
- })(); 
+  }})
