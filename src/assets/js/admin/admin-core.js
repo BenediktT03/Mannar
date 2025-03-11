@@ -1,8 +1,6 @@
- // Create new file: src/assets/js/admin/admin-core.js
-
 /**
- * Admin Panel Core Module
- * Provides central functionality for the admin interface
+ * Admin Core Module
+ * Central functionality for managing the admin panel
  */
 const AdminCore = (function() {
   // State management
@@ -15,7 +13,9 @@ const AdminCore = (function() {
   // UI Elements cache
   let elements = {};
   
-  // Initialize admin panel
+  /**
+   * Initialize admin panel
+   */
   function init() {
     // Cache DOM elements
     cacheElements();
@@ -32,7 +32,9 @@ const AdminCore = (function() {
     console.log('Admin Panel initialized');
   }
   
-  // Cache DOM elements
+  /**
+   * Cache DOM elements for faster access
+   */
   function cacheElements() {
     elements = {
       // Login elements
@@ -54,9 +56,18 @@ const AdminCore = (function() {
     };
   }
   
-  // Check authentication status
+  /**
+   * Check authentication status and setup auth events
+   */
   function checkAuth() {
-    FirebaseService.auth.onAuthStateChanged(user => {
+    if (typeof firebase === 'undefined' || !firebase.auth) {
+      console.error('Firebase Auth not available');
+      showStatus('Firebase authentication not available', true);
+      return;
+    }
+    
+    // Monitor auth state
+    firebase.auth().onAuthStateChanged(user => {
       if (user) {
         onLogin(user);
       } else {
@@ -75,7 +86,9 @@ const AdminCore = (function() {
     }
   }
   
-  // Initialize tabs system
+  /**
+   * Initialize tabs system
+   */
   function initTabs() {
     if (!elements.tabButtons || !elements.tabContents) return;
     
@@ -95,11 +108,14 @@ const AdminCore = (function() {
     }, 100);
   }
   
-  // Switch between tabs
+  /**
+   * Switch between tabs
+   * @param {string} tabId - ID of the tab to switch to
+   */
   function switchTab(tabId) {
     // Check for unsaved changes
     if (state.isDirty && state.currentTab) {
-      if (!confirm('You have unsaved changes. Do you want to continue?')) {
+      if (!confirm('Sie haben ungespeicherte Änderungen. Möchten Sie fortfahren?')) {
         return;
       }
     }
@@ -128,17 +144,20 @@ const AdminCore = (function() {
     }
   }
   
-  // Initialize tab-specific content
+  /**
+   * Initialize tab-specific content
+   * @param {string} tabId - ID of the tab to initialize
+   */
   function initTabContent(tabId) {
     switch (tabId) {
       case 'pages':
-        if (typeof PageEditor !== 'undefined' && PageEditor.loadPages) {
-          PageEditor.loadPages();
+        if (typeof PageManager !== 'undefined' && PageManager.init) {
+          PageManager.init();
         }
         break;
       case 'wordcloud':
-        if (typeof WordCloudEditor !== 'undefined' && WordCloudEditor.init) {
-          WordCloudEditor.init();
+        if (typeof WordCloudManager !== 'undefined' && WordCloudManager.init) {
+          WordCloudManager.init();
         }
         break;
       case 'settings':
@@ -152,7 +171,10 @@ const AdminCore = (function() {
     }
   }
   
-  // Login handler
+  /**
+   * Login form handler
+   * @param {Event} e - Form submit event
+   */
   async function handleLogin(e) {
     if (e) e.preventDefault();
     
@@ -160,32 +182,50 @@ const AdminCore = (function() {
     const password = elements.passField.value;
     
     if (!email || !password) {
-      showStatus('Please enter email and password', true);
+      showStatus('Bitte geben Sie E-Mail und Passwort ein', true);
+      if (elements.loginError) {
+        elements.loginError.textContent = 'Bitte geben Sie E-Mail und Passwort ein';
+      }
       return;
     }
     
-    showStatus('Logging in...', false, 0);
+    showStatus('Anmeldung läuft...', false, 0);
     
-    const result = await FirebaseService.auth.login(email, password);
-    
-    if (!result.success) {
-      showStatus('Login failed: ' + (result.error?.message || 'Unknown error'), true);
+    try {
+      const result = await firebase.auth().signInWithEmailAndPassword(email, password);
+      // Auth state change will trigger onLogin
+    } catch (error) {
+      console.error('Login error:', error);
+      showStatus('Anmeldung fehlgeschlagen: ' + error.message, true);
+      if (elements.loginError) {
+        elements.loginError.textContent = 'Anmeldung fehlgeschlagen: ' + error.message;
+      }
     }
   }
   
-  // Logout handler
+  /**
+   * Logout handler
+   */
   async function handleLogout() {
     if (state.isDirty) {
-      if (!confirm('You have unsaved changes. Are you sure you want to log out?')) {
+      if (!confirm('Sie haben ungespeicherte Änderungen. Sind Sie sicher, dass Sie sich abmelden möchten?')) {
         return;
       }
     }
     
-    await FirebaseService.auth.logout();
-    showStatus('Logged out successfully');
+    try {
+      await firebase.auth().signOut();
+      // Auth state change will trigger onLogout
+    } catch (error) {
+      console.error('Logout error:', error);
+      showStatus('Fehler bei der Abmeldung: ' + error.message, true);
+    }
   }
   
-  // On successful login
+  /**
+   * Handler for successful login
+   * @param {Object} user - Firebase user object
+   */
   function onLogin(user) {
     state.isAuthenticated = true;
     
@@ -193,11 +233,13 @@ const AdminCore = (function() {
     if (elements.loginDiv) elements.loginDiv.style.display = 'none';
     if (elements.adminDiv) elements.adminDiv.style.display = 'block';
     
-    showStatus(`Logged in as ${user.email}`);
+    showStatus(`Angemeldet als ${user.email}`);
     console.log('User logged in:', user.email);
   }
   
-  // On logout
+  /**
+   * Handler for logout
+   */
   function onLogout() {
     state.isAuthenticated = false;
     
@@ -208,7 +250,9 @@ const AdminCore = (function() {
     console.log('User logged out');
   }
   
-  // Refresh preview iframe
+  /**
+   * Refresh preview iframe
+   */
   function refreshPreview() {
     const previewFrame = document.getElementById('previewFrame');
     const previewTypeRadios = document.getElementsByName('previewType');
@@ -221,7 +265,9 @@ const AdminCore = (function() {
     }
   }
   
-  // Set up dirty state tracking
+  /**
+   * Set up dirty state tracking for unsaved changes
+   */
   function initDirtyStateTracking() {
     // Track form changes
     document.addEventListener('change', e => {
@@ -235,13 +281,18 @@ const AdminCore = (function() {
     window.addEventListener('beforeunload', e => {
       if (state.isDirty) {
         e.preventDefault();
-        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        e.returnValue = 'Sie haben ungespeicherte Änderungen. Sind Sie sicher, dass Sie die Seite verlassen möchten?';
         return e.returnValue;
       }
     });
   }
   
-  // Display status message
+  /**
+   * Display status message
+   * @param {string} message - Message to display
+   * @param {boolean} isError - Whether this is an error message
+   * @param {number} timeout - Auto-hide timeout in ms (0 for no auto-hide)
+   */
   function showStatus(message, isError = false, timeout = 3000) {
     if (!elements.statusMsg) return;
     
@@ -255,7 +306,9 @@ const AdminCore = (function() {
     }
   }
   
-  // Reset dirty state
+  /**
+   * Reset dirty state
+   */
   function resetDirtyState() {
     state.isDirty = false;
   }

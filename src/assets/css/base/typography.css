@@ -1,0 +1,205 @@
+ /**
+ * Typografie-System
+ * Definiert konsistente Schriftarten, -größen und -abstände für die gesamte Website
+ */
+
+/* Basis-Typografie */
+html {
+  font-size: var(--base-font-size);
+}
+
+body {
+  font-family: var(--font-family);
+  line-height: var(--line-height);
+  color: var(--text-color);
+}
+
+/* Überschriften */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--heading-font);
+  line-height: var(--heading-line-height);
+  font-weight: 700;
+  margin-bottom: 0.5em;
+  color: var(--secondary-color);
+}
+
+h1 {
+  font-size: 2.5rem;
+  margin-top: 0.67em;
+}
+
+h2 {
+  font-size: 2rem;
+  margin-top: 0.83em;
+}
+
+h3 {
+  font-size: 1.5rem;
+  margin-top: 1em;
+}
+
+h4 {
+  font-size: 1.25rem;
+  margin-top: 1.33em;
+}
+
+h5 {
+  font-size: 1rem;
+  margin-top: 1.67em;
+}
+
+h6 {
+  font-size: 0.875rem;
+  margin-top: 2.33em;
+}
+
+/* Textabsätze */
+p {
+  margin-bottom: 1em;
+}
+
+/* Kleine Textelemente */
+small {
+  font-size: var(--small-font-size);
+}
+
+/* Hervorhebungen */
+strong, b {
+  font-weight: 700;
+}
+
+em, i {
+  font-style: italic;
+}
+
+/* Links */
+a {
+  text-decoration: none;
+  color: var(--primary-color);
+  transition: color var(--transition-speed) ease;
+}
+
+a:hover {
+  color: var(--primary-dark);
+  text-decoration: underline;
+}
+
+/* Listen */
+ul, ol {
+  margin-bottom: 1em;
+}
+
+li {
+  margin-bottom: 0.5em;
+}
+
+/* Blockzitate */
+blockquote {
+  border-left: 4px solid var(--primary-color);
+  padding-left: 1em;
+  margin-left: 0;
+  margin-right: 0;
+  font-style: italic;
+  color: var(--text-light);
+}
+
+/* Code und Preformatierter Text */
+code, pre {
+  font-family: monospace;
+  background-color: var(--light-color);
+  border-radius: var(--border-radius);
+}
+
+code {
+  padding: 0.2em 0.4em;
+  font-size: 0.875em;
+}
+
+pre {
+  padding: 1em;
+  overflow-x: auto;
+  margin-bottom: 1em;
+}
+
+pre code {
+  padding: 0;
+  background-color: transparent;
+}
+
+/* Typografische Utility-Klassen */
+.text-center {
+  text-align: center !important;
+}
+
+.text-left {
+  text-align: left !important;
+}
+
+.text-right {
+  text-align: right !important;
+}
+
+.text-justify {
+  text-align: justify !important;
+}
+
+.text-uppercase {
+  text-transform: uppercase !important;
+}
+
+.text-lowercase {
+  text-transform: lowercase !important;
+}
+
+.text-capitalize {
+  text-transform: capitalize !important;
+}
+
+.font-weight-bold {
+  font-weight: 700 !important;
+}
+
+.font-weight-normal {
+  font-weight: 400 !important;
+}
+
+.font-italic {
+  font-style: italic !important;
+}
+
+/* Responsive Textgrößen */
+@media (max-width: 768px) {
+  html {
+    font-size: calc(var(--base-font-size) * 0.95);
+  }
+  
+  h1 {
+    font-size: 2.2rem;
+  }
+  
+  h2 {
+    font-size: 1.8rem;
+  }
+  
+  h3 {
+    font-size: 1.4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  html {
+    font-size: calc(var(--base-font-size) * 0.9);
+  }
+  
+  h1 {
+    font-size: 2rem;
+  }
+  
+  h2 {
+    font-size: 1.6rem;
+  }
+  
+  h3 {
+    font-size: 1.3rem;
+  }
+}

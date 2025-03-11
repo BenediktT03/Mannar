@@ -1,0 +1,171 @@
+ /**
+ * Wordcloud-Komponente
+ * Definiert Stile für die Wortwolke, ein zentrales Element der Website
+ */
+
+/* Basis-Container für die Wortwolke */
+.textbubble {
+  display: flex;
+  width: 80%;
+  margin: 2rem auto;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 0;
+  transition: opacity var(--transition-standard);
+}
+
+/* Wortwolken-Liste */
+.word-cloud {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  line-height: 2.75rem;
+  width: 100%;
+  margin: 2rem auto;
+  position: relative;
+}
+
+/* Animation für Wortelemente */
+.word-cloud li a {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  display: inline-block;
+}
+
+/* Wortstil */
+.word-cloud a {
+  --size: 4;
+  --color: #000;
+  --hover-color: var(--hover-accent, #292929);
+  color: var(--color);
+  font-size: calc(var(--size) * 0.25rem + 0.5rem);
+  display: inline-block;
+  padding: 0.125rem 0.25rem;
+  position: relative;
+  text-decoration: none;
+  transition: transform var(--transition-standard),
+              text-shadow var(--transition-standard),
+              color var(--transition-standard);
+  will-change: transform, text-shadow, color;
+  border-radius: 45px;
+}
+
+/* Hover-Effekt für Wortwolke */
+.word-cloud a:hover,
+.word-cloud a:focus {
+  transform: scale(1.1) translateY(-2px);
+  text-shadow: 2px 2px 12px rgba(0, 0, 0, 0.25);
+  color: var(--hover-color);
+}
+
+/* Hintergrund-Effekt für Wörter */
+.word-cloud a::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 0;
+  height: 100%;
+  background: var(--color);
+  transform: translate(-50%, 0);
+  opacity: 0.15;
+  transition: width var(--transition-standard);
+  z-index: -1;
+  border-radius: 30px;
+}
+
+.word-cloud a:hover::before,
+.word-cloud a:focus::before {
+  width: 100%;
+}
+
+/* Gewichtungen für Wortwolke */
+.word-cloud a[data-weight="1"] { --size: 1; --color: #6d6d6d; }
+.word-cloud a[data-weight="2"] { --size: 2; --color: #606060; }
+.word-cloud a[data-weight="3"] { --size: 3; --color: #535353; }
+.word-cloud a[data-weight="4"] { --size: 4; --color: #474747; }
+.word-cloud a[data-weight="5"] { --size: 6; --color: #3a3a3a; }
+.word-cloud a[data-weight="6"] { --size: 8; --color: #2d2d2d; }
+.word-cloud a[data-weight="7"] { --size: 10; --color: #202020; }
+.word-cloud a[data-weight="8"] { --size: 13; --color: #131313; }
+.word-cloud a[data-weight="9"] { --size: 16; --color: #000000; }
+
+/* Admin-Bereich Stile für die Wordcloud */
+.word-cloud-admin {
+  max-height: 450px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+}
+
+.word-item {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-sm) 0;
+  margin-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.word-item:last-child {
+  border-bottom: none;
+}
+
+.draggable-handle {
+  cursor: grab;
+  padding: var(--spacing-xs);
+  margin-right: var(--spacing-sm);
+  color: var(--text-light);
+}
+
+.draggable-handle:active {
+  cursor: grabbing;
+}
+
+.word-weight {
+  width: 80px;
+  margin: 0 var(--spacing-sm);
+}
+
+.delete-word-btn {
+  margin-left: auto;
+}
+
+/* Responsive Anpassungen */
+@media (max-width: 768px) {
+  .textbubble {
+    width: 95%;
+  }
+  
+  .word-cloud {
+    width: 100%;
+    line-height: 2rem;
+  }
+  
+  .word-cloud a {
+    font-size: calc(var(--size) * 0.2rem + 0.5rem);
+    padding: 0.15rem 0.35rem;
+  }
+  
+  .word-item {
+    flex-wrap: wrap;
+  }
+  
+  .word-weight {
+    width: 60px;
+  }
+}
+
+/* Barrierefreiheit: Reduzierte Animation */
+@media (prefers-reduced-motion: reduce) {
+  .word-cloud li a,
+  .word-cloud a {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}

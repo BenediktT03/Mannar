@@ -1,0 +1,117 @@
+ /**
+ * Moderner CSS-Reset
+ * Basierend auf modernen Best Practices, mit Fokus auf Barrierefreiheit
+ */
+
+/* Box-Sizing auf border-box setzen */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Margins entfernen */
+body,
+h1, h2, h3, h4, h5, h6,
+p, figure, blockquote, dl, dd {
+  margin: 0;
+}
+
+/* Basisstil für HTML und Body */
+html {
+  scroll-behavior: smooth;
+  font-size: var(--base-font-size, 16px);
+  overflow-x: hidden;
+}
+
+body {
+  min-height: 100vh;
+  text-rendering: optimizeSpeed;
+  line-height: var(--line-height, 1.6);
+  font-family: var(--font-family, 'Lato', sans-serif);
+  color: var(--text-color, #333);
+  background-color: var(--body-bg, #f5f7f9);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Listen ohne Standardstil, wenn keine class vorhanden */
+ul:not([class]),
+ol:not([class]) {
+  padding-left: 2em;
+}
+
+ul[class],
+ol[class] {
+  list-style: none;
+  padding: 0;
+}
+
+/* Bilder einfacher handhabbar machen */
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* Standardfokus-Stil für bessere Barrierefreiheit */
+:focus-visible {
+  outline: 3px solid var(--primary-color, #3498db);
+  outline-offset: 2px;
+}
+
+/* Natürlicher Textfluss in Artikeln */
+article > * + * {
+  margin-top: 1em;
+}
+
+/* Vererbung für Formularelemente */
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+/* Standardstile für Links */
+a {
+  color: var(--primary-color, #3498db);
+  text-decoration: none;
+  transition: color var(--transition-speed, 0.3s) ease;
+}
+
+a:hover {
+  color: var(--primary-dark, #2980b9);
+}
+
+/* Verbesserungen für Barrierefreiheit */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--dark-color, #34495e);
+  color: white;
+  padding: 8px;
+  z-index: 9999;
+  transition: top 0.3s;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* Reduzieren der Animationen bei entsprechender Einstellung */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  html {
+    scroll-behavior: auto;
+  }
+}

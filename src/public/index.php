@@ -1,176 +1,183 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-  <title>Mannar</title>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Mannar - Peer, Genesungsbegeleiter">
-  <link rel="stylesheet" href="./assets/css/styles.css">
-  <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700&display=swap">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-  
-  <!-- Nur eine Version von Firebase laden - Compat Version -->
-  <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-auth-compat.js"></script>
-</head>
-<body>
+<?php
+/**
+ * Mannar Website Homepage
+ * Main entry point for the website
+ */
 
-<!-- Navbar (always visible) -->
-<div class="w3-top">
-  <div class="w3-bar" id="myNavbar">
-    <a class="w3-bar-item w3-button w3-hover-black w3-hide-medium w3-hide-large w3-right" href="javascript:void(0);" onclick="toggleFunction()" title="Navigation Menu">
-      <i class="fas fa-bars"></i>
-    </a>
-    <a href="#home" class="w3-bar-item w3-button">HOME</a>
-    <a href="#about" class="w3-bar-item w3-button w3-hide-small"><i class="fas fa-user"></i> ABOUT</a>
-    <a href="#portfolio" class="w3-bar-item w3-button w3-hide-small"><i class="fas fa-th"></i> PORTFOLIO</a>
-    <a href="#contact" class="w3-bar-item w3-button w3-hide-small"><i class="fas fa-envelope"></i> KONTAKT</a>
-    </a>
-  </div>
+// Initialize the application
+require_once 'core/init.php';
 
-  <!-- Navbar for small screens -->
-  <div id="navDemo" class="w3-bar-block w3-white w3-hide w3-hide-large w3-hide-medium">
-    <a href="#about" class="w3-bar-item w3-button" onclick="toggleFunction()">ABOUT</a>
-    <a href="#portfolio" class="w3-bar-item w3-button" onclick="toggleFunction()">PORTFOLIO</a>
-    <a href="#contact" class="w3-bar-item w3-button" onclick="toggleFunction()">KONTAKT</a>
-    <a href="#" class="w3-bar-item w3-button">SUCHE</a>
-  </div>
-</div>
+// Page configuration
+$page_data = [
+    'page_title' => 'Mannar - Peer und Genesungsbegleiter',
+    'page_description' => 'Mannar bietet Begleitung und Unterstützung auf dem Weg zu psychischer Gesundheit und persönlichem Wachstum.',
+    'current_page' => 'home',
+    'body_class' => 'home-page',
+    
+    // Additional scripts specific to homepage
+    'additional_scripts' => '
+        <script src="' . ASSET_PATH . '/js/content-loader.js?v=' . ASSET_VERSION . '"></script>
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                contentLoader.loadContent(false).then(data => {
+                    // Content loaded successfully, the content-loader.js will handle rendering
+                    console.log("Content loaded successfully");
+                });
+                
+                // Load word cloud if enabled
+                if (' . (ENABLE_WORD_CLOUD ? 'true' : 'false') . ') {
+                    contentLoader.loadWordCloud().then(words => {
+                        const wordCloudList = document.getElementById("wordCloudList");
+                        if (wordCloudList) {
+                            contentLoader.renderWordCloud(wordCloudList, words);
+                            contentLoader.animateWordCloud(document.querySelector(".textbubble"));
+                        }
+                    });
+                }
+            });
+        </script>
+    '
+];
 
-<!-- First section with Logo -->
+// Start output buffer to capture content
+ob_start();
+?>
+
+<!-- Hero Section with Logo -->
 <div class="bgimg-1 w3-display-container" id="home">
-  <div class="w3-display-middle" style="white-space:nowrap;">
-    <img src="./assets/img/IMG_4781.svg" alt="Mannar Logo" id="mainLogo">
-  </div>
+    <div class="w3-display-middle" style="white-space:nowrap;">
+        <img src="<?= ASSET_PATH ?>/img/IMG_4781.svg" alt="Mannar Logo" id="mainLogo" style="display:none;">
+    </div>
 </div>
 
-<!-- About section with Word Cloud -->
+<!-- About Section -->
 <div class="w3-content w3-container w3-padding-64" id="about">
-  <h2 id="aboutTitle" class="w3-center">ÜBER MICH</h2>
-  <p id="aboutSubtitle" class="w3-center"><em>Peer und Genesungsbegleiter</em></p>
-  <div id="aboutText">
-    <p>Willkommen auf meiner Website. Ich bin als Peer und Genesungsbegleiter tätig und unterstütze Menschen auf ihrem Weg zu psychischer Gesundheit und persönlichem Wachstum. Meine eigenen Erfahrungen haben mich gelehrt, wie wichtig Achtsamkeit, Bewusstsein und Selbstreflexion für den Heilungsprozess sind.</p>
-  </div>
-  
-  <div class="textbubble"> 
-    <ul class="word-cloud" id="wordCloudList" role="navigation" aria-label="Psychologie & Spiritualität Word Cloud">
-      <!-- Wird dynamisch aus Firebase geladen -->
-    </ul>
-  </div>
+    <h2 id="aboutTitle" class="w3-center">ÜBER MICH</h2>
+    <p id="aboutSubtitle" class="w3-center"><em>Peer und Genesungsbegleiter</em></p>
+    <div id="aboutText" class="animate-item">
+        <p>Willkommen auf meiner Website. Ich bin als Peer und Genesungsbegleiter tätig und unterstütze Menschen auf ihrem Weg zu psychischer Gesundheit und persönlichem Wachstum. Meine eigenen Erfahrungen haben mich gelehrt, wie wichtig Achtsamkeit, Bewusstsein und Selbstreflexion für den Heilungsprozess sind.</p>
+    </div>
+    
+    <?php if (ENABLE_WORD_CLOUD): ?>
+    <div class="textbubble">
+        <ul class="word-cloud" id="wordCloudList" role="navigation" aria-label="Psychologie & Spiritualität Word Cloud">
+            <!-- Will be dynamically populated from Firebase -->
+        </ul>
+    </div>
+    <?php endif; ?>
 </div>
 
-<!-- Portfolio section -->
+<!-- Portfolio/Offerings Section -->
 <div class="w3-content w3-container w3-padding-64" id="portfolio">
-  <h2 id="offeringsTitle" class="w3-center">MEINE ANGEBOTE</h2>
-  <p id="offeringsSubtitle" class="w3-center"><em>Hier sind einige meiner Leistungen und Angebote</em></p>
-  
-  <div class="w3-row-padding">
-    <div class="w3-col m4 portfolio-item">
-      <div class="w3-card w3-round">
-        <img id="offer1Image" src="/api/placeholder/400/300" alt="Angebot 1" style="width:100%">
-        <div class="w3-container">
-          <h3 id="offer1Title">Einzelgespräche</h3>
-          <div id="offer1Desc">
-            <p>Persönliche Begleitung auf Ihrem Weg zu mehr Bewusstsein und Selbsterkenntnis.</p>
-          </div>
-        </div>
-      </div>
-    </div>
+    <h2 id="offeringsTitle" class="w3-center">MEINE ANGEBOTE</h2>
+    <p id="offeringsSubtitle" class="w3-center"><em>Hier sind einige meiner Leistungen und Angebote</em></p>
     
-    <div class="w3-col m4 portfolio-item">
-      <div class="w3-card w3-round">
-        <img id="offer2Image" src="/api/placeholder/400/300" alt="Gruppenworkshops" style="width:100%">
-        <div class="w3-container">
-          <h3 id="offer2Title">Gruppenworkshops</h3>
-          <div id="offer2Desc">
-            <p>Gemeinsame Erfahrungsräume für Austausch und Wachstum in der Gemeinschaft.</p>
-          </div>
+    <!-- Offerings Cards -->
+    <div class="w3-row-padding">
+        <!-- Offering 1 -->
+        <div class="w3-col m4 portfolio-item animate-item delay-1">
+            <div class="w3-card w3-round">
+                <img id="offer1Image" src="<?= ASSET_PATH ?>/img/placeholder.jpg" alt="Angebot 1" style="width:100%">
+                <div class="w3-container">
+                    <h3 id="offer1Title">Einzelgespräche</h3>
+                    <div id="offer1Desc">
+                        <p>Persönliche Begleitung auf Ihrem Weg zu mehr Bewusstsein und Selbsterkenntnis.</p>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-    
-    <div class="w3-col m4 portfolio-item">
-      <div class="w3-card w3-round">
-        <img id="offer3Image" src="/api/placeholder/400/300" alt="Meditation" style="width:100%">
-        <div class="w3-container">
-          <h3 id="offer3Title">Meditation</h3>
-          <div id="offer3Desc">
-            <p>Anleitungen und Übungen zur Stärkung von Achtsamkeit und innerem Frieden.</p>
-          </div>
+        
+        <!-- Offering 2 -->
+        <div class="w3-col m4 portfolio-item animate-item delay-2">
+            <div class="w3-card w3-round">
+                <img id="offer2Image" src="<?= ASSET_PATH ?>/img/placeholder.jpg" alt="Gruppenworkshops" style="width:100%">
+                <div class="w3-container">
+                    <h3 id="offer2Title">Gruppenworkshops</h3>
+                    <div id="offer2Desc">
+                        <p>Gemeinsame Erfahrungsräume für Austausch und Wachstum in der Gemeinschaft.</p>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
+        
+        <!-- Offering 3 -->
+        <div class="w3-col m4 portfolio-item animate-item delay-3">
+            <div class="w3-card w3-round">
+                <img id="offer3Image" src="<?= ASSET_PATH ?>/img/placeholder.jpg" alt="Meditation" style="width:100%">
+                <div class="w3-container">
+                    <h3 id="offer3Title">Meditation</h3>
+                    <div id="offer3Desc">
+                        <p>Anleitungen und Übungen zur Stärkung von Achtsamkeit und innerem Frieden.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
 <!-- Modal for displaying images on click -->
 <div id="modal01" class="w3-modal w3-black" onclick="this.style.display='none'">
-  <span class="w3-button w3-large w3-black w3-display-topright" title="Schließen"><i class="fas fa-times"></i></span>
-  <div class="w3-modal-content w3-animate-zoom w3-center w3-transparent w3-padding-64">
-    <img id="img01" class="w3-image">
-    <p id="caption" class="w3-opacity w3-large"></p>
-  </div>
+    <span class="w3-button w3-large w3-black w3-display-topright" title="Schließen"><i class="fas fa-times"></i></span>
+    <div class="w3-modal-content w3-animate-zoom w3-center w3-transparent w3-padding-64">
+        <img id="img01" class="w3-image" alt="Vergrößertes Bild">
+        <p id="caption" class="w3-opacity w3-large"></p>
+    </div>
 </div>
 
-<!-- Contact section -->
+<!-- Contact Section -->
 <div class="w3-content w3-container w3-padding-64" id="contact">
-  <h2 id="contactTitle" class="w3-center">KONTAKT</h2>
-  <p id="contactSubtitle" class="w3-center"><em>Ich freue mich auf Ihre Nachricht!</em></p>
+    <h2 id="contactTitle" class="w3-center">KONTAKT</h2>
+    <p id="contactSubtitle" class="w3-center"><em>Ich freue mich auf Ihre Nachricht!</em></p>
 
-  <div class="w3-row w3-padding-32 w3-section">
-    <div class="w3-col m4 w3-container">
-      <img id="contactImage" src="/api/placeholder/400/300" class="w3-image w3-round" style="width:100%" alt="Karte zu meinem Standort">
-    </div>
-    <div class="w3-col m8 w3-panel">
-      <div class="w3-large w3-margin-bottom">
-        <i class="fas fa-map-marker-alt fa-fw w3-hover-text-black w3-xlarge w3-margin-right"></i> Berlin, Deutschland<br>
-        <i class="fas fa-phone fa-fw w3-hover-text-black w3-xlarge w3-margin-right"></i> Telefon: +49 30 123456<br>
-        <i class="fas fa-envelope fa-fw w3-hover-text-black w3-xlarge w3-margin-right"></i> E-Mail: kontakt@beispiel.de<br>
-      </div>
-      <p>Schauen Sie auf einen Kaffee vorbei <i class="fas fa-coffee"></i>, oder hinterlassen Sie mir eine Nachricht:</p>
-      <form action="./api/contact.php" target="_blank" class="contact-form">
-        <div class="w3-row-padding" style="margin:0 -16px 8px -16px">
-          <div class="w3-half">
-            <input class="w3-input w3-border" type="text" placeholder="Name" required name="Name">
-          </div>
-          <div class="w3-half">
-            <input class="w3-input w3-border" type="text" placeholder="E-Mail" required name="Email">
-          </div>
+    <div class="w3-row w3-padding-32 w3-section">
+        <div class="w3-col m4 w3-container animate-item">
+            <img id="contactImage" src="<?= ASSET_PATH ?>/img/placeholder.jpg" class="w3-image w3-round" style="width:100%" alt="Karte zu meinem Standort">
         </div>
-        <input class="w3-input w3-border" type="text" placeholder="Nachricht" required name="Message">
-        <button class="w3-button w3-black w3-right w3-section" type="submit">
-          <i class="fas fa-paper-plane"></i> NACHRICHT SENDEN
-        </button>
-      </form>
+        <div class="w3-col m8 w3-panel animate-item delay-1">
+            <div class="w3-large w3-margin-bottom">
+                <i class="fas fa-map-marker-alt fa-fw w3-hover-text-black w3-xlarge w3-margin-right"></i> Berlin, Deutschland<br>
+                <i class="fas fa-phone fa-fw w3-hover-text-black w3-xlarge w3-margin-right"></i> Telefon: +49 30 123456<br>
+                <i class="fas fa-envelope fa-fw w3-hover-text-black w3-xlarge w3-margin-right"></i> E-Mail: <?= htmlspecialchars(EMAIL_CONFIG['contact_email']) ?><br>
+            </div>
+            <p>Schauen Sie auf einen Kaffee vorbei <i class="fas fa-coffee"></i>, oder hinterlassen Sie mir eine Nachricht:</p>
+            
+            <?php if (ENABLE_CONTACT_FORM): ?>
+            <form action="<?= API_PATH ?>/contact.php" method="post" class="contact-form w3-container">
+                <?php $csrf_token = generate_csrf_token(); ?>
+                <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
+                
+                <div class="w3-row-padding" style="margin:0 -16px 8px -16px">
+                    <div class="w3-half">
+                        <input class="w3-input w3-border" type="text" placeholder="Name" required name="name">
+                    </div>
+                    <div class="w3-half">
+                        <input class="w3-input w3-border" type="email" placeholder="E-Mail" required name="email">
+                    </div>
+                </div>
+                <input class="w3-input w3-border w3-margin-bottom" type="text" placeholder="Betreff" name="subject">
+                <textarea class="w3-input w3-border" name="message" rows="5" placeholder="Nachricht" required></textarea>
+                <button class="w3-button w3-black w3-right w3-section" type="submit">
+                    <i class="fas fa-paper-plane"></i> NACHRICHT SENDEN
+                </button>
+            </form>
+            <?php endif; ?>
+        </div>
     </div>
-  </div>
 </div>
 
-<!-- Go to top button -->
-<div class="go-top" id="goTopBtn">
-  <i class="fas fa-arrow-up"></i>
-</div>
+<?php
+// Get the captured content
+$content = ob_get_clean();
 
-<!-- Footer -->
-<footer class="w3-center w3-black w3-padding-64 w3-opacity w3-hover-opacity-off">
-  <a href="#home" class="w3-button w3-light-grey"><i class="fas fa-arrow-up w3-margin-right"></i>Nach oben</a>
-  <div class="w3-xlarge w3-section social-icons">
-    <i class="fab fa-facebook w3-hover-opacity"></i>
-    <i class="fab fa-instagram w3-hover-opacity"></i>
-    <i class="fab fa-snapchat w3-hover-opacity"></i>
-    <i class="fab fa-pinterest w3-hover-opacity"></i>
-    <i class="fab fa-twitter w3-hover-opacity"></i>
-    <i class="fab fa-linkedin w3-hover-opacity"></i>
-  </div>
-  <p>&copy; 2025 Mannar | Peer und Genesungsbegleiter</p>
-</footer>
+// Render the page with the header, content, and footer
+render_component('header', $page_data);
+render_component('navigation', $page_data);
+?>
 
+<main id="main-content">
+    <?= $content ?>
+</main>
 
-
-<!-- Skripte einbinden -->
-<script src="./assets/js/firebase-service.js"></script>
-<script src="./assets/js/script.js"></script>
-</body>
-</html>
+<?php
+render_component('footer', $page_data);
+?>
