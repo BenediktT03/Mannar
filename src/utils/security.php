@@ -1,6 +1,6 @@
 <?php
 /**
- * Enhanced Security Utilities
+ * Security Utilities
  * Provides comprehensive security functions for the Mannar website
  */
 

@@ -1,7 +1,12 @@
- <?php
+<?php
 /**
  * Database Connection
- * Singleton database connection using PDO
+ * 
+ * Singleton database connection class using PDO for safe and efficient
+ * database operations with proper error handling.
+ *
+ * @package Mannar
+ * @subpackage Core
  */
 
 class Database {
@@ -36,6 +41,7 @@ class Database {
      * Private constructor for singleton pattern
      * 
      * @param array $config Database configuration
+     * @throws Exception If database connection fails
      */
     private function __construct($config = []) {
         // Merge config
@@ -280,11 +286,15 @@ class Database {
     
     /**
      * Prevent cloning of the instance
+     * 
+     * @return void
      */
     private function __clone() {}
     
     /**
      * Prevent unserializing of the instance
+     * 
+     * @return void
      */
     private function __wakeup() {}
 }

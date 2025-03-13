@@ -1,11 +1,16 @@
- <?php
+<?php
 /**
- * Enhanced Contact Form Handler
- * Processes contact form submissions with validation and security measures
+ * Contact Form API Endpoint
+ * 
+ * Processes contact form submissions with validation, security checks,
+ * spam detection, and stores messages for backup.
+ * 
+ * @package Mannar
+ * @subpackage API
  */
 
 // Initialize the application
-require_once __DIR__ . '/../../core/init.php';
+require_once __DIR__ . '/../../src/core/init.php';
 
 // Only process if contact form is enabled
 if (!ENABLE_CONTACT_FORM) {
@@ -61,7 +66,7 @@ if (!validate_email($email)) {
     ], 400);
 }
 
-// Simple spam check (customize this for your needs)
+// Simple spam check
 if (is_spam($message)) {
     json_response([
         'success' => false,
@@ -101,7 +106,7 @@ try {
         error_log("Contact form email: To: $to, From: {$email_config['from_email']}, Subject: $email_subject");
     }
     
-    // Store the message in database or file (optional)
+    // Store the message in database or file (for backup)
     store_contact_message([
         'name' => $name,
         'email' => $email,
@@ -162,7 +167,7 @@ function is_spam($message) {
         return true;
     }
     
-    // Check for common spam keywords (customize for your needs)
+    // Check for common spam keywords
     $spam_keywords = [
         'viagra', 'casino', 'buy cheap', 'free offer', 'winner', 'buy now',
         'cheap meds', 'weight loss', 'earn money', 'make money fast'
@@ -239,12 +244,15 @@ function update_rate_limit($key) {
  * @return bool Success status
  */
 function store_contact_message($data) {
-    // Simple file-based storage for demonstration
-    if (!is_dir(__DIR__ . '/../../data/messages')) {
-        mkdir(__DIR__ . '/../../data/messages', 0750, true);
+    // Use the new data directory structure
+    $messages_dir = __DIR__ . '/../../data/messages';
+    
+    // Create directory if it doesn't exist
+    if (!is_dir($messages_dir)) {
+        mkdir($messages_dir, 0750, true);
     }
     
-    $filename = __DIR__ . '/../../data/messages/' . date('Y-m-d_H-i-s') . '_' . md5($data['email']) . '.json';
+    $filename = $messages_dir . '/' . date('Y-m-d_H-i-s') . '_' . md5($data['email']) . '.json';
     
     return file_put_contents($filename, json_encode($data, JSON_PRETTY_PRINT)) !== false;
 }

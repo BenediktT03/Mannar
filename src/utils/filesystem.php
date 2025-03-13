@@ -1,4 +1,4 @@
- <?php
+<?php
 /**
  * Filesystem Utilities
  * Provides common file and directory operations with error handling

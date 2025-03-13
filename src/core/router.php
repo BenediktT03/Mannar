@@ -1,7 +1,12 @@
- <?php
+<?php
 /**
  * Router System
- * Simple routing system for handling page requests and executing appropriate controllers
+ * 
+ * Handles URL routing for the application, mapping URLs to controllers
+ * and methods with support for route parameters and different HTTP methods.
+ * 
+ * @package Mannar
+ * @subpackage Core
  */
 
 class Router {

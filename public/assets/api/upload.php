@@ -1,11 +1,16 @@
 <?php
 /**
- * Enhanced File Upload Endpoint
- * Handles secure file uploads to Cloudinary with proper validation and error handling
+ * File Upload API Endpoint
+ * 
+ * Handles secure file uploads to Cloudinary with proper validation,
+ * CSRF protection, and error handling.
+ * 
+ * @package Mannar
+ * @subpackage API
  */
 
 // Initialize the application
-require_once __DIR__ . '/../../core/init.php';
+require_once __DIR__ . '/../../src/core/init.php';
 
 // Only allow POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

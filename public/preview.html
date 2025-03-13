@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Vorschau - Mannar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Vorschau der Mannar Website">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="./assets/css/main.css?v=1.0.3">
+  <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+  <!-- Preview-specific styles -->
+  <style>
+    /* Preview mode indicator */
+    .preview-indicator {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background-color: #ff9800;
+      color: white;
+      text-align: center;
+      padding: 8px;
+      z-index: 1000;
+      font-size: 14px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      transition: background-color 0.3s ease;
+    }
+    
+    .preview-indicator.live {
+      background-color: #4CAF50;
+    }
+
+    /* Skip link for accessibility */
+    .skip-link {
+      position: absolute;
+      top: -40px;
+      left: 0;
+      background: #3498db;
+      color: white;
+      padding: 8px;
+      z-index: 1500;
+      transition: top 0.3s;
+    }
+    
+    .skip-link:focus {
+      top: 0;
+    }
+    
+    /* Loading indicator */
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+      font-style: italic;
+    }
+    
+    /* Content transition */
+    .content-section {
+      transition: opacity 0.3s ease;
+    }
+    
+    /* Temporary fade for content loading */
+    .content-loading {
+      opacity: 0.5;
+    }
+  </style>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <!-- Accessibility skip link -->
+  <a href="#main-content" class="skip-link">Zum Hauptinhalt springen</a>
+
+  <!-- Preview mode indicator -->
+  <div id="previewIndicator" class="preview-indicator">
+    Vorschau-Modus: <span id="previewMode">Entwurf</span>
+  </div>
+
+  <!-- Navbar -->
+  <div class="w3-top">
+    <div class="w3-bar" id="myNavbar">
+      <a href="#home" class="w3-bar-item w3-button w3-hover-black">HOME</a>
+      <a href="#about" class="w3-bar-item w3-button w3-hide-small w3-hover-black"><i class="fas fa-user"></i> ABOUT</a>
+      <a href="#portfolio" class="w3-bar-item w3-button w3-hide-small w3-hover-black"><i class="fas fa-th"></i> PORTFOLIO</a>
+      <a href="#contact" class="w3-bar-item w3-button w3-hide-small w3-hover-black"><i class="fas fa-envelope"></i> KONTAKT</a>
+      <button class="w3-bar-item w3-button w3-hide-medium w3-hide-large w3-right" onclick="toggleFunction()" aria-label="Menü öffnen/schließen" aria-expanded="false" aria-controls="navDemo">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+
+    <!-- Mobile menu -->
+    <div id="navDemo" class="w3-bar-block w3-white w3-hide w3-hide-large w3-hide-medium">
+      <a href="#about" class="w3-bar-item w3-button" onclick="toggleFunction()">ABOUT</a>
+      <a href="#portfolio" class="w3-bar-item w3-button" onclick="toggleFunction()">PORTFOLIO</a>
+      <a href="#contact" class="w3-bar-item w3-button" onclick="toggleFunction()">KONTAKT</a>
+    </div>
+  </div>
+
+  <main id="main-content">
+    <!-- Hero-Bereich -->
+    <div class="bgimg-1 w3-display-container" id="home">
+      <div class="w3-display-middle" style="white-space:nowrap;">
+        <img src="./assets/img/IMG_4781.svg" alt="Mannar Logo" id="mainLogo" style="display:none;">
+      </div>
+    </div>
+
+    <!-- About-Sektion -->
+    <div class="w3-content w3-container w3-padding-64 content-section content-loading" id="about">
+      <h2 id="aboutTitleDisplay" class="w3-center">About</h2>
+      <p id="aboutSubtitleDisplay" class="w3-center"><em>Lädt...</em></p>
+      <div id="aboutTextDisplay" class="loading">Inhalt wird geladen...</div>
+
+      <div class="textbubble">
+        <ul class="word-cloud" id="wordCloudList">
+          <!-- Wird dynamisch befüllt -->
+        </ul>
+      </div>
+    </div>
+
+    <!-- Portfolio-Sektion (Angebote) -->
+    <div class="w3-content w3-container w3-padding-64 content-section content-loading" id="portfolio">
+      <h2 id="offeringsTitleDisplay" class="w3-center">Angebote</h2>
+      <p id="offeringsSubtitleDisplay" class="w3-center"><em>Lädt...</em></p>
+      
+      <!-- Drei Angebote / Cards -->
+      <div class="w3-row-padding">
+        <div class="w3-col m4 portfolio-item">
+          <div class="w3-card w3-round">
+            <img id="offer1ImageDisplay" src="/api/placeholder/400/300" alt="Angebot 1" style="width:100%">
+            <div class="w3-container">
+              <h3 id="offer1TitleDisplay" class="loading">Lädt...</h3>
+              <div id="offer1DescDisplay" class="loading">Inhalt wird geladen...</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="w3-col m4 portfolio-item">
+          <div class="w3-card w3-round">
+            <img id="offer2ImageDisplay" src="/api/placeholder/400/300" alt="Angebot 2" style="width:100%">
+            <div class="w3-container">
+              <h3 id="offer2TitleDisplay" class="loading">Lädt...</h3>
+              <div id="offer2DescDisplay" class="loading">Inhalt wird geladen...</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="w3-col m4 portfolio-item">
+          <div class="w3-card w3-round">
+            <img id="offer3ImageDisplay" src="/api/placeholder/400/300" alt="Angebot 3" style="width:100%">
+            <div class="w3-container">
+              <h3 id="offer3TitleDisplay" class="loading">Lädt...</h3>
+              <div id="offer3DescDisplay" class="loading">Inhalt wird geladen...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kontakt-Sektion -->
+    <div class="w3-content w3-container w3-padding-64 content-section content-loading" id="contact">
+      <h2 id="contactTitleDisplay" class="w3-center">Kontakt</h2>
+      <p id="contactSubtitleDisplay" class="w3-center loading">Lädt...</p>
+
+      <div class="w3-row w3-padding-32 w3-section">
+        <div class="w3-col m4 w3-container">
+          <img id="contactImageDisplay" src="/api/placeholder/400/300" class="w3-image w3-round" style="width:100%" alt="Kontaktbild">
+        </div>
+        <div class="w3-col m8 w3-panel">
+          <div class="w3-large w3-margin-bottom">
+            <i class="fas fa-map-marker-alt fa-fw w3-hover-text-black w3-xlarge w3-margin-right"></i> Berlin, Deutschland<br>
+            <i class="fas fa-phone fa-fw w3-hover-text-black w3-xlarge w3-margin-right"></i> Telefon: +49 30 123456<br>
+            <i class="fas fa-envelope fa-fw w3-hover-text-black w3-xlarge w3-margin-right"></i> E-Mail: kontakt@beispiel.de<br>
+          </div>
+          <p>Schauen Sie auf einen Kaffee vorbei <i class="fas fa-coffee"></i>, oder hinterlassen Sie mir eine Nachricht:</p>
+          
+          <!-- Kontaktformular (nur Platzhalter für Vorschau) -->
+          <form class="w3-container">
+            <div class="w3-row-padding" style="margin:0 -16px 8px -16px">
+              <div class="w3-half">
+                <input class="w3-input w3-border" type="text" placeholder="Name" disabled>
+              </div>
+              <div class="w3-half">
+                <input class="w3-input w3-border" type="text" placeholder="E-Mail" disabled>
+              </div>
+            </div>
+            <input class="w3-input w3-border" type="text" placeholder="Nachricht" disabled>
+            <button class="w3-button w3-black w3-right w3-section" type="button" disabled>
+              <i class="fas fa-paper-plane"></i> NACHRICHT SENDEN
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="w3-center w3-black w3-padding-64 w3-opacity w3-hover-opacity-off">
+    <a href="#home" class="w3-button w3-light-grey">
+      <i class="fas fa-arrow-up w3-margin-right"></i>Nach oben
+    </a>
+    <div class="w3-xlarge w3-section social-icons">
+      <i class="fab fa-facebook w3-hover-opacity"></i>
+      <i class="fab fa-instagram w3-hover-opacity"></i>
+      <i class="fab fa-snapchat w3-hover-opacity"></i>
+      <i class="fab fa-pinterest w3-hover-opacity"></i>
+      <i class="fab fa-twitter w3-hover-opacity"></i>
+      <i class="fab fa-linkedin w3-hover-opacity"></i>
+    </div>
+    <p>&copy; 2025 Mannar | Peer und Genesungsbegleiter</p>
+  </footer>
+
+  <!-- Back to top button -->
+  <div id="goTopBtn" class="go-top" aria-label="Nach oben scrollen">
+    <i class="fas fa-arrow-up"></i>
+  </div>
+
+  <!-- Firebase Configuration -->
+  <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAQszUApKHZ3lPrpc7HOINpdOWW3SgvUBM",
+      authDomain: "mannar-129a5.firebaseapp.com",
+      projectId: "mannar-129a5",
+      storageBucket: "mannar-129a5.firebasestorage.app",
+      messagingSenderId: "687710492532",
+      appId: "1:687710492532:web:c7b675da541271f8d83e21",
+      measurementId: "G-NXBLYJ5CXL"
+    };
+    
+    // Initialize Firebase
+    if (typeof firebase !== 'undefined') {
+      firebase.initializeApp(firebaseConfig);
+    }
+  </script>
+
+  <!-- Preview Scripts -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Parse URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const isDraft = urlParams.get('draft') !== 'false'; // Default to draft if not specified
+      
+      // Update preview indicator
+      const previewIndicator = document.getElementById('previewIndicator');
+      const previewMode = document.getElementById('previewMode');
+      
+      if (previewIndicator && previewMode) {
+        if (isDraft) {
+          previewMode.textContent = 'Entwurf';
+          previewIndicator.classList.remove('live');
+        } else {
+          previewMode.textContent = 'Live-Website';
+          previewIndicator.classList.add('live');
+        }
+      }
+      
+      // Load content from Firebase
+      loadContent(isDraft);
+      
+      // Load word cloud if available
+      loadWordCloud();
+      
+      // Initialize navigation toggle for mobile
+      window.toggleFunction = function() {
+        const navDemo = document.getElementById('navDemo');
+        if (!navDemo) return;
+        
+        navDemo.classList.toggle('w3-show');
+        
+        // Update ARIA state
+        const toggleBtn = document.querySelector('[aria-controls="navDemo"]');
+        if (toggleBtn) {
+          toggleBtn.setAttribute('aria-expanded', navDemo.classList.contains('w3-show') ? 'true' : 'false');
+        }
+      };
+      
+      // Initialize scroll-to-top button
+      const goTopBtn = document.getElementById('goTopBtn');
+      if (goTopBtn) {
+        window.addEventListener('scroll', function() {
+          if (window.scrollY > 300) {
+            goTopBtn.classList.add('visible');
+          } else {
+            goTopBtn.classList.remove('visible');
+          }
+        });
+        
+        goTopBtn.addEventListener('click', function() {
+          window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+        });
+      }
+      
+      // Initialize image modal for portfolio items
+      initImageModal();
+    });
+    
+    // Load content from Firebase
+    async function loadContent(isDraft) {
+      // Make sure Firebase is initialized
+      if (typeof firebase === 'undefined' || !firebase.firestore) {
+        console.error('Firebase not available');
+        showError('Firebase nicht verfügbar. Bitte laden Sie die Seite neu.');
+        return;
+      }
+      
+      try {
+        const db = firebase.firestore();
+        const docPath = isDraft ? 'content/draft' : 'content/main';
+        
+        const doc = await db.doc(docPath).get();
+        
+        if (!doc.exists) {
+          console.warn(`No ${isDraft ? 'draft' : 'published'} content found`);
+          showError(`Keine ${isDraft ? 'Entwurfs' : 'veröffentlichten'}-Inhalte gefunden.`);
+          return;
+        }
+        
+        const data = doc.data();
+        
+        // Update content sections
+        updateContent(data);
+        
+      } catch (error) {
+        console.error('Error loading content:', error);
+        showError('Fehler beim Laden der Inhalte: ' + error.message);
+      }
+    }
+    
+    // Update content with data from Firebase
+    function updateContent(data) {
+      // Remove loading state
+      document.querySelectorAll('.content-loading').forEach(el => {
+        el.classList.remove('content-loading');
+      });
+      
+      // Update About section
+      updateElement('aboutTitleDisplay', data.aboutTitle);
+      updateElement('aboutSubtitleDisplay', data.aboutSubtitle);
+      updateElement('aboutTextDisplay', data.aboutText, true);
+      
+      // Update Offerings section
+      updateElement('offeringsTitleDisplay', data.offeringsTitle);
+      updateElement('offeringsSubtitleDisplay', data.offeringsSubtitle);
+      
+      // Update Offering 1
+      updateElement('offer1TitleDisplay', data.offer1Title);
+      updateElement('offer1DescDisplay', data.offer1Desc, true);
+      updateImage('offer1ImageDisplay', data.offer1_image);
+      
+      // Update Offering 2
+      updateElement('offer2TitleDisplay', data.offer2Title);
+      updateElement('offer2DescDisplay', data.offer2Desc, true);
+      updateImage('offer2ImageDisplay', data.offer2_image);
+      
+      // Update Offering 3
+      updateElement('offer3TitleDisplay', data.offer3Title);
+      updateElement('offer3DescDisplay', data.offer3Desc, true);
+      updateImage('offer3ImageDisplay', data.offer3_image);
+      
+      // Update Contact section
+      updateElement('contactTitleDisplay', data.contactTitle);
+      updateElement('contactSubtitleDisplay', data.contactSubtitle);
+      updateImage('contactImageDisplay', data.contact_image);
+      
+      // Remove loading classes
+      document.querySelectorAll('.loading').forEach(el => {
+        el.classList.remove('loading');
+      });
+    }
+    
+    // Helper to update element content
+    function updateElement(id, content, isHtml = false) {
+      const element = document.getElementById(id);
+      if (element && content) {
+        if (isHtml) {
+          element.innerHTML = content;
+        } else {
+          element.textContent = content;
+        }
+      }
+    }
+    
+    // Helper to update image
+    function updateImage(id, imageData) {
+      const imgElement = document.getElementById(id);
+      if (!imgElement) return;
+      
+      if (imageData && (imageData.url || typeof imageData === 'string')) {
+        const imgUrl = imageData.url || imageData;
+        imgElement.src = imgUrl;
+        
+        if (imageData.alt) {
+          imgElement.alt = imageData.alt;
+        }
+        
+        imgElement.style.display = 'block';
+      } else {
+        // Keep placeholder if no image
+        imgElement.style.display = 'none';
+      }
+    }
+    
+    // Load word cloud
+    async function loadWordCloud() {
+      if (typeof firebase === 'undefined' || !firebase.firestore) return;
+      
+      try {
+        const db = firebase.firestore();
+        const doc = await db.collection('content').doc('wordCloud').get();
+        
+        if (!doc.exists || !doc.data().words) {
+          console.warn('No word cloud data found');
+          return;
+        }
+        
+        const words = doc.data().words;
+        renderWordCloud(words);
+        
+      } catch (error) {
+        console.error('Error loading word cloud:', error);
+      }
+    }
+    
+    // Render word cloud
+    function renderWordCloud(words) {
+      const wordCloudList = document.getElementById('wordCloudList');
+      if (!wordCloudList || !words || !words.length) return;
+      
+      // Clear existing content
+      wordCloudList.innerHTML = '';
+      
+      // Add words
+      words.forEach(word => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        
+        a.href = word.link || '#';
+        a.textContent = word.text || '';
+        a.setAttribute('data-weight', word.weight || 5);
+        
+        li.appendChild(a);
+        wordCloudList.appendChild(li);
+      });
+      
+      // Animate word cloud
+      setTimeout(() => {
+        animateWordCloud();
+      }, 300);
+    }
+    
+    // Animate word cloud
+    function animateWordCloud() {
+      const words = document.querySelectorAll('.word-cloud li a');
+      
+      words.forEach((word, index) => {
+        setTimeout(() => {
+          word.style.opacity = '1';
+          word.style.transform = 'translateY(0)';
+        }, 50 * index);
+      });
+    }
+    
+    // Initialize modal for images
+    function initImageModal() {
+      // Get all portfolio images
+      const portfolioImages = document.querySelectorAll('.portfolio-item img');
+      
+      // No need to create modal if no images
+      if (!portfolioImages.length) return;
+      
+      // Get the modal
+      let modal = document.getElementById('imageModal');
+      
+      // Create modal if it doesn't exist
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'imageModal';
+        modal.className = 'w3-modal w3-black';
+        modal.onclick = function() { this.style.display = 'none'; };
+        
+        modal.innerHTML = `
+          <div class="w3-modal-content w3-animate-zoom w3-center w3-transparent w3-padding-64">
+            <span class="w3-button w3-large w3-black w3-display-topright">&times;</span>
+            <img id="modalImg" class="w3-image">
+            <p id="modalCaption" class="w3-opacity w3-large"></p>
+          </div>
+        `;
+        
+        document.body.appendChild(modal);
+      }
+      
+      // Get modal elements
+      const modalImg = document.getElementById('modalImg');
+      const modalCaption = document.getElementById('modalCaption');
+      
+      // Add click event to images
+      portfolioImages.forEach(img => {
+        img.style.cursor = 'pointer';
+        
+        img.addEventListener('click', function() {
+          modal.style.display = 'block';
+          modalImg.src = this.src;
+          modalCaption.textContent = this.alt;
+        });
+      });
+      
+      // Add click event to close button
+      const closeBtn = modal.querySelector('.w3-button');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          modal.style.display = 'none';
+        });
+      }
+    }
+    
+    // Show error message
+    function showError(message) {
+      const elements = ['aboutTextDisplay', 'offer1DescDisplay', 'offer2DescDisplay', 'offer3DescDisplay'];
+      
+      elements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+          element.innerHTML = `<div class="w3-panel w3-pale-red w3-center">
+            <p><i class="fas fa-exclamation-circle"></i> ${message}</p>
+          </div>`;
+        }
+      });
+      
+      // Remove loading classes
+      document.querySelectorAll('.loading').forEach(el => {
+        el.classList.remove('loading');
+      });
+      
+      // Remove content-loading classes
+      document.querySelectorAll('.content-loading').forEach(el => {
+        el.classList.remove('content-loading');
+      });
+    }
+  </script>
+</body>
+</html>

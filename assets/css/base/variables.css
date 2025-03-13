@@ -1,0 +1,238 @@
+/**
+ * CSS Variables - Design System
+ * Central definition of all color values, spacing, typography sizes, etc.
+ * Enhanced for better theming capabilities and consistency
+ */
+
+:root {
+  /* ===== Color System ===== */
+  /* Primary Colors */
+  --primary-color: #3498db;
+  --primary-dark: #2980b9;
+  --primary-light: #5dade2;
+  --primary-very-light: #ebf5fb;
+  
+  /* Secondary Colors */
+  --secondary-color: #2c3e50;
+  --secondary-light: #34495e;
+  --secondary-dark: #1a252f;
+  
+  /* Accent Colors */
+  --accent-color: #e74c3c;
+  --accent-dark: #c0392b;
+  --accent-light: #ec7063;
+  
+  /* Status Colors */
+  --success-color: #2ecc71;
+  --success-dark: #27ae60;
+  --success-light: #abebc6;
+  
+  --warning-color: #f39c12;
+  --warning-dark: #e67e22;
+  --warning-light: #fdebd0;
+  
+  --danger-color: #e74c3c;
+  --danger-dark: #c0392b;
+  --danger-light: #fadbd8;
+  
+  --info-color: #3498db;
+  --info-dark: #2980b9;
+  --info-light: #d4e6f1;
+  
+  /* Neutral Colors */
+  --light-color: #ecf0f1;
+  --light-dark: #bdc3c7;
+  --light-very-dark: #95a5a6;
+  
+  --dark-color: #34495e;
+  --dark-light: #7f8c8d;
+  --dark-very-light: #95a5a6;
+  
+  /* Text Colors */
+  --text-color: #333333;
+  --text-light: #777777;
+  --text-very-light: #999999;
+  --text-inverse: #ffffff;
+  
+  /* Background Colors */
+  --body-bg: #f5f7f9;
+  --body-bg-dark: #ecf0f1;
+  --overlay-bg: rgba(0, 0, 0, 0.5);
+  
+  /* Border Colors */
+  --border-color: #dddddd;
+  --border-light: #eeeeee;
+  --border-dark: #cccccc;
+  
+  /* ===== Typography ===== */
+  /* Font Families */
+  --font-family: 'Lato', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  --heading-font: var(--font-family);
+  --code-font: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  
+  /* Font Sizes */
+  --base-font-size: 16px;
+  --small-font-size: 14px;
+  --very-small-font-size: 12px;
+  --large-font-size: 18px;
+  --very-large-font-size: 20px;
+  
+  /* For headings - accessible with CSS calc() */
+  --h1-size: 2.5rem;
+  --h2-size: 2rem;
+  --h3-size: 1.5rem;
+  --h4-size: 1.25rem;
+  --h5-size: 1rem;
+  --h6-size: 0.875rem;
+  
+  /* Line Heights */
+  --line-height: 1.6;
+  --heading-line-height: 1.3;
+  --compact-line-height: 1.2;
+  
+  /* Font Weights */
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+  
+  /* ===== Spacing System ===== */
+  --spacing-xxs: 0.25rem;  /* 4px */
+  --spacing-xs: 0.5rem;    /* 8px */
+  --spacing-sm: 0.75rem;   /* 12px */
+  --spacing-md: 1rem;      /* 16px */
+  --spacing-lg: 1.5rem;    /* 24px */
+  --spacing-xl: 2rem;      /* 32px */
+  --spacing-xxl: 3rem;     /* 48px */
+  --spacing-xxxl: 4rem;    /* 64px */
+  
+  /* For negative margins */
+  --spacing-xxs-negative: -0.25rem;
+  --spacing-xs-negative: -0.5rem;
+  --spacing-sm-negative: -0.75rem;
+  --spacing-md-negative: -1rem;
+  --spacing-lg-negative: -1.5rem;
+  --spacing-xl-negative: -2rem;
+  
+  /* ===== Layout ===== */
+  --container-width: 1170px;
+  --container-width-small: 960px;
+  --container-width-large: 1400px;
+  
+  --sidebar-width: 300px;
+  --sidebar-width-small: 250px;
+  --sidebar-width-large: 350px;
+  
+  --content-width: 800px;
+  --content-width-small: 650px;
+  --content-width-large: 1000px;
+  
+  --gutter: 20px;
+  --gutter-small: 10px;
+  --gutter-large: 30px;
+  
+  /* ===== Components ===== */
+  --border-radius: 4px;
+  --border-radius-sm: 2px;
+  --border-radius-lg: 8px;
+  --border-radius-xl: 16px;
+  --border-radius-pill: 50px;
+  --border-radius-circle: 50%;
+  
+  --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --box-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --box-shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.1);
+  --box-shadow-xl: 0 8px 16px rgba(0, 0, 0, 0.1);
+  --box-shadow-hover: 0 4px 8px rgba(0, 0, 0, 0.15);
+  
+  /* ===== Animations ===== */
+  --transition-speed: 0.3s;
+  --transition-speed-fast: 0.15s;
+  --transition-speed-slow: 0.5s;
+  
+  --transition-standard: var(--transition-speed) cubic-bezier(0.22, 1, 0.36, 1);
+  --transition-fast: var(--transition-speed-fast) ease;
+  --transition-slow: var(--transition-speed-slow) cubic-bezier(0.22, 1, 0.36, 1);
+  
+  /* ===== Z-Index Layers ===== */
+  --z-index-dropdown: 100;
+  --z-index-sticky: 200;
+  --z-index-fixed: 300;
+  --z-index-modal-backdrop: 400;
+  --z-index-modal: 500;
+  --z-index-popover: 600;
+  --z-index-tooltip: 700;
+  
+  /* ===== Breakpoints ===== */
+  /* These are just for reference in variables, use media queries */
+  --breakpoint-xs: 480px;
+  --breakpoint-sm: 576px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 992px;
+  --breakpoint-xl: 1200px;
+}
+
+/* ===== Dark Theme ===== */
+/* To be applied with a .dark-theme class on a parent element or :root.dark-theme */
+.dark-theme {
+  /* Base Colors Override */
+  --primary-color: #3498db;
+  --primary-dark: #2980b9;
+  --primary-light: #5dade2;
+  --primary-very-light: rgba(52, 152, 219, 0.2);
+  
+  --secondary-color: #34495e;
+  --secondary-light: #4d6280;
+  --secondary-dark: #2c3e50;
+  
+  /* Text Colors */
+  --text-color: #e0e0e0;
+  --text-light: #aaaaaa;
+  --text-very-light: #888888;
+  --text-inverse: #222222;
+  
+  /* Background Colors */
+  --body-bg: #1a1a1a;
+  --body-bg-dark: #111111;
+  
+  /* Status Colors - adjusted for dark theme */
+  --success-light: rgba(46, 204, 113, 0.3);
+  --warning-light: rgba(243, 156, 18, 0.3);
+  --danger-light: rgba(231, 76, 60, 0.3);
+  --info-light: rgba(52, 152, 219, 0.3);
+  
+  /* Border Colors */
+  --border-color: #444444;
+  --border-light: #555555;
+  --border-dark: #333333;
+  
+  /* Component Adjustments */
+  --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  --box-shadow-hover: 0 4px 8px rgba(0, 0, 0, 0.7);
+}
+
+/* ===== Reduced Motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-speed: 0.001s;
+    --transition-speed-fast: 0.001s;
+    --transition-speed-slow: 0.001s;
+    --transition-standard: 0.001s linear;
+    --transition-fast: 0.001s linear;
+    --transition-slow: 0.001s linear;
+  }
+}
+
+/* ===== High Contrast ===== */
+@media (prefers-contrast: high) {
+  :root {
+    --primary-color: #0066cc;
+    --primary-dark: #004c99;
+    --secondary-color: #000000;
+    --accent-color: #cc0000;
+    --text-color: #000000;
+    --text-light: #333333;
+    --border-color: #000000;
+    --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  }
+}

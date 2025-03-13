@@ -1,7 +1,12 @@
 <?php
 /**
  * Application Initialization
- * Bootstraps the Mannar website application and loads required components
+ * 
+ * Bootstraps the Mannar website application, loads required components,
+ * initializes session, error handling, and provides core helper functions.
+ *
+ * @package Mannar
+ * @subpackage Core
  */
 
 // Start output buffering for better control
@@ -19,13 +24,27 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start($session_options);
 }
 
-// Load configuration
-require_once __DIR__ . '/config.php';
+// Define application root path if not defined
+if (!defined('APP_PATH')) {
+    define('APP_PATH', realpath(__DIR__ . '/../../'));
+}
+
+// Load main configuration
+require_once APP_PATH . '/config/app.php';
+
+// Load other configuration files
+if (file_exists(APP_PATH . '/config/database.php')) {
+    require_once APP_PATH . '/config/database.php';
+}
+
+if (file_exists(APP_PATH . '/config/firebase.php')) {
+    require_once APP_PATH . '/config/firebase.php';
+}
 
 // Load utility functions
-require_once __DIR__ . '/utils/security.php';
-require_once __DIR__ . '/utils/formatting.php';
-require_once __DIR__ . '/utils/filesystem.php';
+require_once __DIR__ . '/../utils/security.php';
+require_once __DIR__ . '/../utils/formatting.php';
+require_once __DIR__ . '/../utils/filesystem.php';
 
 // Set security headers
 set_security_headers();
@@ -40,7 +59,7 @@ set_security_headers();
  */
 function render_template($template, $data = [], $return = false) {
     // Ensure template path is valid
-    $template_path = TEMPLATE_PATH . '/' . $template . '.php';
+    $template_path = TEMPLATES_PATH . '/' . $template . '.php';
     
     if (!file_exists($template_path)) {
         throw new Exception("Template not found: $template");
@@ -73,7 +92,7 @@ function render_template($template, $data = [], $return = false) {
  */
 function render_component($component, $data = [], $return = false) {
     // Ensure component path is valid
-    $component_path = TEMPLATE_PATH . '/components/' . $component . '.php';
+    $component_path = TEMPLATES_PATH . '/components/' . $component . '.php';
     
     if (!file_exists($component_path)) {
         throw new Exception("Component not found: $component");
@@ -136,9 +155,6 @@ function fatal_error_handler() {
     }
 }
 
-// Register error handler
-register_shutdown_function('fatal_error_handler');
-
 /**
  * Handle exceptions
  */
@@ -163,3 +179,73 @@ set_exception_handler(function($exception) {
     
     exit(1);
 });
+
+// Register error handler
+register_shutdown_function('fatal_error_handler');
+
+/**
+ * Set security headers for all responses
+ */
+function set_security_headers() {
+    // Prevent clickjacking
+    header('X-Frame-Options: SAMEORIGIN');
+    
+    // Enable XSS protection in browsers
+    header('X-XSS-Protection: 1; mode=block');
+    
+    // Prevent MIME type sniffing
+    header('X-Content-Type-Options: nosniff');
+    
+    // Set referrer policy
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    
+    // Set permissions policy
+    header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
+    
+    // Content Security Policy - Customize as needed for your application
+    if (defined('CSP_ENABLED') && CSP_ENABLED) {
+        $csp = "default-src 'self'; " .
+               "script-src 'self' https://www.gstatic.com https://cdn.firebase.com https://www.googleapis.com 'unsafe-inline'; " .
+               "style-src 'self' https://www.w3schools.com https://fonts.googleapis.com 'unsafe-inline'; " .
+               "img-src 'self' https://res.cloudinary.com data:; " .
+               "font-src 'self' https://fonts.gstatic.com; " .
+               "connect-src 'self' https://*.firebaseio.com https://firestore.googleapis.com; " .
+               "frame-src 'self'; " .
+               "object-src 'none'";
+               
+        header("Content-Security-Policy: $csp");
+    }
+}
+
+/**
+ * Get client IP address
+ * 
+ * @return string IP address
+ */
+function get_client_ip() {
+    $keys = ['HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR'];
+    
+    foreach ($keys as $key) {
+        if (!empty($_SERVER[$key])) {
+            return filter_var($_SERVER[$key], FILTER_VALIDATE_IP);
+        }
+    }
+    
+    return 'UNKNOWN';
+}
+
+// Load the Database class if database configuration is defined
+if (defined('DB_HOST') && defined('DB_NAME') && defined('DB_USER')) {
+    require_once __DIR__ . '/database.php';
+}
+
+// Load Router if available
+if (file_exists(__DIR__ . '/router.php')) {
+    require_once __DIR__ . '/router.php';
+}
+
+// Load base Controller class
+require_once __DIR__ . '/controller.php';
+
+// Initialize any services that should be available globally
+// This would be a good place to initialize Firebase SDK, etc.

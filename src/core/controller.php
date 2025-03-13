@@ -1,12 +1,17 @@
- <?php
+<?php
 /**
  * Base Controller
- * Base class for all controllers providing common functionality
+ * 
+ * Provides common functionality for all controllers including view rendering,
+ * redirects, form handling, and utility methods for derived controllers.
+ * 
+ * @package Mannar
+ * @subpackage Core
  */
 
 class Controller {
     /**
-     * @var array View data
+     * @var array View data to be passed to templates
      */
     protected $viewData = [];
     
@@ -68,7 +73,7 @@ class Controller {
      * @return string View file path
      */
     protected function getViewPath($view) {
-        return __DIR__ . '/../views/' . $view . '.php';
+        return __DIR__ . '/../templates/pages/' . $view . '.php';
     }
     
     /**
@@ -78,7 +83,7 @@ class Controller {
      * @return string Layout file path
      */
     protected function getLayoutPath($layout) {
-        return __DIR__ . '/../views/layouts/' . $layout . '.php';
+        return __DIR__ . '/../templates/layouts/' . $layout . '.php';
     }
     
     /**
@@ -128,7 +133,7 @@ class Controller {
      * @return string Partial file path
      */
     protected function getPartialPath($partial) {
-        return __DIR__ . '/../views/partials/' . $partial . '.php';
+        return __DIR__ . '/../templates/components/' . $partial . '.php';
     }
     
     /**

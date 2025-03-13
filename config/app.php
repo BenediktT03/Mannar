@@ -1,4 +1,4 @@
-<?php
+ <?php
 /**
  * Application Configuration
  * Central configuration file for application settings
@@ -6,6 +6,7 @@
 
 // Prevent direct access
 if (!defined('APP_PATH')) {
+    define('APP_PATH', dirname(__DIR__));
     exit('Direct script access is not allowed.');
 }
 
@@ -20,10 +21,10 @@ define('BASE_URL', 'https://' . $_SERVER['HTTP_HOST']);
 define('ASSETS_URL', BASE_URL . '/assets');
 
 // Application paths
-define('CORE_PATH', APP_PATH . '/core');
-define('TEMPLATES_PATH', APP_PATH . '/templates');
-define('ASSETS_PATH', APP_PATH . '/assets');
-define('API_PATH', APP_PATH . '/api');
+define('CORE_PATH', APP_PATH . '/src/core');
+define('TEMPLATES_PATH', APP_PATH . '/src/templates');
+define('ASSETS_PATH', APP_PATH . '/public/assets');
+define('API_PATH', APP_PATH . '/public/api');
 
 // Asset version for cache busting
 define('ASSET_VERSION', '1.0.3');
@@ -54,14 +55,15 @@ define('CLOUDINARY_CONFIG', [
 ]);
 
 // Mail settings
-define('MAIL_CONFIG', [
+define('EMAIL_CONFIG', [
     'host' => 'smtp.example.com',
     'port' => 587,
     'username' => 'noreply@example.com',
     'password' => 'mail_password',
     'encryption' => 'tls',
-    'from' => 'noreply@example.com',
-    'from_name' => 'Mannar Website'
+    'from_email' => 'noreply@example.com',
+    'from_name' => 'Mannar Website',
+    'contact_email' => 'kontakt@beispiel.de'
 ]);
 
 // Default page settings
@@ -99,6 +101,14 @@ define('FEATURES', [
     'enable_word_cloud' => true,
     'enable_dynamic_pages' => true
 ]);
+
+// Convenience constants for feature flags
+define('ENABLE_CACHING', FEATURES['enable_caching']);
+define('ENABLE_MINIFICATION', FEATURES['enable_minification']);
+define('ENABLE_ANALYTICS', FEATURES['enable_analytics']);
+define('ENABLE_WORD_CLOUD', FEATURES['enable_word_cloud']);
+define('ENABLE_DYNAMIC_PAGES', FEATURES['enable_dynamic_pages']);
+define('ENABLE_CONTACT_FORM', true);
 
 // Error reporting settings
 if (APP_DEBUG) {
