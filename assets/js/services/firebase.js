@@ -1,518 +1,363 @@
 /**
  * Firebase Service
- * Centralized service for Firebase operations
+ * 
+ * Zentrale Schnittstelle für alle Firebase-Interaktionen. Dieser Service
+ * kapselt die Firebase-Initialisierung und stellt Methoden für den Zugriff
+ * auf Firebase-Dienste (Authentifizierung, Firestore, Storage) bereit.
+ * 
+ * @author Ihr Name
+ * @version 1.0.0
  */
-const FirebaseService = (function() {
-  // Configuration
-  const config = {
-    apiKey: "AIzaSyAQszUApKHZ3lPrpc7HOINpdOWW3SgvUBM",
-    authDomain: "mannar-129a5.firebaseapp.com",
-    projectId: "mannar-129a5",
-    storageBucket: "mannar-129a5.firebasestorage.app",
-    messagingSenderId: "687710492532",
-    appId: "1:687710492532:web:c7b675da541271f8d83e21",
-    measurementId: "G-NXBLYJ5CXL"
-  };
-  
-  // Firebase instances
-  let app, db, auth, storage;
-  
-  // Initialization state
-  let initialized = false;
+
+import { errorHandler } from '../utils/error-handler.js';
+
+/**
+ * Firebase Service Klasse
+ */
+class FirebaseService {
+  /**
+   * Erstellt eine neue FirebaseService-Instanz
+   */
+  constructor() {
+    this.app = null;
+    this.auth = null;
+    this.db = null;
+    this.storage = null;
+    this.initialized = false;
+    
+    // Firebase-Konfiguration laden
+    this._loadConfig();
+  }
   
   /**
-   * Initialize Firebase if not already initialized
-   * @returns {boolean} True if initialization successful
+   * Initialisiert Firebase mit der geladenen Konfiguration
+   * @returns {Promise<boolean>} True wenn erfolgreich initialisiert
    */
-  function init() {
-    if (initialized) return true;
-    
+  async initialize() {
     try {
-      // Check if Firebase is available
+      if (this.initialized) return true;
+      
+      // Prüfen, ob Firebase bereits global verfügbar ist
       if (typeof firebase === 'undefined') {
-        console.error('Firebase SDK not loaded');
+        errorHandler.logError('Firebase ist nicht geladen. Bitte Firebase-SDK einbinden.');
         return false;
       }
       
-      // Initialize Firebase app
+      // Firebase initialisieren, wenn noch nicht geschehen
       if (!firebase.apps.length) {
-        app = firebase.initializeApp(config);
+        if (!this.config) {
+          errorHandler.logError('Firebase-Konfiguration konnte nicht geladen werden.');
+          return false;
+        }
+        
+        this.app = firebase.initializeApp(this.config);
       } else {
-        app = firebase.app();
+        this.app = firebase.app();
       }
       
-      // Initialize services
-      db = firebase.firestore();
-      auth = firebase.auth();
-      storage = firebase.storage();
+      // Firebase-Dienste initialisieren
+      this.auth = firebase.auth();
+      this.db = firebase.firestore();
+      this.storage = firebase.storage();
       
-      // Set initialization flag
-      initialized = true;
+      // Firestore-Einstellungen
+      this.db.settings({
+        cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
+      });
       
-      console.log('Firebase initialized successfully');
+      // Offline-Persistenz aktivieren, falls unterstützt
+      try {
+        await this.db.enablePersistence({ synchronizeTabs: true });
+      } catch (err) {
+        if (err.code === 'failed-precondition') {
+          // Mehrere Tabs geöffnet, Persistenz in diesem Kontext nicht möglich
+          console.warn('Firebase Offline-Persistenz nicht verfügbar: Mehrere Tabs geöffnet.');
+        } else if (err.code === 'unimplemented') {
+          // Der aktuelle Browser unterstützt keine Persistenz
+          console.warn('Firebase Offline-Persistenz wird in diesem Browser nicht unterstützt.');
+        }
+      }
+      
+      this.initialized = true;
+      console.info('Firebase erfolgreich initialisiert.');
       return true;
     } catch (error) {
-      console.error('Error initializing Firebase:', error);
+      errorHandler.logError('Fehler bei der Firebase-Initialisierung:', error);
       return false;
     }
   }
   
   /**
-   * Get Firestore database instance
-   * @returns {Object|null} Firestore instance or null if not initialized
+   * Lädt die Firebase-Konfiguration
+   * @private
    */
-  function getFirestore() {
-    if (!initialized) {
-      if (!init()) {
-        return null;
-      }
-    }
-    
-    return db;
-  }
-  
-  /**
-   * Get Auth instance
-   * @returns {Object|null} Auth instance or null if not initialized
-   */
-  function getAuth() {
-    if (!initialized) {
-      if (!init()) {
-        return null;
-      }
-    }
-    
-    return auth;
-  }
-  
-  /**
-   * Get Storage instance
-   * @returns {Object|null} Storage instance or null if not initialized
-   */
-  function getStorage() {
-    if (!initialized) {
-      if (!init()) {
-        return null;
-      }
-    }
-    
-    return storage;
-  }
-  
-  /**
-   * Get document data from Firestore
-   * @param {string} collectionName - Collection name
-   * @param {string} docId - Document ID
-   * @returns {Promise<Object|null>} Document data or null if not found
-   */
-  async function getDocument(collectionName, docId) {
-    if (!initialized) {
-      if (!init()) {
-        return null;
-      }
-    }
-    
+  async _loadConfig() {
     try {
-      const docRef = db.collection(collectionName).doc(docId);
+      // Versuche, die Konfiguration aus dem window-Objekt zu laden (falls inline definiert)
+      if (window.firebaseConfig) {
+        this.config = window.firebaseConfig;
+        return;
+      }
+      
+      // Alternativ: Konfiguration aus einer Konfigurationsdatei laden
+      const response = await fetch('/config/firebase-config.json');
+      if (!response.ok) {
+        throw new Error(`HTTP-Fehler: ${response.status}`);
+      }
+      
+      this.config = await response.json();
+    } catch (error) {
+      errorHandler.logError('Fehler beim Laden der Firebase-Konfiguration:', error);
+      this.config = null;
+    }
+  }
+  
+  /**
+   * Prüft, ob Firebase initialisiert ist und initialisiert es bei Bedarf
+   * @returns {Promise<boolean>} True, wenn Firebase bereit ist
+   * @private
+   */
+  async _ensureInitialized() {
+    if (!this.initialized) {
+      return await this.initialize();
+    }
+    return true;
+  }
+  
+  /**
+   * Ruft eine Firestore-Sammlung ab
+   * @param {string} collectionName - Name der Sammlung
+   * @returns {firebase.firestore.CollectionReference} Firestore-Sammlungsreferenz
+   */
+  async getCollection(collectionName) {
+    await this._ensureInitialized();
+    return this.db.collection(collectionName);
+  }
+  
+  /**
+   * Ruft ein Dokument aus einer Sammlung ab
+   * @param {string} collectionName - Name der Sammlung
+   * @param {string} documentId - ID des Dokuments
+   * @returns {Promise<Object>} Dokumentdaten oder null, falls nicht gefunden
+   */
+  async getDocument(collectionName, documentId) {
+    try {
+      await this._ensureInitialized();
+      
+      const docRef = this.db.collection(collectionName).doc(documentId);
       const doc = await docRef.get();
       
       if (doc.exists) {
-        return {
-          id: doc.id,
-          ...doc.data()
-        };
+        return { id: doc.id, ...doc.data() };
       } else {
-        console.warn(`Document ${docId} not found in ${collectionName}`);
+        console.warn(`Dokument nicht gefunden: ${collectionName}/${documentId}`);
         return null;
       }
     } catch (error) {
-      console.error(`Error getting document ${docId} from ${collectionName}:`, error);
+      errorHandler.logError(`Fehler beim Abrufen des Dokuments ${collectionName}/${documentId}:`, error);
       return null;
     }
   }
   
   /**
-   * Set document data in Firestore
-   * @param {string} collectionName - Collection name
-   * @param {string} docId - Document ID
-   * @param {Object} data - Document data
-   * @param {boolean} merge - Whether to merge with existing data
-   * @returns {Promise<boolean>} True if successful
+   * Ruft Dokumente aus einer Sammlung mit optionaler Filterung ab
+   * @param {string} collectionName - Name der Sammlung
+   * @param {Object} options - Abfrageoptionen (Felder, Sortierung, Limit)
+   * @returns {Promise<Array>} Array von Dokumenten
    */
-  async function setDocument(collectionName, docId, data, merge = true) {
-    if (!initialized) {
-      if (!init()) {
-        return false;
-      }
-    }
-    
+  async getDocuments(collectionName, options = {}) {
     try {
-      // Add server timestamp
-      const dataWithTimestamp = {
-        ...data,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      };
+      await this._ensureInitialized();
       
-      // Set the document
-      await db.collection(collectionName).doc(docId).set(dataWithTimestamp, { merge });
+      let query = this.db.collection(collectionName);
       
-      return true;
-    } catch (error) {
-      console.error(`Error setting document ${docId} in ${collectionName}:`, error);
-      return false;
-    }
-  }
-  
-  /**
-   * Get documents from a collection
-   * @param {string} collectionName - Collection name
-   * @param {Object} options - Query options
-   * @returns {Promise<Array>} Array of documents
-   */
-  async function getCollection(collectionName, options = {}) {
-    if (!initialized) {
-      if (!init()) {
-        return [];
-      }
-    }
-    
-    try {
-      let query = db.collection(collectionName);
-      
-      // Apply where clauses
+      // Filterungen anwenden, falls angegeben
       if (options.where && Array.isArray(options.where)) {
-        options.where.forEach(([field, operator, value]) => {
-          query = query.where(field, operator, value);
+        options.where.forEach(condition => {
+          if (condition.length === 3) {
+            const [field, operator, value] = condition;
+            query = query.where(field, operator, value);
+          }
         });
       }
       
-      // Apply order by
+      // Sortierung anwenden, falls angegeben
       if (options.orderBy) {
-        if (Array.isArray(options.orderBy)) {
-          options.orderBy.forEach(([field, direction = 'asc']) => {
-            query = query.orderBy(field, direction);
-          });
-        } else {
-          query = query.orderBy(options.orderBy);
-        }
+        const orderField = options.orderBy.field || options.orderBy;
+        const orderDirection = options.orderBy.direction || 'asc';
+        query = query.orderBy(orderField, orderDirection);
       }
       
-      // Apply limit
-      if (options.limit) {
+      // Limit anwenden, falls angegeben
+      if (options.limit && typeof options.limit === 'number') {
         query = query.limit(options.limit);
       }
       
-      // Execute query
       const snapshot = await query.get();
       
-      const results = [];
-      snapshot.forEach((doc) => {
-        results.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-      
-      return results;
+      // Ergebnisse in ein Array umwandeln und IDs hinzufügen
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
     } catch (error) {
-      console.error(`Error getting collection ${collectionName}:`, error);
+      errorHandler.logError(`Fehler beim Abrufen von Dokumenten aus ${collectionName}:`, error);
       return [];
     }
   }
   
   /**
-   * Delete a document from Firestore
-   * @param {string} collectionName - Collection name
-   * @param {string} docId - Document ID
-   * @returns {Promise<boolean>} True if successful
+   * Speichert ein Dokument in Firestore
+   * @param {string} collectionName - Name der Sammlung
+   * @param {Object} data - Zu speichernde Daten
+   * @param {string} documentId - Optionale Dokument-ID (wird generiert, falls nicht angegeben)
+   * @returns {Promise<string>} ID des gespeicherten Dokuments oder null bei Fehler
    */
-  async function deleteDocument(collectionName, docId) {
-    if (!initialized) {
-      if (!init()) {
-        return false;
-      }
-    }
-    
+  async saveDocument(collectionName, data, documentId = null) {
     try {
-      await db.collection(collectionName).doc(docId).delete();
-      return true;
-    } catch (error) {
-      console.error(`Error deleting document ${docId} from ${collectionName}:`, error);
-      return false;
-    }
-  }
-  
-  /**
-   * Upload file to Firebase Storage
-   * @param {File} file - File to upload
-   * @param {string} path - Storage path
-   * @param {Object} metadata - File metadata
-   * @returns {Promise<Object>} Upload result
-   */
-  async function uploadFile(file, path, metadata = {}) {
-    if (!initialized) {
-      if (!init()) {
-        throw new Error('Firebase not initialized');
-      }
-    }
-    
-    try {
-      const storageRef = storage.ref();
-      const fileRef = storageRef.child(path);
+      await this._ensureInitialized();
       
-      // Upload file
-      const snapshot = await fileRef.put(file, metadata);
-      
-      // Get download URL
-      const downloadURL = await snapshot.ref.getDownloadURL();
-      
-      return {
-        url: downloadURL,
-        path,
-        metadata: snapshot.metadata
+      // Zeitstempel für Erstellung/Aktualisierung
+      const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+      const dataToSave = {
+        ...data,
+        updatedAt: timestamp
       };
+      
+      // Bei neuen Dokumenten Erstellungszeitstempel hinzufügen
+      if (!documentId) {
+        dataToSave.createdAt = timestamp;
+      }
+      
+      let docRef;
+      
+      if (documentId) {
+        // Existierendes Dokument aktualisieren
+        docRef = this.db.collection(collectionName).doc(documentId);
+        await docRef.update(dataToSave);
+      } else {
+        // Neues Dokument mit generierter ID erstellen
+        docRef = await this.db.collection(collectionName).add(dataToSave);
+      }
+      
+      return docRef.id;
     } catch (error) {
-      console.error(`Error uploading file to ${path}:`, error);
-      throw error;
+      errorHandler.logError(`Fehler beim Speichern des Dokuments in ${collectionName}:`, error);
+      return null;
     }
   }
   
   /**
-   * Download file from Firebase Storage
-   * @param {string} path - Storage path
-   * @returns {Promise<Blob>} File data
+   * Löscht ein Dokument aus Firestore
+   * @param {string} collectionName - Name der Sammlung
+   * @param {string} documentId - ID des zu löschenden Dokuments
+   * @returns {Promise<boolean>} True bei Erfolg, False bei Fehler
    */
-  async function downloadFile(path) {
-    if (!initialized) {
-      if (!init()) {
-        throw new Error('Firebase not initialized');
-      }
-    }
-    
+  async deleteDocument(collectionName, documentId) {
     try {
-      const storageRef = storage.ref();
-      const fileRef = storageRef.child(path);
+      await this._ensureInitialized();
       
-      // Get download URL
-      const url = await fileRef.getDownloadURL();
-      
-      // Fetch file
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      
-      // Get blob
-      const blob = await response.blob();
-      
-      return blob;
-    } catch (error) {
-      console.error(`Error downloading file from ${path}:`, error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Delete file from Firebase Storage
-   * @param {string} path - Storage path
-   * @returns {Promise<boolean>} True if successful
-   */
-  async function deleteFile(path) {
-    if (!initialized) {
-      if (!init()) {
-        return false;
-      }
-    }
-    
-    try {
-      const storageRef = storage.ref();
-      const fileRef = storageRef.child(path);
-      
-      await fileRef.delete();
-      
+      await this.db.collection(collectionName).doc(documentId).delete();
       return true;
     } catch (error) {
-      console.error(`Error deleting file from ${path}:`, error);
+      errorHandler.logError(`Fehler beim Löschen des Dokuments ${collectionName}/${documentId}:`, error);
       return false;
     }
   }
   
   /**
-   * Get document with real-time updates
-   * @param {string} collectionName - Collection name
-   * @param {string} docId - Document ID
-   * @param {Function} callback - Callback function
-   * @returns {Function} Unsubscribe function
+   * Lädt eine Datei in Firebase Storage hoch
+   * @param {File} file - Hochzuladende Datei
+   * @param {string} path - Pfad im Storage
+   * @param {Function} progressCallback - Callback für Fortschrittsanzeige
+   * @returns {Promise<string>} Download-URL der Datei oder null bei Fehler
    */
-  function listenDocument(collectionName, docId, callback) {
-    if (!initialized) {
-      if (!init()) {
-        return () => {};
-      }
-    }
-    
+  async uploadFile(file, path, progressCallback = null) {
     try {
-      const unsubscribe = db.collection(collectionName).doc(docId).onSnapshot(
-        (doc) => {
-          if (doc.exists) {
-            callback({
-              id: doc.id,
-              ...doc.data()
-            });
-          } else {
-            callback(null);
-          }
-        },
-        (error) => {
-          console.error(`Error listening to document ${docId} in ${collectionName}:`, error);
-          callback(null, error);
-        }
-      );
+      await this._ensureInitialized();
       
-      return unsubscribe;
-    } catch (error) {
-      console.error(`Error setting up listener for document ${docId} in ${collectionName}:`, error);
-      return () => {};
-    }
-  }
-  
-  /**
-   * Get collection with real-time updates
-   * @param {string} collectionName - Collection name
-   * @param {Object} options - Query options
-   * @param {Function} callback - Callback function
-   * @returns {Function} Unsubscribe function
-   */
-  function listenCollection(collectionName, options = {}, callback) {
-    if (!initialized) {
-      if (!init()) {
-        return () => {};
-      }
-    }
-    
-    try {
-      let query = db.collection(collectionName);
+      const storagePath = path || `uploads/${Date.now()}_${file.name}`;
+      const storageRef = this.storage.ref(storagePath);
       
-      // Apply where clauses
-      if (options.where && Array.isArray(options.where)) {
-        options.where.forEach(([field, operator, value]) => {
-          query = query.where(field, operator, value);
+      // Upload-Task erstellen
+      const uploadTask = storageRef.put(file);
+      
+      // Fortschritts-Listener, falls Callback angegeben
+      if (progressCallback && typeof progressCallback === 'function') {
+        uploadTask.on('state_changed', snapshot => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          progressCallback(progress, snapshot);
         });
       }
       
-      // Apply order by
-      if (options.orderBy) {
-        if (Array.isArray(options.orderBy)) {
-          options.orderBy.forEach(([field, direction = 'asc']) => {
-            query = query.orderBy(field, direction);
-          });
-        } else {
-          query = query.orderBy(options.orderBy);
-        }
-      }
+      // Auf Abschluss des Uploads warten
+      await uploadTask;
       
-      // Apply limit
-      if (options.limit) {
-        query = query.limit(options.limit);
-      }
-      
-      // Set up listener
-      const unsubscribe = query.onSnapshot(
-        (snapshot) => {
-          const results = [];
-          snapshot.forEach((doc) => {
-            results.push({
-              id: doc.id,
-              ...doc.data()
-            });
-          });
-          
-          callback(results);
-        },
-        (error) => {
-          console.error(`Error listening to collection ${collectionName}:`, error);
-          callback([], error);
-        }
-      );
-      
-      return unsubscribe;
+      // Download-URL abrufen
+      const downloadURL = await storageRef.getDownloadURL();
+      return downloadURL;
     } catch (error) {
-      console.error(`Error setting up listener for collection ${collectionName}:`, error);
-      return () => {};
+      errorHandler.logError('Fehler beim Hochladen der Datei:', error);
+      return null;
     }
   }
   
   /**
-   * Batch write operations
-   * @param {Array} operations - Array of operations
-   * @returns {Promise<boolean>} True if successful
+   * Ruft eine Liste von Dateien aus einem Storage-Pfad ab
+   * @param {string} path - Pfad im Storage
+   * @returns {Promise<Array>} Array von Dateireferenzen
    */
-  async function batchWrite(operations) {
-    if (!initialized) {
-      if (!init()) {
-        return false;
-      }
-    }
-    
+  async listFiles(path) {
     try {
-      const batch = db.batch();
+      await this._ensureInitialized();
       
-      // Process operations
-      operations.forEach((op) => {
-        const { type, collection, doc, data } = op;
+      const storageRef = this.storage.ref(path);
+      const result = await storageRef.listAll();
+      
+      // Metadaten und URLs für alle Dateien abrufen
+      const filesPromises = result.items.map(async (itemRef) => {
+        const url = await itemRef.getDownloadURL();
+        const metadata = await itemRef.getMetadata();
         
-        const docRef = db.collection(collection).doc(doc);
-        
-        switch (type) {
-          case 'set':
-            batch.set(docRef, data, op.options || {});
-            break;
-            
-          case 'update':
-            batch.update(docRef, data);
-            break;
-            
-          case 'delete':
-            batch.delete(docRef);
-            break;
-            
-          default:
-            console.warn(`Unknown batch operation type: ${type}`);
-        }
+        return {
+          name: itemRef.name,
+          fullPath: itemRef.fullPath,
+          url: url,
+          contentType: metadata.contentType,
+          size: metadata.size,
+          timeCreated: metadata.timeCreated,
+          updated: metadata.updated
+        };
       });
       
-      // Commit batch
-      await batch.commit();
-      
-      return true;
+      return await Promise.all(filesPromises);
     } catch (error) {
-      console.error('Error performing batch write:', error);
-      return false;
+      errorHandler.logError(`Fehler beim Abrufen der Dateien aus ${path}:`, error);
+      return [];
     }
   }
   
-  // Initialize Firebase when service is loaded
-  init();
-  
-  // Public API
-  return {
-    init,
-    getFirestore,
-    getAuth,
-    getStorage,
-    getDocument,
-    setDocument,
-    getCollection,
-    deleteDocument,
-    uploadFile,
-    downloadFile,
-    deleteFile,
-    listenDocument,
-    listenCollection,
-    batchWrite
-  };
-})();
+  /**
+   * Löscht eine Datei aus dem Firebase Storage
+   * @param {string} path - Vollständiger Pfad der Datei
+   * @returns {Promise<boolean>} True bei Erfolg
+   */
+  async deleteFile(path) {
+    try {
+      await this._ensureInitialized();
+      
+      const fileRef = this.storage.ref(path);
+      await fileRef.delete();
+      return true;
+    } catch (error) {
+      errorHandler.logError(`Fehler beim Löschen der Datei ${path}:`, error);
+      return false;
+    }
+  }
+}
 
-// Make service globally available
-window.FirebaseService = FirebaseService;
+// Eine Singleton-Instanz des FirebaseService erstellen
+const firebaseService = new FirebaseService();
+
+// Service exportieren
+export default firebaseService;

@@ -1,0 +1,197 @@
+ /**
+ * Pagination Component
+ * Styling for pagination controls and page navigation elements
+ */
+
+/* Pagination container */
+.pagination {
+  display: flex;
+  padding-left: 0;
+  list-style: none;
+  border-radius: var(--border-radius);
+  margin: var(--spacing-md) 0;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Pagination items */
+.pagination-item {
+  margin: 0 2px;
+}
+
+/* Pagination links */
+.pagination-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.75rem;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  line-height: 1;
+  color: var(--primary-color);
+  background-color: white;
+  border: 1px solid var(--border-color);
+  text-decoration: none;
+  transition: color var(--transition-speed) ease,
+              background-color var(--transition-speed) ease,
+              border-color var(--transition-speed) ease,
+              box-shadow var(--transition-speed) ease;
+}
+
+/* First and last page links */
+.pagination-item:first-child .pagination-link {
+  border-top-left-radius: var(--border-radius);
+  border-bottom-left-radius: var(--border-radius);
+}
+
+.pagination-item:last-child .pagination-link {
+  border-top-right-radius: var(--border-radius);
+  border-bottom-right-radius: var(--border-radius);
+}
+
+/* Hover state */
+.pagination-link:hover {
+  z-index: 2;
+  color: var(--primary-dark);
+  text-decoration: none;
+  background-color: var(--light-color);
+  border-color: var(--border-color);
+}
+
+/* Focus state */
+.pagination-link:focus {
+  z-index: 3;
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+/* Active state */
+.pagination-item.active .pagination-link {
+  z-index: 3;
+  color: white;
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  cursor: default;
+}
+
+/* Disabled state */
+.pagination-item.disabled .pagination-link {
+  color: var(--text-light);
+  pointer-events: none;
+  cursor: not-allowed;
+  background-color: white;
+  border-color: var(--border-color);
+}
+
+/* Previous/Next icons */
+.pagination-link i {
+  font-size: 0.875rem;
+}
+
+/* Pagination with gaps */
+.pagination-gap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.75rem;
+  color: var(--text-light);
+}
+
+/* Sizing variants */
+.pagination-sm .pagination-link {
+  padding: 0.25rem 0.5rem;
+  min-width: 2rem;
+  min-height: 2rem;
+  font-size: 0.875rem;
+}
+
+.pagination-lg .pagination-link {
+  padding: 0.75rem 1rem;
+  min-width: 3rem;
+  min-height: 3rem;
+  font-size: 1.25rem;
+}
+
+/* Rounded pagination */
+.pagination-rounded .pagination-link {
+  border-radius: 50%;
+  margin: 0 3px;
+}
+
+.pagination-rounded .pagination-item:first-child .pagination-link,
+.pagination-rounded .pagination-item:last-child .pagination-link {
+  border-radius: 50%;
+}
+
+/* Borderless pagination */
+.pagination-borderless .pagination-link {
+  border: none;
+  background-color: transparent;
+}
+
+.pagination-borderless .pagination-link:hover {
+  background-color: var(--light-color);
+}
+
+.pagination-borderless .pagination-item.active .pagination-link {
+  background-color: var(--primary-color);
+}
+
+/* Responsive pagination */
+@media (max-width: 576px) {
+  .pagination {
+    margin: var(--spacing-sm) 0;
+  }
+  
+  .pagination-link {
+    padding: 0.4rem 0.6rem;
+    min-width: 2.2rem;
+    min-height: 2.2rem;
+  }
+  
+  /* Hide page numbers on very small screens, keep prev/next */
+  .pagination-number {
+    display: none;
+  }
+  
+  .pagination-item:first-child,
+  .pagination-item:last-child,
+  .pagination-item.active {
+    display: block;
+  }
+}
+
+/* Compact pagination for larger sets */
+.pagination-compact {
+  display: flex;
+  align-items: center;
+}
+
+.pagination-compact .pagination-info {
+  margin-right: var(--spacing-md);
+  color: var(--text-light);
+}
+
+.pagination-compact .pagination-control {
+  display: flex;
+  align-items: center;
+}
+
+.pagination-compact .pagination-input {
+  width: 3rem;
+  text-align: center;
+  margin: 0 var(--spacing-xs);
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .pagination-link {
+    transition: none;
+  }
+}
+
+.pagination-link:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}

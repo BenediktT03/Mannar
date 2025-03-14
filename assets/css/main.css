@@ -1,37 +1,43 @@
 /**
  * Mannar Website - Main CSS
- * Zentraler Einstiegspunkt für alle CSS-Styles
- * Importiert alle Stylesheets in der korrekten Reihenfolge
+ * Central entry point for all CSS styles
+ * This file imports all stylesheets in the correct order to ensure proper cascading
  */
 
-/* Base styles - Grundlegende Definitionen */
-@import 'base/variables.css';  /* Muss zuerst geladen werden, da andere CSS-Dateien diese Variablen verwenden */
-@import 'base/reset.css';      /* Normalisiert Browser-Unterschiede */
-@import 'base/typography.css'; /* Grundlegende Typografie-Definitionen */
+/* ===== BASE STYLES ===== */
+/* These define the foundation of the site's design */
+@import 'base/variables.css';  /* Must be loaded first as other CSS files use these variables */
+@import 'base/reset.css';      /* Normalizes browser differences and provides a clean slate */
+@import 'base/typography.css'; /* Defines text styles, fonts, and hierarchies */
 
-/* Layout components - Strukturelle Elemente */
-@import 'layout/grid.css';
-@import 'layout/containers.css';
-@import 'layout/header.css';
-@import 'layout/footer.css';
+/* ===== LAYOUT COMPONENTS ===== */
+/* These define the structural elements and overall page layout */
+@import 'layout/grid.css';      /* Grid system for page layout */
+@import 'layout/containers.css'; /* Content container styles */
+@import 'layout/header.css';    /* Header area styling */
+@import 'layout/footer.css';    /* Footer area styling */
 
-/* UI Components - Wiederverwendbare Elemente */
-@import 'components/buttons.css';
-@import 'components/cards.css';
-@import 'components/forms.css';
-@import 'components/navigation.css';
-@import 'components/wordcloud.css';
-@import 'components/gallery.css';
-@import 'components/modal.css';
+/* ===== UI COMPONENTS ===== */
+/* Reusable interface elements used throughout the site */
+@import 'components/buttons.css';    /* Button styles and variations */
+@import 'components/cards.css';      /* Card component styles */
+@import 'components/forms.css';      /* Form elements and validation styles */
+@import 'components/navigation.css'; /* Navigation menus and links */
+@import 'components/wordcloud.css';  /* Word cloud visualization styles */
+@import 'components/gallery.css';    /* Image gallery styles */
+@import 'components/modal.css';      /* Modal dialog styles */
 
-/* Page-specific styles */
-@import 'pages/home.css';
-@import 'pages/templates.css';
+/* ===== PAGE-SPECIFIC STYLES ===== */
+/* Styles that only apply to specific pages */
+@import 'pages/home.css';      /* Homepage specific styles */
+@import 'pages/templates.css'; /* Template page styles */
 
-/* Admin styles - nur im Admin-Bereich verwendet */
-@import 'pages/admin.css';
+/* ===== ADMIN STYLES ===== */
+/* Styles used only in the admin area */
+@import 'pages/admin.css';     /* Admin panel styles */
 
-/* Utilities - Hilfsfunktionen und -klassen */
-@import 'utils/animations.css';
-@import 'utils/helpers.css';
-@import 'utils/responsive.css'; /* Sollte zuletzt kommen, um andere Stile zu überschreiben */
+/* ===== UTILITIES ===== */
+/* Helper classes and functionality */
+@import 'utils/animations.css'; /* Animation definitions */
+@import 'utils/helpers.css';    /* Utility classes for common tasks */
+@import 'utils/responsive.css'; /* Responsive breakpoints and adjustments - should come last to override other styles */

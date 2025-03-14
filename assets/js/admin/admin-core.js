@@ -1,6 +1,12 @@
 /**
  * Admin Core Module
- * Central functionality for managing the admin panel
+ * Centralized functionality for managing the admin panel
+ * 
+ * This module handles:
+ * - User authentication
+ * - Tab navigation and management
+ * - Form state tracking
+ * - Status notifications
  */
 const AdminCore = (function() {
   // State management
@@ -78,6 +84,9 @@ const AdminCore = (function() {
     // Setup login form
     if (elements.loginForm) {
       elements.loginForm.addEventListener('submit', handleLogin);
+    } else if (elements.loginBtn) {
+      // Fallback if login form element doesn't exist
+      elements.loginBtn.addEventListener('click', handleLogin);
     }
     
     // Setup logout button
@@ -115,7 +124,7 @@ const AdminCore = (function() {
   function switchTab(tabId) {
     // Check for unsaved changes
     if (state.isDirty && state.currentTab) {
-      if (!confirm('Sie haben ungespeicherte Änderungen. Möchten Sie fortfahren?')) {
+      if (!confirm('You have unsaved changes. Do you want to continue?')) {
         return;
       }
     }
@@ -153,6 +162,8 @@ const AdminCore = (function() {
       case 'pages':
         if (typeof PageManager !== 'undefined' && PageManager.init) {
           PageManager.init();
+        } else if (typeof PageEditor !== 'undefined' && PageEditor.init) {
+          PageEditor.init(); // Backwards compatibility
         }
         break;
       case 'wordcloud':
@@ -182,23 +193,23 @@ const AdminCore = (function() {
     const password = elements.passField.value;
     
     if (!email || !password) {
-      showStatus('Bitte geben Sie E-Mail und Passwort ein', true);
+      showStatus('Please enter email and password', true);
       if (elements.loginError) {
-        elements.loginError.textContent = 'Bitte geben Sie E-Mail und Passwort ein';
+        elements.loginError.textContent = 'Please enter email and password';
       }
       return;
     }
     
-    showStatus('Anmeldung läuft...', false, 0);
+    showStatus('Logging in...', false, 0);
     
     try {
-      const result = await firebase.auth().signInWithEmailAndPassword(email, password);
+      await firebase.auth().signInWithEmailAndPassword(email, password);
       // Auth state change will trigger onLogin
     } catch (error) {
       console.error('Login error:', error);
-      showStatus('Anmeldung fehlgeschlagen: ' + error.message, true);
+      showStatus('Login failed: ' + error.message, true);
       if (elements.loginError) {
-        elements.loginError.textContent = 'Anmeldung fehlgeschlagen: ' + error.message;
+        elements.loginError.textContent = 'Login failed: ' + error.message;
       }
     }
   }
@@ -208,7 +219,7 @@ const AdminCore = (function() {
    */
   async function handleLogout() {
     if (state.isDirty) {
-      if (!confirm('Sie haben ungespeicherte Änderungen. Sind Sie sicher, dass Sie sich abmelden möchten?')) {
+      if (!confirm('You have unsaved changes. Are you sure you want to log out?')) {
         return;
       }
     }
@@ -218,7 +229,7 @@ const AdminCore = (function() {
       // Auth state change will trigger onLogout
     } catch (error) {
       console.error('Logout error:', error);
-      showStatus('Fehler bei der Abmeldung: ' + error.message, true);
+      showStatus('Error logging out: ' + error.message, true);
     }
   }
   
@@ -233,7 +244,7 @@ const AdminCore = (function() {
     if (elements.loginDiv) elements.loginDiv.style.display = 'none';
     if (elements.adminDiv) elements.adminDiv.style.display = 'block';
     
-    showStatus(`Angemeldet als ${user.email}`);
+    showStatus(`Logged in as ${user.email}`);
     console.log('User logged in:', user.email);
   }
   
@@ -277,11 +288,20 @@ const AdminCore = (function() {
       }
     });
     
+    // Track text input changes
+    document.addEventListener('input', e => {
+      if (e.target.closest('#adminDiv') && 
+          !e.target.closest('.no-dirty-tracking') &&
+          (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+        state.isDirty = true;
+      }
+    });
+    
     // Add beforeunload handler
     window.addEventListener('beforeunload', e => {
       if (state.isDirty) {
         e.preventDefault();
-        e.returnValue = 'Sie haben ungespeicherte Änderungen. Sind Sie sicher, dass Sie die Seite verlassen möchten?';
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
         return e.returnValue;
       }
     });
@@ -320,7 +340,8 @@ const AdminCore = (function() {
     switchTab,
     refreshPreview,
     setDirty: (isDirty) => { state.isDirty = isDirty; },
-    resetDirtyState
+    resetDirtyState,
+    getState: () => ({ ...state }) // Return a copy of state for debugging
   };
 })();
 
@@ -328,4 +349,4 @@ const AdminCore = (function() {
 document.addEventListener('DOMContentLoaded', AdminCore.init);
 
 // Make showStatus globally available for backward compatibility
-window.showStatus = AdminCore.showStatus;
+window.showStatus = AdminCore.showStatus; 

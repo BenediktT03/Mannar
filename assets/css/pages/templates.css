@@ -1,0 +1,351 @@
+ /**
+ * Template Page Styles
+ * Styles for dynamic page templates in the Mannar website
+ */
+
+/* Common template styles */
+.page-title {
+  font-size: var(--title-size, 2.5rem);
+  margin-bottom: 1rem;
+  color: var(--secondary-color, #2c3e50);
+}
+
+.page-subtitle {
+  font-size: var(--subtitle-size, 1.5rem);
+  margin-bottom: 2rem;
+  font-weight: normal;
+  color: var(--text-light, #777777);
+}
+
+/* Template-specific styles */
+
+/* Basic template */
+.basic-page-content {
+  max-width: 800px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+/* Text-image template */
+.text-image-template .image-container,
+.image-text-template .image-container {
+  margin-bottom: 20px;
+  overflow: hidden;
+  border-radius: var(--border-radius, 4px);
+  box-shadow: var(--box-shadow, 0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.text-image-template .image-container img,
+.image-text-template .image-container img {
+  width: 100%;
+  height: auto;
+  transition: transform 0.5s ease;
+}
+
+.text-image-template .image-container:hover img,
+.image-text-template .image-container:hover img {
+  transform: scale(1.03);
+}
+
+/* Gallery template */
+.gallery-container {
+  display: flex;
+  flex-wrap: wrap;
+  margin: -10px;
+}
+
+.gallery-item {
+  margin: 10px;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--border-radius, 4px);
+  box-shadow: var(--box-shadow, 0 2px 4px rgba(0, 0, 0, 0.1));
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+.gallery-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.gallery-item img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: transform 0.5s ease;
+}
+
+.gallery-item:hover img {
+  transform: scale(1.05);
+}
+
+.gallery-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 10px;
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.gallery-item:hover .gallery-caption {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Landing page template */
+.hero-content {
+  padding: 30px 0;
+}
+
+.hero-image-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--border-radius, 4px);
+  box-shadow: var(--box-shadow, 0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.hero-image-container img {
+  width: 100%;
+  height: auto;
+  transition: transform 0.5s ease;
+}
+
+.hero-image-container:hover img {
+  transform: scale(1.03);
+}
+
+.feature-item {
+  background-color: white;
+  padding: 20px;
+  border-radius: var(--border-radius, 4px);
+  box-shadow: var(--box-shadow, 0 2px 4px rgba(0, 0, 0, 0.1));
+  margin-bottom: 20px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  height: 100%;
+  text-align: center;
+}
+
+.feature-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.feature-item img {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 15px auto;
+  display: block;
+}
+
+.feature-item h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 1.25rem;
+}
+
+/* Portfolio template */
+.portfolio-template .portfolio-item {
+  background-color: white;
+  border-radius: var(--border-radius, 4px);
+  overflow: hidden;
+  box-shadow: var(--box-shadow, 0 2px 4px rgba(0, 0, 0, 0.1));
+  margin-bottom: 30px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.portfolio-template .portfolio-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+
+.portfolio-template .portfolio-item img {
+  width: 100%;
+  height: auto;
+  transition: opacity 0.3s ease;
+}
+
+.portfolio-template .portfolio-item:hover img {
+  opacity: 0.9;
+}
+
+.portfolio-template .portfolio-item h3 {
+  font-size: 1.5rem;
+  margin-top: 15px;
+  margin-bottom: 10px;
+}
+
+.portfolio-template .portfolio-item p {
+  margin-bottom: 15px;
+}
+
+/* Contact template */
+.contact-info-container {
+  background-color: white;
+  border-radius: var(--border-radius, 4px);
+  box-shadow: var(--box-shadow, 0 2px 4px rgba(0, 0, 0, 0.1));
+  padding: 20px;
+  margin-bottom: 30px;
+}
+
+.contact-form-container {
+  background-color: white;
+  border-radius: var(--border-radius, 4px);
+  box-shadow: var(--box-shadow, 0 2px 4px rgba(0, 0, 0, 0.1));
+  padding: 20px;
+}
+
+.contact-template .contact-form button {
+  background-color: var(--primary-color, #3498db);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: var(--border-radius, 4px);
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.contact-template .contact-form button:hover {
+  background-color: var(--primary-dark, #2980b9);
+}
+
+/* Blog template */
+.blog-meta {
+  margin-bottom: 15px;
+  font-size: 0.9rem;
+  color: var(--text-light, #777777);
+}
+
+.blog-meta span {
+  margin-right: 15px;
+}
+
+.blog-meta i {
+  margin-right: 5px;
+}
+
+.blog-content {
+  line-height: 1.8;
+  margin-top: 20px;
+}
+
+.blog-content h2 {
+  margin-top: 30px;
+  margin-bottom: 15px;
+}
+
+.blog-content img {
+  max-width: 100%;
+  height: auto;
+  margin: 20px 0;
+  border-radius: var(--border-radius, 4px);
+}
+
+.blog-content blockquote {
+  margin: 20px 0;
+  padding: 15px;
+  border-left: 4px solid var(--primary-color, #3498db);
+  background-color: var(--light-color, #ecf0f1);
+}
+
+/* Tags and categories */
+.tag-container {
+  margin: 15px 0;
+}
+
+.tag {
+  display: inline-block;
+  background-color: var(--light-color, #ecf0f1);
+  color: var(--text-color, #333333);
+  padding: 5px 10px;
+  margin-right: 10px;
+  margin-bottom: 10px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  transition: background-color 0.3s ease;
+}
+
+.tag:hover {
+  background-color: var(--primary-color, #3498db);
+  color: white;
+}
+
+/* Animation classes for templates */
+.animate-item {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.animate-item.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.delay-1 { transition-delay: 0.2s; }
+.delay-2 { transition-delay: 0.4s; }
+.delay-3 { transition-delay: 0.6s; }
+.delay-4 { transition-delay: 0.8s; }
+.delay-5 { transition-delay: 1.0s; }
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .page-title {
+    font-size: calc(var(--title-size, 2.5rem) * 0.9);
+  }
+  
+  .page-subtitle {
+    font-size: calc(var(--subtitle-size, 1.5rem) * 0.9);
+  }
+}
+
+@media (max-width: 768px) {
+  .page-title {
+    font-size: calc(var(--title-size, 2.5rem) * 0.8);
+  }
+  
+  .page-subtitle {
+    font-size: calc(var(--subtitle-size, 1.5rem) * 0.8);
+  }
+  
+  .delay-1, .delay-2, .delay-3, .delay-4, .delay-5 {
+    transition-delay: 0.1s;
+  }
+  
+  .gallery-caption {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Respect user preferences for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-item,
+  .delay-1,
+  .delay-2,
+  .delay-3,
+  .delay-4,
+  .delay-5 {
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
+  
+  .gallery-item:hover,
+  .feature-item:hover,
+  .portfolio-template .portfolio-item:hover {
+    transform: none;
+  }
+  
+  .text-image-template .image-container:hover img,
+  .image-text-template .image-container:hover img,
+  .gallery-item:hover img,
+  .hero-image-container:hover img {
+    transform: none;
+  }
+}

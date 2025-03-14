@@ -1,394 +1,503 @@
 /**
  * Content Service
- * Centralized service for managing all website content
+ * 
+ * Verwaltet den Zugriff auf und die Bearbeitung von Inhalten der Website.
+ * Nutzt Firebase Firestore als Datenspeicher und bietet Methoden für das
+ * Abrufen, Erstellen, Aktualisieren und Löschen von Inhalten.
+ * 
+ * @author Ihr Name
+ * @version 1.0.0
  */
-const ContentService = (function() {
-  // Cache for loaded content to improve performance
-  const contentCache = {
-    main: null,
-    draft: null,
-    pages: {},
-    wordCloud: null
-  };
 
+import firebaseService from './firebase.js';
+import { errorHandler } from '../utils/error-handler.js';
+
+/**
+ * Content Service Klasse
+ */
+class ContentService {
   /**
-   * Load main website content
-   * @param {boolean} isDraft - Whether to load draft or published content
-   * @param {boolean} useCache - Whether to use cached content if available
-   * @returns {Promise<Object>} Content data
+   * Erstellt eine neue ContentService-Instanz
    */
-  async function loadMainContent(isDraft = false, useCache = true) {
-    const contentType = isDraft ? 'draft' : 'main';
-    
-    // Return cached content if available and requested
-    if (useCache && contentCache[contentType]) {
-      return contentCache[contentType];
-    }
-    
-    try {
-      const docPath = `content/${contentType}`;
-      const db = FirebaseService.getFirestore();
-      const snapshot = await db.collection('content').doc(contentType).get();
-      
-      if (!snapshot.exists) {
-        console.warn(`No ${contentType} content found`);
-        return null;
-      }
-      
-      // Cache the content
-      contentCache[contentType] = snapshot.data();
-      
-      return contentCache[contentType];
-    } catch (error) {
-      console.error(`Error loading ${contentType} content:`, error);
-      return null;
-    }
+  constructor() {
+    this.cachedContent = new Map();
+    this.activeContentListeners = new Map();
   }
-
+  
   /**
-   * Load a specific page by ID
-   * @param {string} pageId - The ID of the page to load
-   * @param {boolean} useCache - Whether to use cached content if available
-   * @returns {Promise<Object>} Page data
+   * Ruft eine Seite nach ihrer URL ab
+   * @param {string} slug - URL-Pfad der Seite
+   * @returns {Promise<Object>} Seitenobjekt oder null, falls nicht gefunden
    */
-  async function loadPage(pageId, useCache = true) {
-    if (!pageId) return null;
-    
-    // Return cached page if available and requested
-    if (useCache && contentCache.pages[pageId]) {
-      return contentCache.pages[pageId];
-    }
-    
+  async getPageBySlug(slug) {
     try {
-      const db = FirebaseService.getFirestore();
-      const snapshot = await db.collection('pages').doc(pageId).get();
+      await firebaseService.initialize();
       
-      if (!snapshot.exists) {
-        console.warn(`Page with ID ${pageId} not found`);
+      // Cache-Key erstellen
+      const cacheKey = `page_${slug}`;
+      
+      // Prüfen, ob die Seite im Cache ist
+      if (this.cachedContent.has(cacheKey)) {
+        return this.cachedContent.get(cacheKey);
+      }
+      
+      // Seite aus Firebase abrufen
+      const querySnapshot = await firebaseService.db.collection('pages')
+        .where('slug', '==', slug)
+        .where('status', '==', 'published')
+        .limit(1)
+        .get();
+      
+      if (querySnapshot.empty) {
+        console.warn(`Seite mit Slug "${slug}" nicht gefunden.`);
         return null;
       }
       
-      // Cache the page
-      contentCache.pages[pageId] = {
-        id: pageId,
-        ...snapshot.data()
+      const pageData = {
+        id: querySnapshot.docs[0].id,
+        ...querySnapshot.docs[0].data()
       };
       
-      return contentCache.pages[pageId];
+      // Seite im Cache speichern (5 Minuten)
+      this.cachedContent.set(cacheKey, pageData);
+      setTimeout(() => this.cachedContent.delete(cacheKey), 5 * 60 * 1000);
+      
+      return pageData;
     } catch (error) {
-      console.error(`Error loading page ${pageId}:`, error);
+      errorHandler.logError(`Fehler beim Abrufen der Seite mit Slug "${slug}":`, error);
       return null;
     }
   }
-
+  
   /**
-   * Load all pages
-   * @param {boolean} useCache - Whether to use cached content if available
-   * @returns {Promise<Array>} Array of page data
+   * Ruft die aktuelle Version des Navigationsmenüs ab
+   * @returns {Promise<Object>} Menüstruktur oder null bei Fehler
    */
-  async function loadAllPages(useCache = false) {
-    // For all pages, we usually want fresh data from the database
-    if (!useCache || Object.keys(contentCache.pages).length === 0) {
-      try {
-        const db = FirebaseService.getFirestore();
-        const snapshot = await db.collection('pages').get();
-        const pages = [];
-        
-        snapshot.forEach(doc => {
-          const pageData = {
-            id: doc.id,
-            ...doc.data()
-          };
-          
-          // Cache each page
-          contentCache.pages[doc.id] = pageData;
-          pages.push(pageData);
-        });
-        
-        return pages;
-      } catch (error) {
-        console.error('Error loading pages:', error);
-        return [];
-      }
-    }
-    
-    // Return cached pages as an array
-    return Object.values(contentCache.pages);
-  }
-
-  /**
-   * Load word cloud data
-   * @param {boolean} useCache - Whether to use cached content if available
-   * @returns {Promise<Array>} Word cloud data
-   */
-  async function loadWordCloud(useCache = true) {
-    // Return cached word cloud if available and requested
-    if (useCache && contentCache.wordCloud) {
-      return contentCache.wordCloud;
-    }
-    
+  async getNavigation() {
     try {
-      const db = FirebaseService.getFirestore();
-      const doc = await db.collection('content').doc('wordCloud').get();
+      await firebaseService.initialize();
       
-      if (!doc.exists || !doc.data().words) {
-        console.warn('No word cloud data found');
-        return [];
+      // Cache-Key für das Menü
+      const cacheKey = 'navigation';
+      
+      // Prüfen, ob das Menü im Cache ist
+      if (this.cachedContent.has(cacheKey)) {
+        return this.cachedContent.get(cacheKey);
       }
       
-      // Cache the word cloud
-      contentCache.wordCloud = doc.data().words;
+      // Navigation aus Firebase abrufen
+      const navDoc = await firebaseService.db.collection('settings').doc('navigation').get();
       
-      return contentCache.wordCloud;
+      if (!navDoc.exists) {
+        console.warn('Navigationseinstellungen nicht gefunden.');
+        return null;
+      }
+      
+      const navData = navDoc.data();
+      
+      // Menü im Cache speichern (10 Minuten)
+      this.cachedContent.set(cacheKey, navData);
+      setTimeout(() => this.cachedContent.delete(cacheKey), 10 * 60 * 1000);
+      
+      return navData;
     } catch (error) {
-      console.error('Error loading word cloud:', error);
+      errorHandler.logError('Fehler beim Abrufen der Navigation:', error);
+      return null;
+    }
+  }
+  
+  /**
+   * Ruft alle veröffentlichten Seiten ab
+   * @param {Object} options - Abfrageoptionen
+   * @returns {Promise<Array>} Array von Seitenobjekten
+   */
+  async getAllPages(options = {}) {
+    try {
+      await firebaseService.initialize();
+      
+      const defaultOptions = {
+        onlyPublished: true,
+        sortBy: 'title',
+        sortDirection: 'asc',
+        limit: 100
+      };
+      
+      const queryOptions = { ...defaultOptions, ...options };
+      
+      // Query erstellen
+      let query = firebaseService.db.collection('pages');
+      
+      // Filter für veröffentlichte Seiten
+      if (queryOptions.onlyPublished) {
+        query = query.where('status', '==', 'published');
+      }
+      
+      // Sortierung
+      query = query.orderBy(queryOptions.sortBy, queryOptions.sortDirection);
+      
+      // Limit
+      if (queryOptions.limit) {
+        query = query.limit(queryOptions.limit);
+      }
+      
+      const snapshot = await query.get();
+      
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+    } catch (error) {
+      errorHandler.logError('Fehler beim Abrufen aller Seiten:', error);
       return [];
     }
   }
-
+  
   /**
-   * Save main website content
-   * @param {Object} contentData - Content to save
-   * @param {boolean} isDraft - Whether to save as draft or published content
-   * @returns {Promise<boolean>} Success status
+   * Ruft eine Seite nach ihrer ID ab
+   * @param {string} id - ID der Seite
+   * @returns {Promise<Object>} Seitenobjekt oder null, falls nicht gefunden
    */
-  async function saveMainContent(contentData, isDraft = true) {
-    if (!contentData) return false;
-    
-    const contentType = isDraft ? 'draft' : 'main';
-    
+  async getPageById(id) {
     try {
-      const db = FirebaseService.getFirestore();
-      
-      // Add timestamp
-      const dataWithTimestamp = {
-        ...contentData,
-        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-      };
-      
-      await db.collection('content').doc(contentType).set(dataWithTimestamp, { merge: true });
-      
-      // Update cache
-      contentCache[contentType] = dataWithTimestamp;
-      
-      return true;
+      return await firebaseService.getDocument('pages', id);
     } catch (error) {
-      console.error(`Error saving ${contentType} content:`, error);
-      return false;
+      errorHandler.logError(`Fehler beim Abrufen der Seite mit ID "${id}":`, error);
+      return null;
     }
   }
-
+  
   /**
-   * Save a page
-   * @param {string} pageId - ID of the page to save
-   * @param {Object} pageData - Page data to save
-   * @returns {Promise<boolean>} Success status
+   * Speichert eine Seite (erstellt oder aktualisiert)
+   * @param {Object} pageData - Seitendaten
+   * @returns {Promise<Object>} Ergebnisobjekt mit ID der gespeicherten Seite
    */
-  async function savePage(pageId, pageData) {
-    if (!pageId || !pageData) return false;
-    
+  async savePage(pageData) {
     try {
-      const db = FirebaseService.getFirestore();
+      await firebaseService.initialize();
       
-      // Add timestamp
-      const dataWithTimestamp = {
-        ...pageData,
-        updated: firebase.firestore.FieldValue.serverTimestamp()
-      };
-      
-      // Ensure created timestamp exists
-      if (!dataWithTimestamp.created) {
-        dataWithTimestamp.created = firebase.firestore.FieldValue.serverTimestamp();
-      }
-      
-      await db.collection('pages').doc(pageId).set(dataWithTimestamp, { merge: true });
-      
-      // Update cache
-      contentCache.pages[pageId] = {
-        id: pageId,
-        ...dataWithTimestamp
-      };
-      
-      return true;
-    } catch (error) {
-      console.error(`Error saving page ${pageId}:`, error);
-      return false;
-    }
-  }
-
-  /**
-   * Delete a page
-   * @param {string} pageId - ID of the page to delete
-   * @returns {Promise<boolean>} Success status
-   */
-  async function deletePage(pageId) {
-    if (!pageId) return false;
-    
-    try {
-      const db = FirebaseService.getFirestore();
-      await db.collection('pages').doc(pageId).delete();
-      
-      // Remove from cache
-      if (contentCache.pages[pageId]) {
-        delete contentCache.pages[pageId];
-      }
-      
-      return true;
-    } catch (error) {
-      console.error(`Error deleting page ${pageId}:`, error);
-      return false;
-    }
-  }
-
-  /**
-   * Save word cloud data
-   * @param {Array} words - Word cloud data to save
-   * @returns {Promise<boolean>} Success status
-   */
-  async function saveWordCloud(words) {
-    if (!Array.isArray(words)) return false;
-    
-    try {
-      const db = FirebaseService.getFirestore();
-      
-      await db.collection('content').doc('wordCloud').set({
-        words,
-        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      
-      // Update cache
-      contentCache.wordCloud = words;
-      
-      return true;
-    } catch (error) {
-      console.error('Error saving word cloud:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Publish draft content to live website
-   * @returns {Promise<boolean>} Success status
-   */
-  async function publishDraftContent() {
-    try {
-      // Load latest draft content
-      const draftContent = await loadMainContent(true, false);
-      
-      if (!draftContent) {
-        console.error('No draft content to publish');
-        return false;
-      }
-      
-      // Save draft content as main content
-      const success = await saveMainContent(draftContent, false);
-      
-      return success;
-    } catch (error) {
-      console.error('Error publishing draft content:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Clear content cache
-   * @param {string} cacheType - Type of cache to clear (optional)
-   */
-  function clearCache(cacheType = null) {
-    if (cacheType) {
-      // Clear specific cache
-      if (cacheType === 'pages') {
-        contentCache.pages = {};
-      } else {
-        contentCache[cacheType] = null;
-      }
-    } else {
-      // Clear all cache
-      contentCache.main = null;
-      contentCache.draft = null;
-      contentCache.pages = {};
-      contentCache.wordCloud = null;
-    }
-  }
-
-  /**
-   * Check if content has changed by comparing with cached version
-   * @param {string} contentType - Type of content ('main', 'draft', 'wordCloud')
-   * @param {Object|Array} newContent - Content to compare
-   * @returns {boolean} True if content has changed
-   */
-  function hasContentChanged(contentType, newContent) {
-    if (!contentType || !newContent || !contentCache[contentType]) {
-      return true;
-    }
-    
-    // Simple JSON comparison
-    return JSON.stringify(contentCache[contentType]) !== JSON.stringify(newContent);
-  }
-
-  /**
-   * Format image data in a consistent way
-   * @param {string|Object} imageData - Image data to format
-   * @returns {Object} Formatted image data
-   */
-  function formatImageData(imageData) {
-    if (typeof imageData === 'string') {
-      return { url: imageData, public_id: '', alt: '' };
-    } else if (imageData && typeof imageData === 'object') {
-      return {
-        url: imageData.url || imageData.secure_url || '',
-        public_id: imageData.public_id || '',
-        alt: imageData.alt || ''
-      };
-    }
-    
-    return { url: '', public_id: '', alt: '' };
-  }
-
-  /**
-   * Update image elements with content data
-   * @param {Object} data - Content data containing image information
-   * @param {Object} imageElements - Map of image element references
-   */
-  function updateImagePreviews(data, imageElements) {
-    if (!data || !imageElements) return;
-    
-    Object.keys(imageElements).forEach(key => {
-      const imgElement = imageElements[key];
-      if (!imgElement) return;
-      
-      const dataKey = key.replace('Img', '_image');
-      if (data[dataKey]) {
-        const imageData = formatImageData(data[dataKey]);
-        imgElement.src = imageData.url || "/api/placeholder/400/300";
-        
-        if (imageData.url) {
-          imgElement.style.display = "block";
-          if (imageData.alt) imgElement.alt = imageData.alt;
+      // Sicherstellen, dass der Slug vorhanden ist
+      if (!pageData.slug) {
+        if (pageData.title) {
+          pageData.slug = this._generateSlug(pageData.title);
         } else {
-          imgElement.style.display = "none";
+          throw new Error('Seitentitel oder Slug ist erforderlich.');
         }
       }
-    });
+      
+      // ID extrahieren, falls vorhanden
+      const id = pageData.id;
+      const cleanPageData = { ...pageData };
+      delete cleanPageData.id;
+      
+      // Zeitstempel hinzufügen
+      cleanPageData.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+      
+      if (!id) {
+        cleanPageData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      }
+      
+      // Seitenstatus standardmäßig auf Entwurf setzen, falls nicht angegeben
+      if (!cleanPageData.status) {
+        cleanPageData.status = 'draft';
+      }
+      
+      const docId = await firebaseService.saveDocument('pages', cleanPageData, id);
+      
+      // Cache für diese Seite löschen
+      const cacheKey = `page_${pageData.slug}`;
+      this.cachedContent.delete(cacheKey);
+      
+      return { success: true, id: docId };
+    } catch (error) {
+      errorHandler.logError('Fehler beim Speichern der Seite:', error);
+      return { success: false, error: 'Beim Speichern der Seite ist ein Fehler aufgetreten.' };
+    }
   }
+  
+  /**
+   * Löscht eine Seite
+   * @param {string} id - ID der zu löschenden Seite
+   * @returns {Promise<boolean>} True bei Erfolg
+   */
+  async deletePage(id) {
+    try {
+      // Seite zuerst abrufen, um den Slug für Cache-Invalidierung zu erhalten
+      const page = await this.getPageById(id);
+      
+      if (page && page.slug) {
+        // Cache für diese Seite löschen
+        const cacheKey = `page_${page.slug}`;
+        this.cachedContent.delete(cacheKey);
+      }
+      
+      return await firebaseService.deleteDocument('pages', id);
+    } catch (error) {
+      errorHandler.logError(`Fehler beim Löschen der Seite mit ID "${id}":`, error);
+      return false;
+    }
+  }
+  
+  /**
+   * Aktualisiert den Status einer Seite
+   * @param {string} id - ID der Seite
+   * @param {string} status - Neuer Status ('draft', 'published', 'archived')
+   * @returns {Promise<boolean>} True bei Erfolg
+   */
+  async updatePageStatus(id, status) {
+    try {
+      if (!['draft', 'published', 'archived'].includes(status)) {
+        throw new Error('Ungültiger Seitenstatus.');
+      }
+      
+      await firebaseService.initialize();
+      
+      // Seite abrufen, um den Slug für Cache-Invalidierung zu erhalten
+      const page = await this.getPageById(id);
+      
+      await firebaseService.db.collection('pages').doc(id).update({
+        status: status,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      
+      if (page && page.slug) {
+        // Cache für diese Seite löschen
+        const cacheKey = `page_${page.slug}`;
+        this.cachedContent.delete(cacheKey);
+      }
+      
+      return true;
+    } catch (error) {
+      errorHandler.logError(`Fehler beim Aktualisieren des Status der Seite "${id}":`, error);
+      return false;
+    }
+  }
+  
+  /**
+   * Speichert die Navigationseinstellungen
+   * @param {Object} navData - Navigationsdaten
+   * @returns {Promise<boolean>} True bei Erfolg
+   */
+  async saveNavigation(navData) {
+    try {
+      await firebaseService.initialize();
+      
+      await firebaseService.db.collection('settings').doc('navigation').set({
+        ...navData,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      
+      // Navigation-Cache löschen
+      this.cachedContent.delete('navigation');
+      
+      return true;
+    } catch (error) {
+      errorHandler.logError('Fehler beim Speichern der Navigation:', error);
+      return false;
+    }
+  }
+  
+  /**
+   * Ruft Wortwolken-Daten aus einer Sammlung ab
+   * @param {string} collectionPath - Pfad zur Sammlung
+   * @returns {Promise<Array>} Array von Wort-Objekten [{ text: 'Wort', weight: 10 }]
+   */
+  async getWordCloudData(collectionPath) {
+    try {
+      await firebaseService.initialize();
+      
+      // Cache-Key für die Wortwolke
+      const cacheKey = `wordcloud_${collectionPath}`;
+      
+      // Prüfen, ob die Daten im Cache sind
+      if (this.cachedContent.has(cacheKey)) {
+        return this.cachedContent.get(cacheKey);
+      }
+      
+      let wordData = [];
+      
+      // Prüfen, ob es sich um einen direkten Dokumentpfad handelt
+      if (collectionPath.includes('/')) {
+        const [collection, document] = collectionPath.split('/');
+        const docRef = await firebaseService.db.collection(collection).doc(document).get();
+        
+        if (docRef.exists) {
+          wordData = docRef.data().words || [];
+        }
+      } else {
+        // Alle Dokumente in der Sammlung abrufen
+        const querySnapshot = await firebaseService.db.collection(collectionPath).get();
+        
+        // Wörter aus allen Dokumenten zusammenführen
+        wordData = [];
+        querySnapshot.forEach(doc => {
+          const docData = doc.data();
+          if (docData.text && docData.weight) {
+            wordData.push({
+              text: docData.text,
+              weight: docData.weight
+            });
+          }
+        });
+      }
+      
+      // Daten im Cache speichern (15 Minuten)
+      this.cachedContent.set(cacheKey, wordData);
+      setTimeout(() => this.cachedContent.delete(cacheKey), 15 * 60 * 1000);
+      
+      return wordData;
+    } catch (error) {
+      errorHandler.logError(`Fehler beim Abrufen der Wortwolken-Daten aus "${collectionPath}":`, error);
+      return [];
+    }
+  }
+  
+  /**
+   * Richtet einen Echtzeit-Listener für Inhaltsänderungen ein
+   * @param {string} collectionPath - Pfad zur zu überwachenden Sammlung
+   * @param {string} documentId - Optionale Dokument-ID (falls vorhanden, wird nur dieses Dokument überwacht)
+   * @param {Function} callback - Callback-Funktion, die bei Änderungen aufgerufen wird
+   * @returns {Function} Funktion zum Entfernen des Listeners
+   */
+  async listenForContentChanges(collectionPath, documentId, callback) {
+    try {
+      await firebaseService.initialize();
+      
+      let unsubscribe;
+      
+      // Listener-ID generieren
+      const listenerId = documentId ? 
+        `${collectionPath}_${documentId}` : 
+        `${collectionPath}_collection`;
+      
+      // Vorhandenen Listener entfernen, falls vorhanden
+      if (this.activeContentListeners.has(listenerId)) {
+        this.activeContentListeners.get(listenerId)();
+      }
+      
+      if (documentId) {
+        // Einzelnes Dokument überwachen
+        unsubscribe = firebaseService.db.collection(collectionPath).doc(documentId)
+          .onSnapshot(docSnapshot => {
+            if (docSnapshot.exists) {
+              callback({
+                id: docSnapshot.id,
+                ...docSnapshot.data()
+              });
+            } else {
+              callback(null);
+            }
+          });
+      } else {
+        // Gesamte Sammlung überwachen
+        unsubscribe = firebaseService.db.collection(collectionPath)
+          .onSnapshot(querySnapshot => {
+            const documents = [];
+            querySnapshot.forEach(doc => {
+              documents.push({
+                id: doc.id,
+                ...doc.data()
+              });
+            });
+            callback(documents);
+          });
+      }
+      
+      // Listener speichern
+      this.activeContentListeners.set(listenerId, unsubscribe);
+      
+      // Funktion zum Entfernen des Listeners zurückgeben
+      return () => {
+        if (unsubscribe) {
+          unsubscribe();
+          this.activeContentListeners.delete(listenerId);
+        }
+      };
+    } catch (error) {
+      errorHandler.logError(`Fehler beim Einrichten des Content-Listeners für "${collectionPath}":`, error);
+      return () => {}; // Leere Funktion zurückgeben
+    }
+  }
+  
+  /**
+   * Lädt alle Einstellungen aus Firestore
+   * @returns {Promise<Object>} Einstellungsobjekt
+   */
+  async getSettings() {
+    try {
+      await firebaseService.initialize();
+      
+      // Cache-Key für Einstellungen
+      const cacheKey = 'settings';
+      
+      // Prüfen, ob die Einstellungen im Cache sind
+      if (this.cachedContent.has(cacheKey)) {
+        return this.cachedContent.get(cacheKey);
+      }
+      
+      const settingsDoc = await firebaseService.db.collection('settings').doc('general').get();
+      
+      const settingsData = settingsDoc.exists ? settingsDoc.data() : {};
+      
+      // Einstellungen im Cache speichern (15 Minuten)
+      this.cachedContent.set(cacheKey, settingsData);
+      setTimeout(() => this.cachedContent.delete(cacheKey), 15 * 60 * 1000);
+      
+      return settingsData;
+    } catch (error) {
+      errorHandler.logError('Fehler beim Abrufen der Einstellungen:', error);
+      return {};
+    }
+  }
+  
+  /**
+   * Speichert allgemeine Einstellungen
+   * @param {Object} settingsData - Einstellungsdaten
+   * @returns {Promise<boolean>} True bei Erfolg
+   */
+  async saveSettings(settingsData) {
+    try {
+      await firebaseService.initialize();
+      
+      await firebaseService.db.collection('settings').doc('general').set({
+        ...settingsData,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      
+      // Einstellungs-Cache löschen
+      this.cachedContent.delete('settings');
+      
+      return true;
+    } catch (error) {
+      errorHandler.logError('Fehler beim Speichern der Einstellungen:', error);
+      return false;
+    }
+  }
+  
+  /**
+   * Generiert einen URL-freundlichen Slug aus einem Titel
+   * @param {string} title - Titel, aus dem der Slug generiert werden soll
+   * @returns {string} URL-freundlicher Slug
+   * @private
+   */
+  _generateSlug(title) {
+    return title
+      .toLowerCase()
+      .replace(/[äöüß]/g, match => {
+        switch (match) {
+          case 'ä': return 'ae';
+          case 'ö': return 'oe';
+          case 'ü': return 'ue';
+          case 'ß': return 'ss';
+          default: return match;
+        }
+      })
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+}
 
-  // Public API
-  return {
-    loadMainContent,
-    loadPage,
-    loadAllPages,
-    loadWordCloud,
-    saveMainContent,
-    savePage,
-    deletePage,
-    saveWordCloud,
-    publishDraftContent,
-    clearCache,
-    formatImageData,
-    updateImagePreviews,
-    hasContentChanged
-  };
-})();
+// Eine Singleton-Instanz des ContentService erstellen
+const contentService = new ContentService();
 
-// Make service globally available
-window.ContentService = ContentService;
+// Service exportieren
+export default contentService;

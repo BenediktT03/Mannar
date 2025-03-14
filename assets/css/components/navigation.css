@@ -1,0 +1,280 @@
+ /**
+ * Navigation Components
+ * Styling for navigation elements including the main menu, mobile menu, and breadcrumbs
+ */
+
+/* Primary navigation container */
+.w3-bar,
+.main-nav {
+  position: fixed;
+  width: 100%;
+  top: 0;
+  left: 0;
+  z-index: var(--z-index-fixed);
+  transition: background-color var(--transition-standard),
+              box-shadow var(--transition-standard),
+              transform var(--transition-standard);
+}
+
+/* Initial transparent navbar state */
+.w3-bar:not(.scrolled),
+.main-nav:not(.scrolled) {
+  background-color: transparent;
+}
+
+/* Scrolled navbar state */
+.w3-bar.scrolled,
+.main-nav.scrolled {
+  background-color: white;
+  box-shadow: var(--box-shadow);
+}
+
+/* Hide navbar when scrolling down */
+.w3-bar:not(.visible),
+.main-nav:not(.visible) {
+  transform: translateY(-100%);
+}
+
+/* Show navbar when scrolling up */
+.w3-bar.visible,
+.main-nav.visible {
+  transform: translateY(0);
+}
+
+/* Navigation items */
+.w3-bar-item,
+.nav-item {
+  display: inline-block;
+  padding: 1rem 1.25rem;
+  color: var(--text-color);
+  text-decoration: none;
+  transition: color var(--transition-speed) ease,
+              background-color var(--transition-speed) ease;
+}
+
+/* Navigation items hover state */
+.w3-bar-item:hover,
+.nav-item:hover {
+  color: var(--primary-color);
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Active navigation item */
+.w3-bar-item.active,
+.nav-item.active,
+.w3-bar-item.w3-text-blue {
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--primary-color);
+}
+
+/* Navigation with icons */
+.w3-bar-item i,
+.nav-item i {
+  margin-right: 0.5rem;
+}
+
+/* Mobile menu toggle button */
+.w3-button.w3-right,
+.mobile-nav-toggle {
+  display: none;
+  padding: 0.75rem;
+  cursor: pointer;
+  background-color: transparent;
+  border: none;
+}
+
+.w3-button.w3-right i,
+.mobile-nav-toggle i {
+  font-size: 1.5rem;
+  color: var(--text-color);
+  transition: color var(--transition-speed) ease;
+}
+
+.w3-button.w3-right:hover i,
+.mobile-nav-toggle:hover i {
+  color: var(--primary-color);
+}
+
+/* Mobile navigation menu */
+.w3-bar-block,
+.mobile-nav {
+  display: none;
+  position: fixed;
+  top: 50px;
+  left: 0;
+  width: 100%;
+  background-color: white;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+  z-index: var(--z-index-fixed) - 1;
+  transition: transform var(--transition-standard),
+              opacity var(--transition-standard);
+  transform: translateY(-10px);
+  opacity: 0;
+}
+
+.w3-bar-block.w3-show,
+.mobile-nav.show {
+  display: block;
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.w3-bar-block .w3-bar-item,
+.mobile-nav .nav-item {
+  display: block;
+  width: 100%;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Skip navigation link for accessibility */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background-color: var(--primary-color);
+  color: white;
+  padding: 8px;
+  z-index: var(--z-index-fixed) + 1;
+  transition: top 0.3s;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* Breadcrumbs navigation */
+.breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  list-style: none;
+  background-color: var(--light-color);
+  border-radius: var(--border-radius);
+}
+
+.breadcrumbs-item {
+  display: flex;
+  align-items: center;
+}
+
+.breadcrumbs-item:not(:first-child)::before {
+  display: inline-block;
+  padding: 0 0.5rem;
+  color: var(--text-light);
+  content: "/";
+}
+
+.breadcrumbs-link {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.breadcrumbs-link:hover {
+  text-decoration: underline;
+}
+
+.breadcrumbs-active {
+  color: var(--text-light);
+}
+
+/* Secondary navigation */
+.secondary-nav {
+  display: flex;
+  flex-wrap: wrap;
+  padding-left: 0;
+  margin-bottom: 1rem;
+  list-style: none;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.secondary-nav-item {
+  margin-bottom: -1px;
+}
+
+.secondary-nav-link {
+  display: block;
+  padding: 0.5rem 1rem;
+  text-decoration: none;
+  color: var(--text-color);
+  transition: color var(--transition-speed) ease,
+              background-color var(--transition-speed) ease;
+}
+
+.secondary-nav-link:hover {
+  color: var(--primary-color);
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.secondary-nav-link.active {
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--primary-color);
+}
+
+/* Responsive navigation */
+@media (max-width: 768px) {
+  /* Hide desktop navigation items */
+  .w3-bar-item.w3-hide-small,
+  .nav-item.desktop-only {
+    display: none;
+  }
+  
+  /* Show mobile menu toggle button */
+  .w3-button.w3-right,
+  .mobile-nav-toggle {
+    display: block;
+  }
+  
+  /* Always show background on mobile */
+  .w3-bar:not(.scrolled),
+  .main-nav:not(.scrolled) {
+    background-color: white;
+    box-shadow: var(--box-shadow);
+  }
+  
+  /* Adjust navigation padding for mobile */
+  .w3-bar-item,
+  .nav-item {
+    padding: 0.75rem 1rem;
+  }
+  
+  /* Adjust breadcrumbs for mobile */
+  .breadcrumbs {
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Simplify breadcrumbs on very small screens */
+  @media (max-width: 480px) {
+    .breadcrumbs-item:not(:last-child):not(:first-child) {
+      display: none;
+    }
+    
+    .breadcrumbs-item:not(:first-child)::before {
+      content: "...";
+    }
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .w3-bar,
+  .main-nav,
+  .w3-bar-item,
+  .nav-item,
+  .w3-bar-block,
+  .mobile-nav,
+  .skip-link {
+    transition: none;
+  }
+}
+
+/* Keyboard navigation accessibility */
+.w3-bar-item:focus,
+.nav-item:focus,
+.breadcrumbs-link:focus,
+.secondary-nav-link:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: -2px;
+}

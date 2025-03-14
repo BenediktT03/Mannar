@@ -1,0 +1,319 @@
+ /**
+ * Tooltip Component
+ * Styling for tooltips, popovers, and contextual help elements
+ */
+
+/* Base tooltip */
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+/* Tooltip trigger */
+.tooltip-trigger {
+  cursor: help;
+  border-bottom: 1px dotted var(--text-light);
+}
+
+/* Tooltip content */
+.tooltip-content {
+  position: absolute;
+  z-index: var(--z-index-tooltip);
+  visibility: hidden;
+  opacity: 0;
+  width: 200px;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--dark-color);
+  color: white;
+  text-align: center;
+  border-radius: var(--border-radius);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  transition: opacity var(--transition-speed) ease,
+              transform var(--transition-speed) ease,
+              visibility var(--transition-speed) ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  word-wrap: break-word;
+}
+
+/* Tooltip arrow */
+.tooltip-content::after {
+  content: "";
+  position: absolute;
+  border-width: 5px;
+  border-style: solid;
+}
+
+/* Tooltip positions */
+/* Top tooltip (default) */
+.tooltip-top .tooltip-content {
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+}
+
+.tooltip-top .tooltip-content::after {
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-color: var(--dark-color) transparent transparent transparent;
+}
+
+/* Bottom tooltip */
+.tooltip-bottom .tooltip-content {
+  top: 125%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-10px);
+}
+
+.tooltip-bottom .tooltip-content::after {
+  bottom: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-color: transparent transparent var(--dark-color) transparent;
+}
+
+/* Left tooltip */
+.tooltip-left .tooltip-content {
+  top: 50%;
+  right: 125%;
+  transform: translateY(-50%) translateX(10px);
+}
+
+.tooltip-left .tooltip-content::after {
+  top: 50%;
+  left: 100%;
+  margin-top: -5px;
+  border-color: transparent transparent transparent var(--dark-color);
+}
+
+/* Right tooltip */
+.tooltip-right .tooltip-content {
+  top: 50%;
+  left: 125%;
+  transform: translateY(-50%) translateX(-10px);
+}
+
+.tooltip-right .tooltip-content::after {
+  top: 50%;
+  right: 100%;
+  margin-top: -5px;
+  border-color: transparent var(--dark-color) transparent transparent;
+}
+
+/* Tooltip hover and focus state */
+.tooltip:hover .tooltip-content,
+.tooltip:focus .tooltip-content,
+.tooltip:focus-within .tooltip-content {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.tooltip-left:hover .tooltip-content,
+.tooltip-left:focus .tooltip-content,
+.tooltip-left:focus-within .tooltip-content {
+  transform: translateY(-50%) translateX(0);
+}
+
+.tooltip-right:hover .tooltip-content,
+.tooltip-right:focus .tooltip-content,
+.tooltip-right:focus-within .tooltip-content {
+  transform: translateY(-50%) translateX(0);
+}
+
+.tooltip-bottom:hover .tooltip-content,
+.tooltip-bottom:focus .tooltip-content,
+.tooltip-bottom:focus-within .tooltip-content {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Tooltip variations */
+/* Primary color tooltip */
+.tooltip-primary .tooltip-content {
+  background-color: var(--primary-color);
+}
+
+.tooltip-primary.tooltip-top .tooltip-content::after {
+  border-color: var(--primary-color) transparent transparent transparent;
+}
+
+.tooltip-primary.tooltip-bottom .tooltip-content::after {
+  border-color: transparent transparent var(--primary-color) transparent;
+}
+
+.tooltip-primary.tooltip-left .tooltip-content::after {
+  border-color: transparent transparent transparent var(--primary-color);
+}
+
+.tooltip-primary.tooltip-right .tooltip-content::after {
+  border-color: transparent var(--primary-color) transparent transparent;
+}
+
+/* Secondary color tooltip */
+.tooltip-secondary .tooltip-content {
+  background-color: var(--secondary-color);
+}
+
+.tooltip-secondary.tooltip-top .tooltip-content::after {
+  border-color: var(--secondary-color) transparent transparent transparent;
+}
+
+.tooltip-secondary.tooltip-bottom .tooltip-content::after {
+  border-color: transparent transparent var(--secondary-color) transparent;
+}
+
+.tooltip-secondary.tooltip-left .tooltip-content::after {
+  border-color: transparent transparent transparent var(--secondary-color);
+}
+
+.tooltip-secondary.tooltip-right .tooltip-content::after {
+  border-color: transparent var(--secondary-color) transparent transparent;
+}
+
+/* Light tooltip (for dark backgrounds) */
+.tooltip-light .tooltip-content {
+  background-color: white;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.tooltip-light.tooltip-top .tooltip-content::after {
+  border-color: white transparent transparent transparent;
+}
+
+.tooltip-light.tooltip-bottom .tooltip-content::after {
+  border-color: transparent transparent white transparent;
+}
+
+.tooltip-light.tooltip-left .tooltip-content::after {
+  border-color: transparent transparent transparent white;
+}
+
+.tooltip-light.tooltip-right .tooltip-content::after {
+  border-color: transparent white transparent transparent;
+}
+
+/* Sizes */
+.tooltip-sm .tooltip-content {
+  width: 150px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+.tooltip-lg .tooltip-content {
+  width: 300px;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+}
+
+/* Interactive tooltip (with HTML content) */
+.tooltip-interactive .tooltip-content {
+  pointer-events: auto;
+}
+
+/* Popover (enhanced tooltip with header and footer) */
+.popover {
+  position: relative;
+  display: inline-block;
+}
+
+.popover-content {
+  position: absolute;
+  z-index: var(--z-index-popover);
+  visibility: hidden;
+  opacity: 0;
+  width: 300px;
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.15);
+  transition: opacity var(--transition-speed) ease,
+              transform var(--transition-speed) ease,
+              visibility var(--transition-speed) ease;
+  pointer-events: none;
+}
+
+.popover-header {
+  padding: 0.5rem 0.75rem;
+  background-color: var(--light-color);
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+}
+
+.popover-body {
+  padding: 0.75rem;
+}
+
+.popover-footer {
+  padding: 0.5rem 0.75rem;
+  background-color: var(--light-color);
+  border-top: 1px solid var(--border-color);
+  text-align: right;
+}
+
+/* Popover arrow */
+.popover-content::after,
+.popover-content::before {
+  content: "";
+  position: absolute;
+  border-style: solid;
+}
+
+.popover-content::after {
+  border-width: 10px;
+}
+
+.popover-content::before {
+  border-width: 11px;
+  border-color: var(--border-color);
+}
+
+/* Popover positions */
+.popover-top .popover-content {
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+}
+
+.popover-top .popover-content::after {
+  top: 100%;
+  left: 50%;
+  margin-left: -10px;
+  border-color: white transparent transparent transparent;
+}
+
+.popover-top .popover-content::before {
+  top: 100%;
+  left: 50%;
+  margin-left: -11px;
+  border-color: var(--border-color) transparent transparent transparent;
+}
+
+/* Similarly for other positions (bottom, left, right) */
+
+/* Popover hover and focus state */
+.popover:hover .popover-content,
+.popover:focus .popover-content,
+.popover:focus-within .popover-content {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .tooltip-content,
+  .popover-content {
+    transition: none;
+  }
+}
+
+/* Keyboard focus indicator */
+.tooltip-trigger:focus,
+.popover-trigger:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}

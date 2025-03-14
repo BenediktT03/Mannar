@@ -1,29 +1,36 @@
- /**
- * Moderner CSS-Reset
- * Basierend auf modernen Best Practices, mit Fokus auf Barrierefreiheit
+/**
+ * Modern CSS Reset
+ * A comprehensive CSS reset with focus on accessibility and modern best practices
+ * 
+ * This reset establishes a consistent baseline across browsers while preserving
+ * useful browser defaults and focusing on accessibility.
  */
 
-/* Box-Sizing auf border-box setzen */
+/* Box sizing rules */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
-/* Margins entfernen */
+/* Remove default margin and padding */
+html,
 body,
 h1, h2, h3, h4, h5, h6,
 p, figure, blockquote, dl, dd {
   margin: 0;
+  padding: 0;
 }
 
-/* Basisstil für HTML und Body */
+/* Set core root defaults */
 html {
   scroll-behavior: smooth;
   font-size: var(--base-font-size, 16px);
   overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
 }
 
+/* Set core body defaults */
 body {
   min-height: 100vh;
   text-rendering: optimizeSpeed;
@@ -36,55 +43,126 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Listen ohne Standardstil, wenn keine class vorhanden */
+/* Improve media defaults */
+img, picture, video, canvas, svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Remove list styles on ul, ol elements with a list role, which suggests default styling will be removed */
+ul[role="list"],
+ol[role="list"] {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Default styling for lists that don't have role="list" */
+ul:not([role="list"]),
+ol:not([role="list"]) {
+  padding-left: 2em;
+}
+
+/* Make sure unclassed lists still have styling */
 ul:not([class]),
 ol:not([class]) {
   padding-left: 2em;
 }
 
-ul[class],
-ol[class] {
-  list-style: none;
-  padding: 0;
-}
-
-/* Bilder einfacher handhabbar machen */
-img {
-  max-width: 100%;
-  display: block;
-}
-
-/* Standardfokus-Stil für bessere Barrierefreiheit */
-:focus-visible {
-  outline: 3px solid var(--primary-color, #3498db);
-  outline-offset: 2px;
-}
-
-/* Natürlicher Textfluss in Artikeln */
-article > * + * {
-  margin-top: 1em;
-}
-
-/* Vererbung für Formularelemente */
-input,
-button,
-textarea,
-select {
-  font: inherit;
-}
-
-/* Standardstile für Links */
+/* Remove default styling from links */
 a {
-  color: var(--primary-color, #3498db);
   text-decoration: none;
+  color: var(--primary-color, #3498db);
   transition: color var(--transition-speed, 0.3s) ease;
+  background-color: transparent;
 }
 
 a:hover {
   color: var(--primary-dark, #2980b9);
 }
 
-/* Verbesserungen für Barrierefreiheit */
+a:focus-visible {
+  outline: 3px solid var(--primary-color, #3498db);
+  outline-offset: 2px;
+}
+
+/* Built in elements */
+hr {
+  border: 0;
+  border-top: 1px solid var(--border-color, #ddd);
+  margin: 1em 0;
+}
+
+/* Better default focus styles */
+:focus-visible {
+  outline: 3px solid var(--primary-color, #3498db);
+  outline-offset: 2px;
+}
+
+/* Form elements */
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: inherit;
+  font-size: 100%;
+  line-height: 1.15;
+  margin: 0;
+}
+
+button,
+input {
+  overflow: visible;
+}
+
+button,
+select {
+  text-transform: none;
+}
+
+button,
+[type="button"],
+[type="reset"],
+[type="submit"] {
+  -webkit-appearance: button;
+  appearance: button;
+}
+
+/* Fix button styling issues in Firefox */
+button::-moz-focus-inner,
+[type="button"]::-moz-focus-inner,
+[type="reset"]::-moz-focus-inner,
+[type="submit"]::-moz-focus-inner {
+  border-style: none;
+  padding: 0;
+}
+
+/* Make sure textareas without a rows attribute are not tiny */
+textarea:not([rows]) {
+  min-height: 10em;
+}
+
+/* Natural flow and rhythm in articles */
+article > * + * {
+  margin-top: 1em;
+}
+
+/* Accessible hiding */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Skip links for keyboard navigation */
 .skip-link {
   position: absolute;
   top: -40px;
@@ -100,7 +178,7 @@ a:hover {
   top: 0;
 }
 
-/* Reduzieren der Animationen bei entsprechender Einstellung */
+/* Remove all animations, transitions and smooth scrolling for people that prefer not to see them */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -114,4 +192,31 @@ a:hover {
   html {
     scroll-behavior: auto;
   }
+}
+
+/* Selection style */
+::selection {
+  background-color: var(--primary-color, #3498db);
+  color: white;
+  text-shadow: none;
+}
+
+/* Remove tap delay on iOS */
+a, button, input, select, textarea, label, summary {
+  touch-action: manipulation;
+}
+
+/* Set system font stack as fallback */
+body {
+  font-family: var(--font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol");
+}
+
+/* Tables */
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th {
+  text-align: left;
 }

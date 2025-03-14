@@ -1,16 +1,16 @@
 /**
  * Editor Module
- * Verwaltet Rich-Text-Editoren im Admin-Bereich
- * Bietet eine einheitliche API für Quill-Editoren
+ * Manages rich text editors in the admin panel
+ * Provides a unified API for Quill editors with TinyMCE compatibility layer
  */
 const EditorModule = (function() {
-  // Aktive Editoren speichern
+  // Active editors registry
   const activeEditors = new Map();
   
-  // Standard-Editor-Optionen
+  // Default editor configuration options
   const defaultOptions = {
     theme: 'snow',
-    placeholder: 'Inhalt hier eingeben...',
+    placeholder: 'Enter content here...',
     modules: {
       toolbar: [
         ['bold', 'italic', 'underline', 'strike'],
@@ -27,11 +27,11 @@ const EditorModule = (function() {
     }
   };
   
-  // Erweiterte Editor-Optionen für verschiedene Feldtypen
+  // Predefined editor configurations for different field types
   const editorTypes = {
-    // Editor für Überschriften und kurze Texte
+    // Editor for headings and short texts
     heading: {
-      placeholder: 'Überschrift eingeben...',
+      placeholder: 'Enter heading...',
       modules: {
         toolbar: [
           ['bold', 'italic', 'underline'],
@@ -44,9 +44,9 @@ const EditorModule = (function() {
       }
     },
     
-    // Editor für kurze Textabschnitte
+    // Editor for short text sections
     short: {
-      placeholder: 'Kurzen Text eingeben...',
+      placeholder: 'Enter short text...',
       modules: {
         toolbar: [
           ['bold', 'italic', 'underline'],
@@ -57,9 +57,9 @@ const EditorModule = (function() {
       }
     },
     
-    // Vollständiger Editor für umfangreiche Inhalte
+    // Full-featured editor for comprehensive content
     full: {
-      placeholder: 'Inhalt hier eingeben...',
+      placeholder: 'Enter content here...',
       modules: {
         toolbar: [
           ['bold', 'italic', 'underline', 'strike'],
@@ -80,51 +80,51 @@ const EditorModule = (function() {
   };
   
   /**
-   * Prüfen, ob Quill verfügbar ist
-   * @returns {boolean} Verfügbarkeit
+   * Check if Quill is available
+   * @returns {boolean} Availability
    */
   function isQuillAvailable() {
     return typeof Quill !== 'undefined';
   }
   
   /**
-   * Quill-Editor initialisieren
-   * @param {HTMLElement|string} container - Container oder Container-ID
-   * @param {Object} options - Editor-Optionen
-   * @returns {Object} Quill-Editor-Instanz
+   * Initialize a Quill editor
+   * @param {HTMLElement|string} container - Container or container ID
+   * @param {Object} options - Editor options
+   * @returns {Object|null} Quill editor instance or null on failure
    */
   function initEditor(container, options = {}) {
     if (!isQuillAvailable()) {
-      console.error('Quill-Editor nicht verfügbar. Bitte laden Sie die Quill-Bibliothek.');
+      console.error('Quill editor not available. Please load the Quill library.');
       return null;
     }
     
-    // Container ermitteln
+    // Get container element
     const editorContainer = typeof container === 'string' 
       ? document.getElementById(container) 
       : container;
     
     if (!editorContainer) {
-      console.error('Editor-Container nicht gefunden');
+      console.error('Editor container not found');
       return null;
     }
     
-    // Vordefinierte Optionen basierend auf editorType auswählen
+    // Get predefined options based on editorType
     let baseOptions = { ...defaultOptions };
     if (options.editorType && editorTypes[options.editorType]) {
       baseOptions = { ...baseOptions, ...editorTypes[options.editorType] };
-      delete options.editorType; // editorType aus Optionen entfernen
+      delete options.editorType; // Remove editorType from options
     }
     
-    // Optionen zusammenführen
+    // Merge options
     const mergedOptions = { ...baseOptions, ...options };
     
     try {
-      // Quill-Editor erstellen
+      // Create Quill editor
       const editor = new Quill(editorContainer, mergedOptions);
       
-      // Editor im Map speichern
-      const containerId = editorContainer.id || `editor-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      // Store editor in registry
+      const containerId = editorContainer.id || `editor-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
       if (!editorContainer.id) {
         editorContainer.id = containerId;
       }
@@ -133,15 +133,15 @@ const EditorModule = (function() {
       
       return editor;
     } catch (error) {
-      console.error('Fehler beim Initialisieren des Editors:', error);
+      console.error('Error initializing editor:', error);
       return null;
     }
   }
   
   /**
-   * Editor-Inhalt abrufen
-   * @param {string} containerId - Container-ID
-   * @returns {string} HTML-Inhalt
+   * Get editor content
+   * @param {string} containerId - Container ID
+   * @returns {string} HTML content
    */
   function getContent(containerId) {
     const editor = activeEditors.get(containerId);
@@ -151,16 +151,16 @@ const EditorModule = (function() {
   }
   
   /**
-   * Editor-Inhalt festlegen
-   * @param {string} containerId - Container-ID
-   * @param {string} content - HTML-Inhalt
-   * @returns {boolean} Erfolg
+   * Set editor content
+   * @param {string} containerId - Container ID
+   * @param {string} content - HTML content
+   * @returns {boolean} Success
    */
   function setContent(containerId, content) {
     const editor = activeEditors.get(containerId);
     if (!editor) return false;
     
-    // Inhalt löschen und neuen Inhalt einfügen
+    // Clear content and insert new content
     editor.root.innerHTML = '';
     editor.clipboard.dangerouslyPasteHTML(content || '');
     
@@ -168,37 +168,37 @@ const EditorModule = (function() {
   }
   
   /**
-   * Editor-Instanz abrufen
-   * @param {string} containerId - Container-ID
-   * @returns {Object} Quill-Editor-Instanz
+   * Get editor instance
+   * @param {string} containerId - Container ID
+   * @returns {Object|null} Quill editor instance
    */
   function getEditor(containerId) {
     return activeEditors.get(containerId);
   }
   
   /**
-   * Textarea in Quill-Editor umwandeln
-   * @param {HTMLElement|string} textarea - Textarea oder Textarea-ID
-   * @param {Object} options - Editor-Optionen
-   * @returns {Object} Quill-Editor-Instanz
+   * Convert textarea to Quill editor
+   * @param {HTMLElement|string} textarea - Textarea or textarea ID
+   * @param {Object} options - Editor options
+   * @returns {Object|null} Quill editor instance
    */
   function convertTextarea(textarea, options = {}) {
     if (!isQuillAvailable()) {
-      console.error('Quill-Editor nicht verfügbar');
+      console.error('Quill editor not available');
       return null;
     }
     
-    // Textarea ermitteln
+    // Get textarea element
     const textareaElement = typeof textarea === 'string' 
       ? document.getElementById(textarea) 
       : textarea;
     
     if (!textareaElement || textareaElement.tagName !== 'TEXTAREA') {
-      console.error('Keine gültige Textarea gefunden');
+      console.error('No valid textarea found');
       return null;
     }
     
-    // Editor-Container erstellen
+    // Create editor container
     const containerId = `${textareaElement.id}-editor`;
     let container = document.getElementById(containerId);
     
@@ -208,37 +208,37 @@ const EditorModule = (function() {
       container.className = 'quill-editor';
       container.style.minHeight = options.minHeight || '200px';
       
-      // Container nach der Textarea einfügen
+      // Insert container after textarea
       textareaElement.insertAdjacentElement('afterend', container);
     }
     
-    // Textarea ausblenden
+    // Hide textarea
     textareaElement.style.display = 'none';
     
-    // Editor initialisieren
+    // Initialize editor
     const editor = initEditor(container, options);
     
     if (!editor) {
-      console.error('Fehler beim Initialisieren des Editors');
+      console.error('Error initializing editor');
       return null;
     }
     
-    // Initialen Inhalt setzen
+    // Set initial content
     editor.clipboard.dangerouslyPasteHTML(textareaElement.value || '');
     
-    // Änderungen in Textarea synchronisieren
+    // Sync changes to textarea
     editor.on('text-change', () => {
       textareaElement.value = editor.root.innerHTML;
       
-      // Change-Event auf der Textarea auslösen
+      // Trigger change event on textarea
       const event = new Event('change', { bubbles: true });
       textareaElement.dispatchEvent(event);
       
-      // Dirty-Flag setzen, wenn im Admin-Bereich
+      // Set dirty flag if in admin panel
       if (window.AdminCore && typeof window.AdminCore.setDirty === 'function') {
         window.AdminCore.setDirty(true);
-      } else if (window.state && typeof window.state.isDirty !== 'undefined') {
-        window.state.isDirty = true;
+      } else if (window.PageEditor && typeof window.PageEditor.setDirty === 'function') {
+        window.PageEditor.setDirty(true);
       }
     });
     
@@ -246,30 +246,30 @@ const EditorModule = (function() {
   }
   
   /**
-   * Alle Textarea mit bestimmter Klasse in Editoren umwandeln
-   * @param {string} selector - CSS-Selektor für die Textareas
-   * @param {Object} options - Editor-Optionen
-   * @returns {Array} Erstellte Editoren
+   * Convert all textareas with a specific selector to editors
+   * @param {string} selector - CSS selector for textareas
+   * @param {Object} options - Editor options
+   * @returns {Array} Created editors
    */
-  function convertAll(selector = '.rich-editor', options = {}) {
+  function convertAll(selector = '.tinymce-editor', options = {}) {
     const textareas = document.querySelectorAll(selector);
     const editors = [];
     
     textareas.forEach(textarea => {
-      // Spezifische Optionen basierend auf Datenattributen
+      // Get specific options from data attributes
       const elementOptions = { ...options };
       
-      // Editor-Typ aus data-editor-type auslesen
+      // Get editor type from data-editor-type
       if (textarea.dataset.editorType && editorTypes[textarea.dataset.editorType]) {
         elementOptions.editorType = textarea.dataset.editorType;
       }
       
-      // Min-Höhe aus data-min-height auslesen
+      // Get min height from data-min-height
       if (textarea.dataset.minHeight) {
         elementOptions.minHeight = textarea.dataset.minHeight;
       }
       
-      // Editor erstellen
+      // Create editor
       const editor = convertTextarea(textarea, elementOptions);
       if (editor) editors.push(editor);
     });
@@ -278,23 +278,23 @@ const EditorModule = (function() {
   }
   
   /**
-   * Editor aus dem DOM entfernen
-   * @param {string} containerId - Container-ID
-   * @returns {boolean} Erfolg
+   * Remove editor from DOM
+   * @param {string} containerId - Container ID
+   * @returns {boolean} Success
    */
   function destroyEditor(containerId) {
     const editor = activeEditors.get(containerId);
     if (!editor) return false;
     
-    // Editor aus Map entfernen
+    // Remove from registry
     activeEditors.delete(containerId);
     
-    // Container leeren
+    // Clear container
     const container = document.getElementById(containerId);
     if (container) {
       container.innerHTML = '';
       
-      // Versteckte Textarea suchen und wieder anzeigen
+      // Find hidden textarea and show it
       const textareaId = containerId.replace('-editor', '');
       const textarea = document.getElementById(textareaId);
       if (textarea) {
@@ -308,7 +308,7 @@ const EditorModule = (function() {
   }
   
   /**
-   * Alle Editoren aus dem DOM entfernen
+   * Remove all editors
    */
   function destroyAll() {
     for (const containerId of activeEditors.keys()) {
@@ -317,19 +317,20 @@ const EditorModule = (function() {
   }
   
   /**
-   * Editoren nach DOM-Änderungen neu initialisieren
-   * (nützlich nach AJAX-Ladeprozessen)
-   * @param {string} selector - CSS-Selektor für Textarea
-   * @param {Object} options - Editor-Optionen
+   * Refresh editors after DOM changes
+   * (useful after AJAX loading)
+   * @param {string} selector - CSS selector for textareas
+   * @param {Object} options - Editor options
+   * @returns {Array} Created editors
    */
-  function refreshEditors(selector = '.rich-editor', options = {}) {
-    // Vorhandene Container-IDs merken
+  function refreshEditors(selector = '.tinymce-editor', options = {}) {
+    // Note existing editor container IDs
     const existingEditors = new Set(activeEditors.keys());
     
-    // Neue Editoren erstellen
+    // Create new editors
     const editors = convertAll(selector, options);
     
-    // Alte Editoren entfernen, die noch in der Map sind, aber nicht mehr auf der Seite
+    // Remove old editors that are no longer in the DOM
     for (const containerId of existingEditors) {
       if (!document.getElementById(containerId)) {
         activeEditors.delete(containerId);
@@ -339,7 +340,11 @@ const EditorModule = (function() {
     return editors;
   }
   
-  // TinyMCE-Kompatibilitätsschicht erstellen
+  /**
+   * Create TinyMCE compatibility layer
+   * For backwards compatibility with existing code
+   * @returns {Object} TinyMCE-like API
+   */
   function createTinyMCECompatLayer() {
     return {
       init: function(selector) {
@@ -348,14 +353,14 @@ const EditorModule = (function() {
       },
       activeEditor: {
         getContent: function() {
-          // Aktiven Editor finden (einfache Implementierung)
+          // Find active editor (simple implementation)
           for (const [id, editor] of activeEditors.entries()) {
             if (document.activeElement.closest(`#${id}`)) {
               return editor.root.innerHTML;
             }
           }
           
-          // Wenn kein aktiver Editor gefunden, ersten Editor verwenden
+          // If no active editor found, use first editor
           if (activeEditors.size > 0) {
             const firstEditor = activeEditors.values().next().value;
             return firstEditor.root.innerHTML;
@@ -377,7 +382,7 @@ const EditorModule = (function() {
     };
   }
   
-  // Öffentliche API
+  // Public API
   return {
     initEditor,
     getContent,
@@ -393,19 +398,15 @@ const EditorModule = (function() {
   };
 })();
 
-// Für globalen Zugriff
+// For global access
 window.EditorModule = EditorModule;
 
-// TinyMCE-Kompatibilitätsschicht für ältere Skripte
+// TinyMCE compatibility layer for legacy scripts
 window.tinymce = EditorModule.createTinyMCECompatLayer();
 
-// Ältere Editor-Namen für Rückwärtskompatibilität
-window.editorModule = EditorModule;
-window.quillEditor = EditorModule;
-
-// Initialisierung bei DOM-Ladung
+// Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-  // Verzögerung, um sicherzustellen, dass Quill geladen ist
+  // Delay to ensure Quill is loaded
   setTimeout(() => {
     if (typeof Quill !== 'undefined') {
       EditorModule.convertAll();

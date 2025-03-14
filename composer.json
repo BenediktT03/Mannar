@@ -1,1 +1,17 @@
-{"require":{"tivie/htaccess-parser":"*"}}
+{
+    "name": "benediktt03/mannar",
+    "description": "Ein PHP-Projekt mit Htaccess-Unterstützung",
+    "type": "project",
+    "require": {
+        "tivie/php-htaccess-parser": "^1.2" 
+    },
+    "autoload": {
+        "psr-4": {
+            "Mannar\\": "src/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true
+    },
+    "minimum-stability": "stable"
+}

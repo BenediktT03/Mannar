@@ -1,0 +1,356 @@
+ /**
+ * Alert Components
+ * Styling for notifications, status messages, and alerts
+ */
+
+/* Base alert container */
+.alert {
+  position: relative;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--border-radius);
+  display: flex;
+  align-items: flex-start;
+}
+
+/* Alert with icon */
+.alert-icon {
+  margin-right: 0.75rem;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+}
+
+/* Alert content */
+.alert-content {
+  flex: 1;
+}
+
+/* Alert title */
+.alert-title {
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 0.25rem;
+}
+
+/* Alert message */
+.alert-message {
+  margin-bottom: 0;
+}
+
+/* Alert close button */
+.alert-close {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-size: 1.5rem;
+  padding: 0;
+  line-height: 1;
+  margin-left: 1rem;
+  opacity: 0.5;
+  transition: opacity var(--transition-speed) ease;
+}
+
+.alert-close:hover {
+  opacity: 0.75;
+}
+
+/* Alert variants */
+.alert-primary {
+  color: #084298;
+  background-color: #cfe2ff;
+  border-color: #b6d4fe;
+}
+
+.alert-secondary {
+  color: #41464b;
+  background-color: #e2e3e5;
+  border-color: #d3d6d8;
+}
+
+.alert-success {
+  color: #0f5132;
+  background-color: #d1e7dd;
+  border-color: #badbcc;
+}
+
+.alert-danger, 
+.alert-error {
+  color: #842029;
+  background-color: #f8d7da;
+  border-color: #f5c2c7;
+}
+
+.alert-warning {
+  color: #664d03;
+  background-color: #fff3cd;
+  border-color: #ffecb5;
+}
+
+.alert-info {
+  color: #055160;
+  background-color: #cff4fc;
+  border-color: #b6effb;
+}
+
+.alert-light {
+  color: #636464;
+  background-color: #fefefe;
+  border-color: #fdfdfe;
+}
+
+.alert-dark {
+  color: #141619;
+  background-color: #d3d3d4;
+  border-color: #bcbebf;
+}
+
+/* Solid alert variants */
+.alert-solid {
+  border-width: 0;
+  color: white;
+}
+
+.alert-solid.alert-primary {
+  background-color: var(--primary-color);
+}
+
+.alert-solid.alert-secondary {
+  background-color: var(--secondary-color);
+}
+
+.alert-solid.alert-success {
+  background-color: var(--success-color);
+}
+
+.alert-solid.alert-danger,
+.alert-solid.alert-error {
+  background-color: var(--danger-color);
+}
+
+.alert-solid.alert-warning {
+  background-color: var(--warning-color);
+}
+
+.alert-solid.alert-info {
+  background-color: var(--info-color);
+}
+
+.alert-solid.alert-light {
+  background-color: var(--light-color);
+  color: var(--text-color);
+}
+
+.alert-solid.alert-dark {
+  background-color: var(--dark-color);
+}
+
+/* Left-bordered alert variants */
+.alert-bordered-left {
+  border-left-width: 4px;
+}
+
+/* Status message for admin panel */
+.status-msg {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: var(--z-index-tooltip);
+  max-width: 350px;
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-20px);
+  opacity: 0;
+  transition: transform var(--transition-standard), 
+              opacity var(--transition-standard);
+  display: none;
+}
+
+.status-msg.show {
+  transform: translateY(0);
+  opacity: 1;
+  display: block;
+}
+
+.status-msg.success {
+  background-color: #d4edda;
+  color: #155724;
+  border-left: 4px solid var(--success-color);
+}
+
+.status-msg.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border-left: 4px solid var(--danger-color);
+}
+
+.status-msg.warning {
+  background-color: #fff3cd;
+  color: #856404;
+  border-left: 4px solid var(--warning-color);
+}
+
+.status-msg.info {
+  background-color: #d1ecf1;
+  color: #0c5460;
+  border-left: 4px solid var(--info-color);
+}
+
+/* Alert animations */
+@keyframes alert-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.alert-animated {
+  animation: alert-fade-in 0.3s ease forwards;
+}
+
+/* Toast notifications (auto-hiding alerts) */
+.toast {
+  position: fixed;
+  z-index: var(--z-index-toast);
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--border-radius);
+  background-color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  transition: transform var(--transition-standard), 
+              opacity var(--transition-standard);
+}
+
+.toast-top-right {
+  top: 20px;
+  right: 20px;
+  transform: translateX(20px);
+}
+
+.toast-top-left {
+  top: 20px;
+  left: 20px;
+  transform: translateX(-20px);
+}
+
+.toast-bottom-right {
+  bottom: 20px;
+  right: 20px;
+  transform: translateX(20px);
+}
+
+.toast-bottom-left {
+  bottom: 20px;
+  left: 20px;
+  transform: translateX(-20px);
+}
+
+.toast-center {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.toast-center.show {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* Alert container for multiple alerts */
+.alert-container {
+  position: fixed;
+  z-index: var(--z-index-toast);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 350px;
+}
+
+.alert-container-top-right {
+  top: 20px;
+  right: 20px;
+  align-items: flex-end;
+}
+
+.alert-container-top-left {
+  top: 20px;
+  left: 20px;
+  align-items: flex-start;
+}
+
+.alert-container-bottom-right {
+  bottom: 20px;
+  right: 20px;
+  align-items: flex-end;
+}
+
+.alert-container-bottom-left {
+  bottom: 20px;
+  left: 20px;
+  align-items: flex-start;
+}
+
+.alert-container .alert {
+  margin-bottom: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+  .alert-container,
+  .toast,
+  .status-msg {
+    max-width: calc(100% - 40px);
+  }
+  
+  .alert-container-top-right,
+  .alert-container-top-left,
+  .toast-top-right,
+  .toast-top-left {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    align-items: stretch;
+  }
+  
+  .alert-container-bottom-right,
+  .alert-container-bottom-left,
+  .toast-bottom-right,
+  .toast-bottom-left {
+    bottom: 10px;
+    right: 10px;
+    left: 10px;
+    align-items: stretch;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .alert,
+  .alert-close,
+  .status-msg,
+  .toast {
+    transition: none;
+  }
+  
+  .alert-animated {
+    animation: none;
+  }
+}
+
+/* Focus styling for interactive elements */
+.alert-close:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+  opacity: 1;
+}

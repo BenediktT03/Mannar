@@ -1,0 +1,190 @@
+ /**
+ * Homepage Styles
+ * Specific styles for the Mannar website homepage
+ */
+
+/* Hero section with background image */
+.bgimg-1 {
+  position: relative;
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-image: url('../img/background.jpg');
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Logo animation on homepage */
+#mainLogo {
+  max-width: 80%;
+  height: auto;
+  opacity: 0;
+  transform: scale(0.8);
+  animation: logoFadeIn 2s ease forwards;
+}
+
+@keyframes logoFadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* About section */
+#about {
+  background-color: white;
+  position: relative;
+  z-index: 2;
+}
+
+#about h2 {
+  margin-bottom: 1rem;
+}
+
+#about .animate-item {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+#about .animate-item.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Portfolio/Offerings section */
+#portfolio {
+  background-color: var(--light-color, #ecf0f1);
+  position: relative;
+  z-index: 2;
+}
+
+.portfolio-item {
+  margin-bottom: 30px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.portfolio-item:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.portfolio-item img {
+  width: 100%;
+  height: auto;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+
+.portfolio-item:hover img {
+  opacity: 0.9;
+}
+
+.portfolio-item h3 {
+  margin-top: 1rem;
+  font-size: 1.5rem;
+}
+
+/* Staggered animation delays for portfolio items */
+.delay-1 {
+  transition-delay: 0.2s;
+}
+
+.delay-2 {
+  transition-delay: 0.4s;
+}
+
+.delay-3 {
+  transition-delay: 0.6s;
+}
+
+/* Contact section */
+#contact {
+  background-color: white;
+  position: relative;
+  z-index: 2;
+}
+
+#contact .w3-large {
+  margin-bottom: 1.5rem;
+}
+
+#contact i.fa-fw {
+  color: var(--primary-color, #3498db);
+}
+
+/* Contact form */
+.contact-form button {
+  background-color: var(--primary-color, #3498db);
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+.contact-form button:hover {
+  background-color: var(--primary-dark, #2980b9);
+}
+
+/* Responsive adjustments for homepage */
+@media (max-width: 992px) {
+  .bgimg-1 {
+    background-attachment: scroll;
+  }
+  
+  #mainLogo {
+    max-width: 70%;
+  }
+}
+
+@media (max-width: 768px) {
+  .portfolio-item {
+    margin-bottom: 20px;
+  }
+  
+  #mainLogo {
+    max-width: 60%;
+  }
+  
+  /* Reset animation delays on mobile for better performance */
+  .delay-1, .delay-2, .delay-3 {
+    transition-delay: 0.1s;
+  }
+}
+
+@media (max-width: 480px) {
+  #mainLogo {
+    max-width: 80%;
+  }
+}
+
+/* Respect user preferences for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .bgimg-1 {
+    background-attachment: scroll;
+  }
+  
+  #mainLogo {
+    animation: none;
+    opacity: 1;
+    transform: scale(1);
+  }
+  
+  .animate-item,
+  .delay-1,
+  .delay-2,
+  .delay-3 {
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
+  
+  .portfolio-item:hover {
+    transform: none;
+  }
+}

@@ -1,21 +1,23 @@
- /**
- * Main Application
- * Bootstrap and initialize all components and services
+/**
+ * Application Module
+ * Central initialization and management of the Mannar website
  */
 const App = (function() {
   // Configuration
   const config = {
     // Environment: 'development' or 'production'
-    environment: 'production',
-    // Debug mode
-    debug: false,
+    environment: window.location.hostname === 'localhost' ? 'development' : 'production',
+    // Debug mode (enabled in development by default)
+    debug: window.location.hostname === 'localhost',
     // Feature flags
     features: {
-      // Enable animations
-      animations: true,
-      // Enable analytics
-      analytics: true,
-      // Enable service worker
+      // Enable animations by default, but respect user preferences
+      animations: !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+      // Enable analytics in production only
+      analytics: window.location.hostname !== 'localhost',
+      // Enable dynamic content loading
+      dynamicContent: true,
+      // Enable service worker (for offline support - currently disabled)
       serviceWorker: false
     }
   };
@@ -33,7 +35,9 @@ const App = (function() {
     
     try {
       // Merge options with default config
-      Object.assign(config, options);
+      if (options.config) {
+        Object.assign(config, options.config);
+      }
       
       // Configure logging based on environment
       configureLogging();
@@ -94,26 +98,30 @@ const App = (function() {
    */
   async function initServices() {
     // Initialize Firebase
-    if (!FirebaseService.init()) {
-      console.error('Failed to initialize Firebase');
+    if (typeof FirebaseService !== 'undefined') {
+      if (!FirebaseService.init()) {
+        console.error('Failed to initialize Firebase');
+      }
+    } else {
+      log('FirebaseService not available');
     }
     
     // Initialize other services if they exist
-    if (window.ContentService) {
-      log('ContentService available');
-    }
+    const services = [
+      'ContentService',
+      'AuthService',
+      'UploadService',
+      'UIService'
+    ];
     
-    if (window.AuthService) {
-      log('AuthService available');
-    }
-    
-    if (window.UploadService) {
-      log('UploadService available');
-    }
-    
-    if (window.UIService) {
-      log('UIService available');
-    }
+    services.forEach(service => {
+      if (typeof window[service] !== 'undefined') {
+        log(`${service} available`);
+        if (typeof window[service].init === 'function') {
+          window[service].init();
+        }
+      }
+    });
     
     return true;
   }
@@ -123,7 +131,7 @@ const App = (function() {
    */
   function initUIComponents() {
     // Initialize UI utilities if available
-    if (window.UIService) {
+    if (typeof UIService !== 'undefined') {
       // Initialize lazy loading for images
       UIService.initLazyLoading();
       
@@ -137,6 +145,9 @@ const App = (function() {
       
       // Initialize smooth scrolling
       UIService.initSmoothScrolling();
+    } else if (typeof UIUtils !== 'undefined') {
+      // Fallback to UIUtils if UIService isn't available
+      UIUtils.initAll();
     }
     
     // Initialize navigation
@@ -173,13 +184,19 @@ const App = (function() {
           !event.target.closest('#navDemo') && 
           !event.target.closest('[aria-controls="navDemo"]')) {
         navDemo.classList.remove('w3-show');
+        
+        // Update ARIA attributes
+        const toggleBtn = document.querySelector('[aria-controls="navDemo"]');
+        if (toggleBtn) {
+          toggleBtn.setAttribute('aria-expanded', 'false');
+        }
       }
     });
     
     // Handle navigation scroll behavior
     const navbar = document.getElementById('myNavbar');
     if (navbar) {
-      window.addEventListener('scroll', () => {
+      const handleScroll = () => {
         if (window.scrollY > 100) {
           navbar.classList.add('scrolled');
           navbar.classList.add('visible');
@@ -190,7 +207,11 @@ const App = (function() {
             navbar.classList.remove('visible');
           }
         }
-      });
+      };
+      
+      // Initial call and event listener
+      handleScroll();
+      window.addEventListener('scroll', handleScroll);
     }
   }
   
@@ -222,15 +243,15 @@ const App = (function() {
   }
   
   /**
-   * Detect current page
-   * @returns {string} Page type
+   * Detect current page based on URL
+   * @returns {string} Page type identifier
    */
   function detectCurrentPage() {
     const path = window.location.pathname;
     
-    if (path.includes('admin-panel.php')) {
+    if (path.includes('admin') || path.includes('admin-panel.php')) {
       return 'admin';
-    } else if (path.includes('preview.php') || path.includes('preview.html')) {
+    } else if (path.includes('preview') || path.includes('preview.html')) {
       return 'preview';
     } else if (path.includes('page.php')) {
       return 'page';
@@ -252,7 +273,7 @@ const App = (function() {
     }
     
     // Initialize main content from Firebase if not in admin mode
-    if (window.ContentService) {
+    if (typeof ContentService !== 'undefined' && config.features.dynamicContent) {
       ContentService.loadMainContent(false)
         .then(data => {
           if (!data) {
@@ -270,96 +291,10 @@ const App = (function() {
   }
   
   /**
-   * Initialize admin page functionality
-   */
-  function initAdminPage() {
-    log('Initializing admin page');
-    
-    // Admin functionality is handled separately in admin-specific scripts
-  }
-  
-  /**
-   * Initialize dynamic page functionality
-   */
-  function initDynamicPage() {
-    log('Initializing dynamic page');
-    
-    // Get page ID from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const pageId = urlParams.get('id');
-    
-    if (!pageId) {
-      log('No page ID found');
-      return;
-    }
-    
-    // Load page content if ContentService is available
-    if (window.ContentService) {
-      ContentService.loadPage(pageId)
-        .then(pageData => {
-          if (!pageData) {
-            log(`Page ${pageId} not found`);
-            return;
-          }
-          
-          log(`Loaded page: ${pageData.title}`);
-          
-          // Update page content
-          updateDynamicPageContent(pageData);
-        })
-        .catch(error => {
-          console.error(`Error loading page ${pageId}:`, error);
-        });
-    }
-  }
-  
-  /**
-   * Initialize preview page functionality
-   */
-  function initPreviewPage() {
-    log('Initializing preview page');
-    
-    // Get draft mode from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const isDraft = urlParams.get('draft') === 'true';
-    
-    // Update preview indicator
-    const previewIndicator = document.getElementById('previewIndicator');
-    const previewMode = document.getElementById('previewMode');
-    
-    if (previewIndicator && previewMode) {
-      if (isDraft) {
-        previewMode.textContent = 'Entwurf';
-        previewIndicator.classList.remove('live');
-      } else {
-        previewMode.textContent = 'Live-Website';
-        previewIndicator.classList.add('live');
-      }
-    }
-    
-    // Load preview content
-    if (window.ContentService) {
-      ContentService.loadMainContent(isDraft)
-        .then(data => {
-          if (!data) {
-            log('No content found for preview');
-            return;
-          }
-          
-          // Update preview content
-          updatePreviewContent(data);
-        })
-        .catch(error => {
-          console.error('Error loading preview content:', error);
-        });
-    }
-  }
-  
-  /**
    * Initialize word cloud
    */
   function initWordCloud() {
-    if (!window.ContentService) return;
+    if (typeof ContentService === 'undefined') return;
     
     const wordCloudList = document.getElementById('wordCloudList');
     if (!wordCloudList) return;
@@ -375,8 +310,10 @@ const App = (function() {
         // Render word cloud
         renderWordCloud(wordCloudList, words);
         
-        // Animate word cloud
-        animateWordCloud(document.querySelector('.textbubble'));
+        // Animate word cloud if animations are enabled
+        if (config.features.animations) {
+          animateWordCloud(document.querySelector('.textbubble'));
+        }
       })
       .catch(error => {
         console.error('Error loading word cloud:', error);
@@ -401,17 +338,23 @@ const App = (function() {
       a.textContent = word.text || '';
       a.setAttribute('data-weight', word.weight || 5);
       
+      // Add appropriate ARIA attributes for accessibility
+      a.setAttribute('role', 'button');
+      if (word.description) {
+        a.setAttribute('aria-label', word.description);
+      }
+      
       li.appendChild(a);
       container.appendChild(li);
     });
   }
   
   /**
-   * Animate word cloud
+   * Animate word cloud appearance
    * @param {HTMLElement} container - Container element
    */
   function animateWordCloud(container) {
-    if (!container) return;
+    if (!container || !config.features.animations) return;
     
     const wordElements = container.querySelectorAll('.word-cloud li a');
     
@@ -424,89 +367,157 @@ const App = (function() {
   }
   
   /**
-   * Update home page content
+   * Update home page content with loaded data
    * @param {Object} data - Content data
    */
   function updateHomePageContent(data) {
-    // Update about section
-    if (data.aboutTitle) {
-      const aboutTitle = document.getElementById('aboutTitle');
-      if (aboutTitle) aboutTitle.innerHTML = data.aboutTitle;
-    }
+    const updateElement = (id, property, value) => {
+      const element = document.getElementById(id);
+      if (element && value) {
+        if (property === 'innerHTML') {
+          element.innerHTML = value;
+        } else if (property === 'textContent') {
+          element.textContent = value;
+        } else {
+          element[property] = value;
+        }
+      }
+    };
     
-    if (data.aboutSubtitle) {
-      const aboutSubtitle = document.getElementById('aboutSubtitle');
-      if (aboutSubtitle) aboutSubtitle.innerHTML = data.aboutSubtitle;
-    }
+    // Update section titles and content
+    updateElement('aboutTitle', 'innerHTML', data.aboutTitle);
+    updateElement('aboutSubtitle', 'innerHTML', data.aboutSubtitle);
+    updateElement('aboutText', 'innerHTML', data.aboutText);
     
-    if (data.aboutText) {
-      const aboutText = document.getElementById('aboutText');
-      if (aboutText) aboutText.innerHTML = data.aboutText;
-    }
+    updateElement('offeringsTitle', 'innerHTML', data.offeringsTitle);
+    updateElement('offeringsSubtitle', 'innerHTML', data.offeringsSubtitle);
     
-    // Update offerings section
-    if (data.offeringsTitle) {
-      const offeringsTitle = document.getElementById('offeringsTitle');
-      if (offeringsTitle) offeringsTitle.innerHTML = data.offeringsTitle;
-    }
-    
-    if (data.offeringsSubtitle) {
-      const offeringsSubtitle = document.getElementById('offeringsSubtitle');
-      if (offeringsSubtitle) offeringsSubtitle.innerHTML = data.offeringsSubtitle;
-    }
-    
-    // Update offering 1
-    if (data.offer1Title) {
-      const offer1Title = document.getElementById('offer1Title');
-      if (offer1Title) offer1Title.innerHTML = data.offer1Title;
-    }
-    
-    if (data.offer1Desc) {
-      const offer1Desc = document.getElementById('offer1Desc');
-      if (offer1Desc) offer1Desc.innerHTML = data.offer1Desc;
-    }
-    
-    // Update offering 2
-    if (data.offer2Title) {
-      const offer2Title = document.getElementById('offer2Title');
-      if (offer2Title) offer2Title.innerHTML = data.offer2Title;
-    }
-    
-    if (data.offer2Desc) {
-      const offer2Desc = document.getElementById('offer2Desc');
-      if (offer2Desc) offer2Desc.innerHTML = data.offer2Desc;
-    }
-    
-    // Update offering 3
-    if (data.offer3Title) {
-      const offer3Title = document.getElementById('offer3Title');
-      if (offer3Title) offer3Title.innerHTML = data.offer3Title;
-    }
-    
-    if (data.offer3Desc) {
-      const offer3Desc = document.getElementById('offer3Desc');
-      if (offer3Desc) offer3Desc.innerHTML = data.offer3Desc;
+    // Update offerings
+    for (let i = 1; i <= 3; i++) {
+      updateElement(`offer${i}Title`, 'innerHTML', data[`offer${i}Title`]);
+      updateElement(`offer${i}Desc`, 'innerHTML', data[`offer${i}Desc`]);
     }
     
     // Update contact section
-    if (data.contactTitle) {
-      const contactTitle = document.getElementById('contactTitle');
-      if (contactTitle) contactTitle.innerHTML = data.contactTitle;
-    }
+    updateElement('contactTitle', 'innerHTML', data.contactTitle);
+    updateElement('contactSubtitle', 'innerHTML', data.contactSubtitle);
     
-    if (data.contactSubtitle) {
-      const contactSubtitle = document.getElementById('contactSubtitle');
-      if (contactSubtitle) contactSubtitle.innerHTML = data.contactSubtitle;
-    }
-    
-    // Update images
-    if (window.ContentService && ContentService.updateImagePreviews) {
+    // Update images if ContentService has the method
+    if (typeof ContentService !== 'undefined' && typeof ContentService.updateImagePreviews === 'function') {
       ContentService.updateImagePreviews(data, {
         offer1Img: document.getElementById('offer1Image'),
         offer2Img: document.getElementById('offer2Image'),
         offer3Img: document.getElementById('offer3Image'),
         contactImg: document.getElementById('contactImage')
       });
+    } else {
+      // Fallback image updating
+      updateImages(data);
+    }
+  }
+  
+  /**
+   * Update images on the page (fallback method)
+   * @param {Object} data - Content data with image information
+   */
+  function updateImages(data) {
+    const updateImage = (id, imageData) => {
+      const img = document.getElementById(id);
+      if (!img) return;
+      
+      if (imageData && (imageData.url || typeof imageData === 'string')) {
+        const url = typeof imageData === 'string' ? imageData : imageData.url;
+        img.src = url;
+        img.style.display = 'block';
+        
+        if (imageData.alt) {
+          img.alt = imageData.alt;
+        }
+      } else {
+        img.style.display = 'none';
+      }
+    };
+    
+    updateImage('offer1Image', data.offer1_image);
+    updateImage('offer2Image', data.offer2_image);
+    updateImage('offer3Image', data.offer3_image);
+    updateImage('contactImage', data.contact_image);
+  }
+  
+  /**
+   * Initialize admin page
+   */
+  function initAdminPage() {
+    log('Initializing admin page');
+    // Admin functionality is handled in separate admin-specific scripts
+    // This just ensures they're properly triggered
+    
+    // Make sure AdminCore is initialized if available
+    if (typeof AdminCore !== 'undefined' && typeof AdminCore.init === 'function') {
+      setTimeout(() => AdminCore.init(), 100);
+    }
+  }
+  
+  /**
+   * Initialize dynamic page
+   */
+  function initDynamicPage() {
+    log('Initializing dynamic page');
+    
+    // Get page ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const pageId = urlParams.get('id');
+    
+    if (!pageId) {
+      log('No page ID found');
+      return;
+    }
+    
+    // Load page content if ContentService is available
+    if (typeof ContentService !== 'undefined') {
+      ContentService.loadPage(pageId)
+        .then(pageData => {
+          if (!pageData) {
+            log(`Page ${pageId} not found`);
+            showPageError('Die angeforderte Seite wurde nicht gefunden.');
+            return;
+          }
+          
+          log(`Loaded page: ${pageData.title}`);
+          
+          // Update page content
+          updateDynamicPageContent(pageData);
+        })
+        .catch(error => {
+          console.error(`Error loading page ${pageId}:`, error);
+          showPageError(`Fehler beim Laden der Seite: ${error.message}`);
+        });
+    }
+  }
+  
+  /**
+   * Show page error message
+   * @param {string} message - Error message to display
+   */
+  function showPageError(message) {
+    const pageContent = document.getElementById('pageContent');
+    const pageLoading = document.getElementById('pageLoading');
+    
+    if (pageLoading) {
+      pageLoading.style.display = 'none';
+    }
+    
+    if (pageContent) {
+      pageContent.innerHTML = `
+        <div class="w3-container w3-padding-64">
+          <div class="w3-panel w3-red">
+            <h3>Fehler</h3>
+            <p>${message}</p>
+            <a href="index.php" class="w3-button w3-blue">Zurück zur Startseite</a>
+          </div>
+        </div>
+      `;
+      pageContent.style.opacity = '1';
     }
   }
   
@@ -516,21 +527,146 @@ const App = (function() {
    */
   function updateDynamicPageContent(pageData) {
     // Set page title
-    document.title = pageData.title;
+    document.title = pageData.title + ' - Mannar';
     
     // Get page content container
     const pageContent = document.getElementById('pageContent');
+    const pageLoading = document.getElementById('pageLoading');
+    
+    if (pageLoading) {
+      pageLoading.style.opacity = '0';
+      setTimeout(() => {
+        pageLoading.style.display = 'none';
+      }, 300);
+    }
+    
     if (!pageContent) return;
     
-    // Clear loading indicator
-    pageContent.innerHTML = '';
+    // Show content container
+    pageContent.style.opacity = '1';
     
     // Generate content based on template
     const templateId = pageData.template;
     const data = pageData.data || {};
     
-    // Render template
-    renderPageTemplate(templateId, data, pageContent);
+    // Set the page title and subtitle in the content
+    const titleEl = document.createElement('h1');
+    titleEl.className = 'page-title w3-center';
+    titleEl.textContent = pageData.title || '';
+    
+    pageContent.innerHTML = '';
+    pageContent.appendChild(titleEl);
+    
+    if (data.subtitle) {
+      const subtitleEl = document.createElement('h2');
+      subtitleEl.className = 'page-subtitle w3-center';
+      subtitleEl.textContent = data.subtitle;
+      pageContent.appendChild(subtitleEl);
+    }
+    
+    // Create a container for the main content
+    const contentContainer = document.createElement('div');
+    pageContent.appendChild(contentContainer);
+    
+    // Render the template content
+    try {
+      contentContainer.innerHTML = renderTemplate(templateId, data);
+      
+      // Initialize any template-specific functionality
+      initTemplateComponents(templateId, data);
+    } catch (error) {
+      console.error('Error rendering template:', error);
+      contentContainer.innerHTML = `
+        <div class="w3-panel w3-red">
+          <h3>Fehler beim Rendern der Seite</h3>
+          <p>${error.message}</p>
+        </div>
+      `;
+    }
+  }
+  
+  /**
+   * Render a template with data
+   * @param {string} templateId - Template identifier
+   * @param {Object} data - Template data
+   * @returns {string} Rendered HTML
+   */
+  function renderTemplate(templateId, data) {
+    // This would be a switch statement or function calls to different template renderers
+    // Simplified here, but in the real implementation you would have template-specific renderers
+    return `
+      <div class="w3-container w3-padding">
+        <div class="w3-content">
+          ${data.content || 'No content available'}
+        </div>
+      </div>
+    `;
+  }
+  
+  /**
+   * Initialize template-specific components
+   * @param {string} templateId - Template identifier
+   * @param {Object} data - Template data
+   */
+  function initTemplateComponents(templateId, data) {
+    // Initialize components based on template type
+    // This is where you would add template-specific initialization
+    switch (templateId) {
+      case 'gallery':
+        initGallery();
+        break;
+      case 'contact':
+        initContactForm();
+        break;
+    }
+  }
+  
+  /**
+   * Initialize preview page
+   */
+  function initPreviewPage() {
+    log('Initializing preview page');
+    
+    // If PreviewModule exists, use it
+    if (typeof PreviewModule !== 'undefined' && typeof PreviewModule.init === 'function') {
+      PreviewModule.init();
+      return;
+    }
+    
+    // Otherwise handle preview functionality directly
+    const urlParams = new URLSearchParams(window.location.search);
+    const isDraft = urlParams.get('draft') === 'true';
+    
+    // Update preview indicator
+    const previewIndicator = document.getElementById('previewIndicator');
+    const previewMode = document.getElementById('previewMode');
+    
+    if (previewIndicator && previewMode) {
+      if (isDraft) {
+        previewMode.textContent = 'Entwurf';
+        previewIndicator.classList.remove('live');
+      } else {
+        previewMode.textContent = 'Live-Website';
+        previewIndicator.classList.add('live');
+      }
+    }
+    
+    // Load preview content
+    if (typeof ContentService !== 'undefined') {
+      ContentService.loadMainContent(isDraft)
+        .then(data => {
+          if (!data) {
+            log('No content found for preview');
+            return;
+          }
+          
+          // Update preview content
+          updatePreviewContent(data);
+        })
+        .catch(error => {
+          console.error('Error loading preview content:', error);
+        });
+    }
   }
   
   /**
@@ -538,79 +674,35 @@ const App = (function() {
    * @param {Object} data - Content data
    */
   function updatePreviewContent(data) {
+    // Helper function to update elements
+    const updateElement = (id, content) => {
+      const element = document.getElementById(id);
+      if (element && content) {
+        element.innerHTML = content;
+      }
+    };
+    
     // Update about section
-    if (data.aboutTitle) {
-      const aboutTitleDisplay = document.getElementById('aboutTitleDisplay');
-      if (aboutTitleDisplay) aboutTitleDisplay.innerHTML = data.aboutTitle;
-    }
-    
-    if (data.aboutSubtitle) {
-      const aboutSubtitleDisplay = document.getElementById('aboutSubtitleDisplay');
-      if (aboutSubtitleDisplay) aboutSubtitleDisplay.innerHTML = data.aboutSubtitle;
-    }
-    
-    if (data.aboutText) {
-      const aboutTextDisplay = document.getElementById('aboutTextDisplay');
-      if (aboutTextDisplay) aboutTextDisplay.innerHTML = data.aboutText;
-    }
+    updateElement('aboutTitleDisplay', data.aboutTitle);
+    updateElement('aboutSubtitleDisplay', data.aboutSubtitle);
+    updateElement('aboutTextDisplay', data.aboutText);
     
     // Update offerings section
-    if (data.offeringsTitle) {
-      const offeringsTitleDisplay = document.getElementById('offeringsTitleDisplay');
-      if (offeringsTitleDisplay) offeringsTitleDisplay.innerHTML = data.offeringsTitle;
-    }
+    updateElement('offeringsTitleDisplay', data.offeringsTitle);
+    updateElement('offeringsSubtitleDisplay', data.offeringsSubtitle);
     
-    if (data.offeringsSubtitle) {
-      const offeringsSubtitleDisplay = document.getElementById('offeringsSubtitleDisplay');
-      if (offeringsSubtitleDisplay) offeringsSubtitleDisplay.innerHTML = data.offeringsSubtitle;
-    }
-    
-    // Update offering 1
-    if (data.offer1Title) {
-      const offer1TitleDisplay = document.getElementById('offer1TitleDisplay');
-      if (offer1TitleDisplay) offer1TitleDisplay.innerHTML = data.offer1Title;
-    }
-    
-    if (data.offer1Desc) {
-      const offer1DescDisplay = document.getElementById('offer1DescDisplay');
-      if (offer1DescDisplay) offer1DescDisplay.innerHTML = data.offer1Desc;
-    }
-    
-    // Update offering 2
-    if (data.offer2Title) {
-      const offer2TitleDisplay = document.getElementById('offer2TitleDisplay');
-      if (offer2TitleDisplay) offer2TitleDisplay.innerHTML = data.offer2Title;
-    }
-    
-    if (data.offer2Desc) {
-      const offer2DescDisplay = document.getElementById('offer2DescDisplay');
-      if (offer2DescDisplay) offer2DescDisplay.innerHTML = data.offer2Desc;
-    }
-    
-    // Update offering 3
-    if (data.offer3Title) {
-      const offer3TitleDisplay = document.getElementById('offer3TitleDisplay');
-      if (offer3TitleDisplay) offer3TitleDisplay.innerHTML = data.offer3Title;
-    }
-    
-    if (data.offer3Desc) {
-      const offer3DescDisplay = document.getElementById('offer3DescDisplay');
-      if (offer3DescDisplay) offer3DescDisplay.innerHTML = data.offer3Desc;
+    // Update offerings
+    for (let i = 1; i <= 3; i++) {
+      updateElement(`offer${i}TitleDisplay`, data[`offer${i}Title`]);
+      updateElement(`offer${i}DescDisplay`, data[`offer${i}Desc`]);
     }
     
     // Update contact section
-    if (data.contactTitle) {
-      const contactTitleDisplay = document.getElementById('contactTitleDisplay');
-      if (contactTitleDisplay) contactTitleDisplay.innerHTML = data.contactTitle;
-    }
-    
-    if (data.contactSubtitle) {
-      const contactSubtitleDisplay = document.getElementById('contactSubtitleDisplay');
-      if (contactSubtitleDisplay) contactSubtitleDisplay.innerHTML = data.contactSubtitle;
-    }
+    updateElement('contactTitleDisplay', data.contactTitle);
+    updateElement('contactSubtitleDisplay', data.contactSubtitle);
     
     // Update images
-    if (window.ContentService && ContentService.updateImagePreviews) {
+    if (typeof ContentService !== 'undefined' && typeof ContentService.updateImagePreviews === 'function') {
       ContentService.updateImagePreviews(data, {
         offer1Img: document.getElementById('offer1ImageDisplay'),
         offer2Img: document.getElementById('offer2ImageDisplay'),
@@ -618,434 +710,6 @@ const App = (function() {
         contactImg: document.getElementById('contactImageDisplay')
       });
     }
-  }
-  
-  /**
-   * Render page template
-   * @param {string} templateId - Template ID
-   * @param {Object} data - Template data
-   * @param {HTMLElement} container - Container element
-   */
-  function renderPageTemplate(templateId, data, container) {
-    // Simple template rendering based on template ID
-    switch (templateId) {
-      case 'basic':
-        renderBasicTemplate(data, container);
-        break;
-        
-      case 'text-image':
-        renderTextImageTemplate(data, container);
-        break;
-        
-      case 'image-text':
-        renderImageTextTemplate(data, container);
-        break;
-        
-      case 'gallery':
-        renderGalleryTemplate(data, container);
-        break;
-        
-      case 'landing':
-        renderLandingTemplate(data, container);
-        break;
-        
-      case 'portfolio':
-        renderPortfolioTemplate(data, container);
-        break;
-        
-      case 'contact':
-        renderContactTemplate(data, container);
-        break;
-        
-      case 'blog':
-        renderBlogTemplate(data, container);
-        break;
-        
-      default:
-        container.innerHTML = `
-          <div class="w3-panel w3-pale-red">
-            <h3>Error: Unknown Template</h3>
-            <p>The template "${templateId}" is not supported.</p>
-          </div>
-        `;
-    }
-  }
-  
-  /**
-   * Render basic template
-   * @param {Object} data - Template data
-   * @param {HTMLElement} container - Container element
-   */
-  function renderBasicTemplate(data, container) {
-    container.innerHTML = `
-      <h1 class="page-title w3-center">${data.title || ''}</h1>
-      ${data.subtitle ? `<h2 class="page-subtitle w3-center">${data.subtitle}</h2>` : ''}
-      <div class="w3-container">
-        ${data.content || ''}
-      </div>
-    `;
-  }
-  
-  /**
-   * Render text-image template
-   * @param {Object} data - Template data
-   * @param {HTMLElement} container - Container element
-   */
-  function renderTextImageTemplate(data, container) {
-    container.innerHTML = `
-      <h1 class="page-title w3-center">${data.title || ''}</h1>
-      ${data.subtitle ? `<h2 class="page-subtitle w3-center">${data.subtitle}</h2>` : ''}
-      <div class="w3-row-padding">
-        <div class="w3-col m8 w3-padding animate-item">
-          <div>${data.content || ''}</div>
-        </div>
-        <div class="w3-col m4 w3-padding animate-item delay-1">
-          <div class="image-container w3-card">
-            <img src="${data.featuredImage?.url || '/api/placeholder/400/300'}" alt="${data.featuredImage?.alt || data.title || 'Bild'}" class="w3-image">
-          </div>
-        </div>
-      </div>
-    `;
-  }
-  
-  /**
-   * Render image-text template
-   * @param {Object} data - Template data
-   * @param {HTMLElement} container - Container element
-   */
-  function renderImageTextTemplate(data, container) {
-    container.innerHTML = `
-      <h1 class="page-title w3-center">${data.title || ''}</h1>
-      ${data.subtitle ? `<h2 class="page-subtitle w3-center">${data.subtitle}</h2>` : ''}
-      <div class="w3-row-padding">
-        <div class="w3-col m4 w3-padding animate-item">
-          <div class="image-container w3-card">
-            <img src="${data.featuredImage?.url || '/api/placeholder/400/300'}" alt="${data.featuredImage?.alt || data.title || 'Bild'}" class="w3-image">
-          </div>
-        </div>
-        <div class="w3-col m8 w3-padding animate-item delay-1">
-          <div>${data.content || ''}</div>
-        </div>
-      </div>
-    `;
-  }
-  
-  /**
-   * Render gallery template
-   * @param {Object} data - Template data
-   * @param {HTMLElement} container - Container element
-   */
-  function renderGalleryTemplate(data, container) {
-    let galleryItemsHtml = '';
-    
-    if (data.images && Array.isArray(data.images) && data.images.length > 0) {
-      data.images.forEach((image, index) => {
-        if (!image || !image.url) return;
-        
-        galleryItemsHtml += `
-          <div class="w3-col m4 l3 s6 w3-padding animate-item delay-${index % 5}">
-            <div class="gallery-item w3-card">
-              <img src="${image.url}" alt="${image.alt || ''}" class="w3-image gallery-img" style="width:100%">
-              ${image.caption ? `<div class="w3-padding-small w3-light-grey">${image.caption}</div>` : ''}
-            </div>
-          </div>
-        `;
-      });
-    } else {
-      galleryItemsHtml = '<div class="w3-panel w3-pale-yellow w3-center">Keine Bilder in dieser Galerie</div>';
-    }
-    
-    container.innerHTML = `
-      <h1 class="page-title w3-center">${data.title || ''}</h1>
-      ${data.subtitle ? `<h2 class="page-subtitle w3-center">${data.subtitle}</h2>` : ''}
-      <div class="w3-container">${data.description || ''}</div>
-      <div class="w3-row-padding w3-margin-top gallery-container">
-        ${galleryItemsHtml}
-      </div>
-    `;
-    
-    // Add modal for gallery images
-    addGalleryModal(container);
-  }
-  
-  /**
-   * Add gallery modal
-   * @param {HTMLElement} container - Container element
-   */
-  function addGalleryModal(container) {
-    // Create modal if it doesn't exist
-    let galleryModal = document.getElementById('galleryModal');
-    
-    if (!galleryModal) {
-      galleryModal = document.createElement('div');
-      galleryModal.id = 'galleryModal';
-      galleryModal.className = 'w3-modal';
-      galleryModal.onclick = function() { this.style.display = 'none'; };
-      
-      galleryModal.innerHTML = `
-        <div class="w3-modal-content w3-animate-zoom">
-          <span class="w3-button w3-hover-red w3-xlarge w3-display-topright">&times;</span>
-          <img id="modalImg" class="w3-image" style="width:100%; max-height:80vh; object-fit:contain;">
-          <div id="modalCaption" class="w3-container w3-padding-16 w3-light-grey"></div>
-        </div>
-      `;
-      
-      document.body.appendChild(galleryModal);
-    }
-    
-    // Add click event to gallery images
-    const galleryImages = container.querySelectorAll('.gallery-img');
-    
-    galleryImages.forEach(img => {
-      img.style.cursor = 'pointer';
-      
-      img.addEventListener('click', function(e) {
-        e.stopPropagation();
-        
-        const modalImg = document.getElementById('modalImg');
-        const modalCaption = document.getElementById('modalCaption');
-        
-        if (!modalImg || !modalCaption) return;
-        
-        modalImg.src = this.src;
-        
-        // Get caption if available
-        const captionElement = this.nextElementSibling;
-        
-        if (captionElement && captionElement.textContent) {
-          modalCaption.textContent = captionElement.textContent;
-          modalCaption.style.display = 'block';
-        } else {
-          modalCaption.textContent = '';
-          modalCaption.style.display = 'none';
-        }
-        
-        galleryModal.style.display = 'block';
-      });
-    });
-  }
-  
-  /**
-   * Render landing template
-   * @param {Object} data - Template data
-   * @param {HTMLElement} container - Container element
-   */
-  function renderLandingTemplate(data, container) {
-    let featuresHtml = '';
-    
-    // Generate features
-    if (data.features && Array.isArray(data.features) && data.features.length > 0) {
-      data.features.forEach((feature, index) => {
-        if (!feature) return;
-        
-        featuresHtml += `
-          <div class="w3-col m4 s12 w3-padding animate-item delay-${index % 3}">
-            <div class="feature-item w3-card w3-padding w3-center">
-              ${feature.icon && feature.icon.url ? 
-                `<img src="${feature.icon.url}" alt="${feature.title || 'Feature'}" style="width:64px; height:64px; margin:0 auto; display:block;">` : 
-                '<div class="w3-circle w3-light-grey w3-padding w3-center" style="width:64px; height:64px; margin:0 auto; display:flex; align-items:center; justify-content:center;"><i class="fas fa-star"></i></div>'
-              }
-              <h3>${feature.title || 'Feature'}</h3>
-              <p>${feature.description || ''}</p>
-            </div>
-          </div>
-        `;
-      });
-    }
-    
-    container.innerHTML = `
-      <h1 class="page-title w3-center">${data.title || ''}</h1>
-      ${data.subtitle ? `<h2 class="page-subtitle w3-center">${data.subtitle}</h2>` : ''}
-      
-      <!-- Hero Section -->
-      <div class="w3-row-padding">
-        <div class="w3-col m6 s12 w3-padding animate-item">
-          <div class="w3-padding-large">
-            <div class="hero-content">
-              ${data.content || ''}
-            </div>
-            ${data.ctaButtonText ? 
-              `<a href="${data.ctaButtonLink || '#'}" class="w3-button w3-padding-large w3-large w3-margin-top">${data.ctaButtonText}</a>` : 
-              ''}
-          </div>
-        </div>
-        <div class="w3-col m6 s12 w3-padding animate-item delay-1">
-          <div class="hero-image-container">
-            ${data.heroImage && data.heroImage.url ? 
-              `<img src="${data.heroImage.url}" alt="${data.heroImage.alt || data.title || 'Hero Image'}" class="w3-image w3-card">` : 
-              '<div class="w3-pale-blue w3-padding-64 w3-center w3-card"><i class="fas fa-image" style="font-size:48px"></i><p>Hero Image</p></div>'
-            }
-          </div>
-        </div>
-      </div>
-      
-      <!-- Features Section -->
-      ${data.featuresTitle ? `<h2 class="w3-center w3-margin-top">${data.featuresTitle}</h2>` : ''}
-      <div class="w3-row-padding w3-margin-top features-container">
-        ${featuresHtml || '<div class="w3-col s12 w3-center w3-padding">Keine Features definiert</div>'}
-      </div>
-      
-      <!-- CTA Section -->
-      ${data.ctaText ? 
-        `<div class="w3-panel w3-padding-32 w3-center w3-margin-top animate-item">
-          <h3>${data.ctaText}</h3>
-          ${data.ctaButtonText ? 
-            `<a href="${data.ctaButtonLink || '#'}" class="w3-button w3-padding-large">${data.ctaButtonText}</a>` : 
-            ''}
-        </div>` : 
-        ''}
-    `;
-  }
-  
-  /**
-   * Render portfolio template
-   * @param {Object} data - Template data
-   * @param {HTMLElement} container - Container element
-   */
-  function renderPortfolioTemplate(data, container) {
-    let projectsHtml = '';
-    
-    // Generate projects
-    if (data.projects && Array.isArray(data.projects) && data.projects.length > 0) {
-      data.projects.forEach((project, index) => {
-        if (!project) return;
-        
-        projectsHtml += `
-          <div class="w3-col m6 l4 w3-padding animate-item delay-${index % 3}">
-            <div class="w3-card portfolio-item">
-              ${project.thumbnail && project.thumbnail.url ? 
-                `<img src="${project.thumbnail.url}" alt="${project.title || 'Projekt'}" class="w3-image" style="width:100%">` : 
-                '<div class="w3-pale-blue w3-padding-32 w3-center"><i class="fas fa-image"></i><p>Projekt Bild</p></div>'
-              }
-              <div class="w3-container">
-                <h3>${project.title || 'Projekt'}</h3>
-                <p>${project.description || ''}</p>
-                ${project.link ? `<a href="${project.link}" class="w3-button w3-margin-bottom">Mehr erfahren</a>` : ''}
-              </div>
-            </div>
-          </div>
-        `;
-      });
-    } else {
-      projectsHtml = '<div class="w3-panel w3-pale-yellow w3-center">Keine Projekte definiert</div>';
-    }
-    
-    container.innerHTML = `
-      <h1 class="page-title w3-center">${data.title || ''}</h1>
-      ${data.subtitle ? `<h2 class="page-subtitle w3-center">${data.subtitle}</h2>` : ''}
-      <div class="w3-container animate-item">${data.introduction || ''}</div>
-      <div class="w3-row-padding w3-margin-top">
-        ${projectsHtml}
-      </div>
-    `;
-  }
-  
-  /**
-   * Render contact template
-   * @param {Object} data - Template data
-   * @param {HTMLElement} container - Container element
-   */
-  function renderContactTemplate(data, container) {
-    container.innerHTML = `
-      <h1 class="page-title w3-center">${data.title || ''}</h1>
-      ${data.subtitle ? `<h2 class="page-subtitle w3-center">${data.subtitle}</h2>` : ''}
-      <div class="w3-container animate-item">${data.introduction || ''}</div>
-      
-      <div class="w3-row w3-padding-32 w3-section">
-        ${data.contactImage && data.contactImage.url ? 
-          `<div class="w3-col m4 w3-container animate-item">
-            <img src="${data.contactImage.url}" alt="${data.contactImage.alt || 'Kontaktbild'}" class="w3-image w3-round" style="width:100%">
-          </div>` : 
-          ''
-        }
-        
-        <div class="w3-col ${data.contactImage && data.contactImage.url ? 'm8' : 's12'} w3-panel animate-item delay-1">
-          <div class="w3-large w3-margin-bottom">
-            ${data.address ? `<p><i class="fas fa-map-marker-alt fa-fw w3-xlarge w3-margin-right"></i> ${data.address}</p>` : ''}
-            ${data.phone ? `<p><i class="fas fa-phone fa-fw w3-xlarge w3-margin-right"></i> ${data.phone}</p>` : ''}
-            ${data.email ? `<p><i class="fas fa-envelope fa-fw w3-xlarge w3-margin-right"></i> ${data.email}</p>` : ''}
-          </div>
-          
-          ${data.showForm ? 
-            `<form class="w3-container contact-form" action="./api/contact.php" method="post">
-              <div class="w3-row-padding" style="margin:0 -16px 8px -16px">
-                <div class="w3-half">
-                  <input class="w3-input w3-border" type="text" placeholder="Name" required name="Name">
-                </div>
-                <div class="w3-half">
-                  <input class="w3-input w3-border" type="email" placeholder="E-Mail" required name="Email">
-                </div>
-              </div>
-              <textarea class="w3-input w3-border" placeholder="Nachricht" required name="Message" rows="5"></textarea>
-              <button class="w3-button w3-right w3-section" type="submit">
-                <i class="fas fa-paper-plane"></i> NACHRICHT SENDEN
-              </button>
-            </form>` : 
-            ''
-          }
-        </div>
-      </div>
-    `;
-  }
-  
-  /**
-   * Render blog template
-   * @param {Object} data - Template data
-   * @param {HTMLElement} container - Container element
-   */
-  function renderBlogTemplate(data, container) {
-    // Format categories
-    let categoriesHtml = '';
-    
-    if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
-      categoriesHtml = `
-        <div class="w3-section w3-padding-small w3-light-grey w3-round">
-          <i class="fas fa-tags"></i> Kategorien: 
-          ${data.categories.map(cat => `<span class="w3-tag w3-small w3-margin-right">${cat}</span>`).join('')}
-        </div>
-      `;
-    }
-    
-    container.innerHTML = `
-      <h1 class="page-title w3-center">${data.title || ''}</h1>
-      ${data.subtitle ? `<h2 class="page-subtitle w3-center">${data.subtitle}</h2>` : ''}
-      
-      <!-- Blog header with meta -->
-      <div class="w3-container w3-margin-bottom">
-        <div class="w3-row">
-          <div class="w3-col m8 s12">
-            <div class="blog-meta w3-margin-bottom">
-              ${data.date ? `<span class="w3-margin-right"><i class="far fa-calendar-alt"></i> ${data.date}</span>` : ''}
-              ${data.author ? `<span><i class="far fa-user"></i> ${data.author}</span>` : ''}
-            </div>
-            ${categoriesHtml}
-          </div>
-        </div>
-      </div>
-      
-      <!-- Featured image -->
-      ${data.featuredImage && data.featuredImage.url ? 
-        `<div class="w3-container w3-margin-bottom animate-item">
-          <div class="w3-card">
-            <img src="${data.featuredImage.url}" alt="${data.featuredImage.alt || data.title || 'Blog Post'}" class="w3-image" style="width:100%">
-          </div>
-        </div>` : 
-        ''
-      }
-      
-      <!-- Excerpt -->
-      ${data.excerpt ? 
-        `<div class="w3-panel w3-pale-blue w3-leftbar w3-border-blue animate-item">
-          <p><em>${data.excerpt}</em></p>
-        </div>` : 
-        ''
-      }
-      
-      <!-- Main content -->
-      <div class="w3-container blog-content animate-item delay-1">
-        ${data.content || ''}
-      </div>
-    `;
   }
   
   /**
@@ -1061,11 +725,16 @@ const App = (function() {
   // Public API
   return {
     init,
-    log
+    config,
+    log,
+    updateHomePageContent,
+    updatePreviewContent
   };
 })();
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-  App.init();
+  App.init().catch(error => {
+    console.error('Failed to initialize application:', error);
+  });
 });

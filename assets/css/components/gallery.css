@@ -1,0 +1,243 @@
+ /**
+ * Gallery Components
+ * Styling for image galleries and showcase elements
+ */
+
+/* Gallery container */
+.gallery-container {
+  margin-bottom: var(--spacing-lg);
+}
+
+/* Gallery item */
+.gallery-item {
+  position: relative;
+  margin-bottom: var(--spacing-md);
+  overflow: hidden;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  cursor: pointer;
+  transition: transform var(--transition-standard), 
+              box-shadow var(--transition-standard);
+}
+
+.gallery-item:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--box-shadow-hover);
+}
+
+/* Gallery image */
+.gallery-item img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: transform var(--transition-standard);
+}
+
+.gallery-item:hover img {
+  transform: scale(1.05);
+}
+
+/* Gallery caption */
+.gallery-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: var(--spacing-sm);
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity var(--transition-standard),
+              transform var(--transition-standard);
+}
+
+.gallery-item:hover .gallery-caption {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Gallery modal */
+.gallery-modal {
+  display: none;
+  position: fixed;
+  z-index: var(--z-index-modal);
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.9);
+  opacity: 0;
+  transition: opacity var(--transition-standard);
+}
+
+.gallery-modal.show {
+  display: block;
+  opacity: 1;
+}
+
+.gallery-modal-content {
+  position: relative;
+  margin: auto;
+  display: block;
+  max-width: 90%;
+  max-height: 80vh;
+  padding: var(--spacing-md);
+}
+
+.gallery-modal-img {
+  display: block;
+  max-width: 100%;
+  max-height: 80vh;
+  margin: auto;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.gallery-modal-caption {
+  margin: auto;
+  display: block;
+  width: 80%;
+  max-width: 700px;
+  text-align: center;
+  color: white;
+  padding: var(--spacing-md) 0;
+}
+
+.gallery-modal-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  color: white;
+  font-size: 40px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color var(--transition-speed) ease;
+  z-index: var(--z-index-modal) + 1;
+}
+
+.gallery-modal-close:hover {
+  color: var(--primary-color);
+}
+
+/* Gallery navigation */
+.gallery-modal-nav {
+  position: absolute;
+  top: 50%;
+  width: 100%;
+  transform: translateY(-50%);
+}
+
+.gallery-modal-prev,
+.gallery-modal-next {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color var(--transition-speed) ease;
+}
+
+.gallery-modal-prev {
+  left: 20px;
+}
+
+.gallery-modal-next {
+  right: 20px;
+}
+
+.gallery-modal-prev:hover,
+.gallery-modal-next:hover {
+  background-color: var(--primary-color);
+}
+
+/* Masonry gallery layout */
+.gallery-masonry {
+  columns: 3 200px;
+  column-gap: var(--spacing-md);
+}
+
+.gallery-masonry .gallery-item {
+  break-inside: avoid;
+  margin-bottom: var(--spacing-md);
+}
+
+/* Grid gallery layout */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-gap: var(--spacing-md);
+  align-items: start;
+}
+
+.gallery-grid .gallery-item {
+  margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .gallery-masonry {
+    columns: 2 150px;
+  }
+  
+  .gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+  
+  .gallery-modal-content {
+    width: 95%;
+  }
+  
+  .gallery-modal-caption {
+    width: 95%;
+  }
+  
+  .gallery-modal-prev,
+  .gallery-modal-next {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .gallery-masonry {
+    columns: 1;
+  }
+  
+  .gallery-modal-nav {
+    display: none;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .gallery-item,
+  .gallery-item img,
+  .gallery-caption,
+  .gallery-modal {
+    transition: none;
+  }
+  
+  .gallery-item:hover {
+    transform: none;
+  }
+  
+  .gallery-item:hover img {
+    transform: none;
+  }
+}
+
+/* Focus indicators for keyboard navigation */
+.gallery-item:focus {
+  outline: 3px solid var(--primary-color);
+}
+
+.gallery-modal-close:focus,
+.gallery-modal-prev:focus,
+.gallery-modal-next:focus {
+  outline: 2px solid white;
+}

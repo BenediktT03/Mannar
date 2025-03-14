@@ -1,0 +1,271 @@
+ /**
+ * Modal Components
+ * Styling for modal dialogs and popups across the website
+ */
+
+/* Modal container */
+.modal,
+.w3-modal {
+  display: none;
+  position: fixed;
+  z-index: var(--z-index-modal);
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transition: opacity var(--transition-standard);
+}
+
+.modal.show,
+.w3-modal.show {
+  opacity: 1;
+}
+
+/* Modal content */
+.modal-content,
+.w3-modal-content {
+  position: relative;
+  background-color: white;
+  margin: 10vh auto;
+  padding: 0;
+  width: 80%;
+  max-width: 700px;
+  border-radius: var(--border-radius);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  transform: translateY(-20px);
+  transition: transform var(--transition-standard);
+  overflow: hidden;
+}
+
+.modal.show .modal-content,
+.w3-modal.show .w3-modal-content {
+  transform: translateY(0);
+}
+
+/* Modal header */
+.modal-header,
+.w3-modal .w3-container:first-child {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--light-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title,
+.w3-modal h2 {
+  margin: 0;
+  color: var(--secondary-color);
+  font-weight: 600;
+}
+
+/* Modal close button */
+.modal-close,
+.w3-modal .w3-button.w3-display-topright {
+  background-color: transparent;
+  border: none;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-light);
+  padding: 0;
+  cursor: pointer;
+  transition: color var(--transition-speed) ease;
+}
+
+.modal-close:hover,
+.w3-modal .w3-button.w3-display-topright:hover {
+  color: var(--danger-color);
+  text-decoration: none;
+}
+
+/* Modal body */
+.modal-body,
+.w3-modal .w3-container:not(:first-child):not(:last-child) {
+  padding: var(--spacing-lg);
+}
+
+/* Modal footer */
+.modal-footer,
+.w3-modal .w3-container:last-child {
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--border-color);
+  background-color: var(--light-color);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.modal-footer > .btn,
+.w3-modal .w3-container:last-child > .w3-button {
+  margin-left: var(--spacing-sm);
+}
+
+/* Image modals */
+.modal-image,
+#modal01 {
+  background-color: rgba(0, 0, 0, 0.9);
+  padding: var(--spacing-xl);
+}
+
+.modal-image .modal-content,
+#modal01 .w3-modal-content {
+  background-color: transparent;
+  max-width: none;
+  width: auto;
+  box-shadow: none;
+  text-align: center;
+}
+
+.modal-image img,
+#modal01 .w3-image {
+  max-width: 90%;
+  max-height: 80vh;
+  margin: auto;
+  display: block;
+}
+
+.modal-image .caption,
+#modal01 #caption {
+  margin: auto;
+  display: block;
+  width: 80%;
+  max-width: 700px;
+  text-align: center;
+  color: white;
+  padding: var(--spacing-md) 0;
+}
+
+/* Modal animations */
+@keyframes modal-zoom {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.modal-content.animate-zoom,
+.w3-modal-content.w3-animate-zoom {
+  animation: modal-zoom 0.6s;
+}
+
+@keyframes modal-top {
+  from {
+    top: -300px;
+    opacity: 0;
+  }
+  to {
+    top: 0;
+    opacity: 1;
+  }
+}
+
+.modal-content.animate-top,
+.w3-modal-content.w3-animate-top {
+  position: relative;
+  animation: modal-top 0.4s;
+}
+
+/* Custom modal types */
+.modal-confirm .modal-content {
+  max-width: 400px;
+}
+
+.modal-confirm .modal-header {
+  background-color: var(--secondary-color);
+  color: white;
+  border-bottom: none;
+}
+
+.modal-confirm .modal-title {
+  color: white;
+}
+
+.modal-danger .modal-header {
+  background-color: var(--danger-color);
+}
+
+.modal-success .modal-header {
+  background-color: var(--success-color);
+}
+
+/* Modal icon */
+.modal-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto var(--spacing-md) auto;
+  border-radius: 50%;
+  font-size: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.modal-danger .modal-icon {
+  background-color: var(--danger-color);
+}
+
+.modal-success .modal-icon {
+  background-color: var(--success-color);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .modal-content,
+  .w3-modal-content {
+    width: 95%;
+    margin: 10vh auto;
+  }
+  
+  .modal-body,
+  .w3-modal .w3-container:not(:first-child):not(:last-child) {
+    padding: var(--spacing-md);
+  }
+  
+  .modal-footer,
+  .w3-modal .w3-container:last-child {
+    flex-direction: column;
+  }
+  
+  .modal-footer > .btn,
+  .w3-modal .w3-container:last-child > .w3-button {
+    margin-left: 0;
+    margin-top: var(--spacing-sm);
+    width: 100%;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .modal,
+  .w3-modal,
+  .modal-content,
+  .w3-modal-content {
+    transition: none;
+  }
+  
+  .modal-content.animate-zoom,
+  .w3-modal-content.w3-animate-zoom,
+  .modal-content.animate-top,
+  .w3-modal-content.w3-animate-top {
+    animation: none;
+  }
+  
+  .modal.show .modal-content,
+  .w3-modal.show .w3-modal-content {
+    transform: none;
+  }
+}
+
+/* Focus management for accessibility */
+.modal-close:focus,
+.w3-modal .w3-button.w3-display-topright:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}

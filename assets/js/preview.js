@@ -1,257 +1,240 @@
 /**
  * Preview Module
- * Handles content previewing functionality for the Mannar website
- * Loads and displays content from Firebase based on preview mode (draft or live)
+ * Handles content preview functionality for the Mannar website
  */
 const PreviewModule = (function() {
   // Configuration
   const config = {
-    isDraft: true,
-    timestamp: Date.now(),
-    loadingDelay: 300,
-    fadeSpeed: 500
-  };
-  
-  // DOM elements cache
-  const elements = {
-    indicator: null,
-    modeText: null,
-    refreshBtn: null,
-    loading: null,
-    // Content elements will be cached on init
-    contentElements: {}
+    selectors: {
+      previewIndicator: '#previewIndicator',
+      previewMode: '#previewMode',
+      mainLogo: '#mainLogo',
+      refreshButton: '#refreshPreviewBtn'
+    },
+    elements: {},
+    isDraft: true, // Default to draft mode
+    contentLoaded: false
   };
   
   /**
-   * Initialize the preview functionality
-   * @param {Object} options - Configuration options
+   * Initialize the preview module
    */
-  function init(options = {}) {
-    // Merge options with defaults
-    Object.assign(config, options);
+  function init() {
+    console.log('Initializing preview module');
     
     // Cache DOM elements
     cacheElements();
     
+    // Determine preview mode from URL
+    parseQueryParams();
+    
+    // Update preview indicator
+    updatePreviewIndicator();
+    
     // Set up event listeners
-    attachEventListeners();
+    setupEventListeners();
     
     // Load content
     loadContent();
-    
-    console.log('Preview initialized:', config.isDraft ? 'Draft Mode' : 'Live Mode');
   }
   
   /**
    * Cache DOM elements for better performance
    */
   function cacheElements() {
-    // Preview interface elements
-    elements.indicator = document.getElementById('previewIndicator');
-    elements.modeText = document.getElementById('previewMode');
-    elements.refreshBtn = document.getElementById('refreshPreviewBtn');
-    elements.loading = document.getElementById('pageLoading');
+    Object.keys(config.selectors).forEach(key => {
+      config.elements[key] = document.querySelector(config.selectors[key]);
+    });
     
-    // Cache content elements for more efficient updates
-    elements.contentElements = {
-      // About section
+    // Also cache display elements for later updates
+    config.displayElements = {
       aboutTitle: document.getElementById('aboutTitleDisplay'),
       aboutSubtitle: document.getElementById('aboutSubtitleDisplay'),
       aboutText: document.getElementById('aboutTextDisplay'),
-      wordCloud: document.getElementById('wordCloudList'),
-      
-      // Offerings section
       offeringsTitle: document.getElementById('offeringsTitleDisplay'),
       offeringsSubtitle: document.getElementById('offeringsSubtitleDisplay'),
-      
-      // Offering 1
       offer1Title: document.getElementById('offer1TitleDisplay'),
       offer1Desc: document.getElementById('offer1DescDisplay'),
       offer1Image: document.getElementById('offer1ImageDisplay'),
-      
-      // Offering 2
       offer2Title: document.getElementById('offer2TitleDisplay'),
       offer2Desc: document.getElementById('offer2DescDisplay'),
       offer2Image: document.getElementById('offer2ImageDisplay'),
-      
-      // Offering 3
       offer3Title: document.getElementById('offer3TitleDisplay'),
       offer3Desc: document.getElementById('offer3DescDisplay'),
       offer3Image: document.getElementById('offer3ImageDisplay'),
-      
-      // Contact section
       contactTitle: document.getElementById('contactTitleDisplay'),
       contactSubtitle: document.getElementById('contactSubtitleDisplay'),
-      contactImage: document.getElementById('contactImageDisplay')
+      contactImage: document.getElementById('contactImageDisplay'),
+      wordCloud: document.getElementById('wordCloudList')
     };
   }
   
   /**
-   * Attach event listeners
+   * Parse query parameters from URL
    */
-  function attachEventListeners() {
-    // Refresh button
-    if (elements.refreshBtn) {
-      elements.refreshBtn.addEventListener('click', refreshPreview);
-    }
-    
-    // Keyboard shortcut for refresh (F5 or Ctrl+R)
-    document.addEventListener('keydown', function(e) {
-      // F5 or Ctrl+R
-      if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
-        e.preventDefault();
-        refreshPreview();
-      }
-    });
+  function parseQueryParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    config.isDraft = urlParams.get('draft') !== 'false'; // Default to draft if not explicitly set to false
+    config.timestamp = urlParams.get('t') || Date.now(); // Cache-busting parameter
   }
   
   /**
-   * Load content based on preview mode
+   * Update the preview indicator based on mode
    */
-  async function loadContent() {
-    showLoading();
+  function updatePreviewIndicator() {
+    if (!config.elements.previewIndicator || !config.elements.previewMode) return;
     
-    try {
-      // Check if Firebase service is available
-      if (!window.FirebaseService) {
-        throw new Error('Firebase service not available');
-      }
-      
-      // Load main content based on draft mode
-      const contentPath = config.isDraft ? 'content/draft' : 'content/main';
-      const contentData = await FirebaseService.getDocument('content', config.isDraft ? 'draft' : 'main');
-      
-      if (!contentData) {
-        showError('No content found. Please create content in the admin panel first.');
-        return;
-      }
-      
-      // Update page content
-      updatePageContent(contentData);
-      
-      // Load word cloud if content service is available
-      if (window.ContentService && typeof ContentService.loadWordCloud === 'function') {
-        const words = await ContentService.loadWordCloud();
-        if (words && words.length > 0) {
-          renderWordCloud(words);
-        }
-      }
-      
-      // Hide loading indicator
-      hideLoading();
-    } catch (error) {
-      console.error('Error loading preview content:', error);
-      showError(`Error loading content: ${error.message}`);
-    }
-  }
-  
-  /**
-   * Update page content with data from Firebase
-   * @param {Object} data - Content data
-   */
-  function updatePageContent(data) {
-    // Update about section
-    safelyUpdateElement(elements.contentElements.aboutTitle, data.aboutTitle);
-    safelyUpdateElement(elements.contentElements.aboutSubtitle, data.aboutSubtitle);
-    safelyUpdateElement(elements.contentElements.aboutText, data.aboutText, true);
-    
-    // Update offerings section
-    safelyUpdateElement(elements.contentElements.offeringsTitle, data.offeringsTitle);
-    safelyUpdateElement(elements.contentElements.offeringsSubtitle, data.offeringsSubtitle);
-    
-    // Update offering 1
-    safelyUpdateElement(elements.contentElements.offer1Title, data.offer1Title);
-    safelyUpdateElement(elements.contentElements.offer1Desc, data.offer1Desc, true);
-    updateImage(elements.contentElements.offer1Image, data.offer1_image);
-    
-    // Update offering 2
-    safelyUpdateElement(elements.contentElements.offer2Title, data.offer2Title);
-    safelyUpdateElement(elements.contentElements.offer2Desc, data.offer2Desc, true);
-    updateImage(elements.contentElements.offer2Image, data.offer2_image);
-    
-    // Update offering 3
-    safelyUpdateElement(elements.contentElements.offer3Title, data.offer3Title);
-    safelyUpdateElement(elements.contentElements.offer3Desc, data.offer3Desc, true);
-    updateImage(elements.contentElements.offer3Image, data.offer3_image);
-    
-    // Update contact section
-    safelyUpdateElement(elements.contentElements.contactTitle, data.contactTitle);
-    safelyUpdateElement(elements.contentElements.contactSubtitle, data.contactSubtitle);
-    updateImage(elements.contentElements.contactImage, data.contact_image);
-  }
-  
-  /**
-   * Safely update an element's content
-   * @param {HTMLElement} element - Element to update
-   * @param {string} content - Content to set
-   * @param {boolean} isHTML - Whether content should be set as innerHTML
-   */
-  function safelyUpdateElement(element, content, isHTML = false) {
-    if (!element) return;
-    
-    if (isHTML) {
-      element.innerHTML = content || '';
+    if (config.isDraft) {
+      config.elements.previewMode.textContent = 'Entwurf';
+      config.elements.previewIndicator.classList.remove('live');
     } else {
-      element.textContent = content || '';
+      config.elements.previewMode.textContent = 'Live-Website';
+      config.elements.previewIndicator.classList.add('live');
     }
   }
   
   /**
-   * Update an image element with new source
-   * @param {HTMLImageElement} imgElement - Image element to update
-   * @param {Object|string} imageData - Image data object or URL string
+   * Set up event listeners
    */
-  function updateImage(imgElement, imageData) {
-    if (!imgElement) return;
-    
-    // Format image data consistently
-    const formattedData = formatImageData(imageData);
-    
-    // Update image source
-    imgElement.src = formattedData.url || '/assets/img/placeholder.jpg';
-    
-    // Update alt text if available
-    if (formattedData.alt) {
-      imgElement.alt = formattedData.alt;
+  function setupEventListeners() {
+    // Refresh button (if in admin panel)
+    if (config.elements.refreshButton) {
+      config.elements.refreshButton.addEventListener('click', refreshPreview);
     }
     
-    // Show or hide image based on URL availability
-    imgElement.style.display = formattedData.url ? 'block' : 'none';
+    // Listen for postMessage events (for communication from admin panel)
+    window.addEventListener('message', handleMessage);
   }
   
   /**
-   * Format image data consistently
-   * @param {Object|string} imageData - Image data to format
-   * @returns {Object} Formatted image data
+   * Handle messages from parent window (admin panel)
+   * @param {MessageEvent} event - Message event
    */
-  function formatImageData(imageData) {
-    if (!imageData) {
-      return { url: '', public_id: '', alt: '' };
+  function handleMessage(event) {
+    // Security check - only accept messages from same origin
+    if (event.origin !== window.location.origin) return;
+    
+    const data = event.data;
+    
+    // Handle different message types
+    switch (data.type) {
+      case 'refresh':
+        refreshPreview();
+        break;
+        
+      case 'previewContent':
+        updateContent(data.content);
+        break;
+        
+      case 'setMode':
+        if (data.isDraft !== undefined) {
+          config.isDraft = data.isDraft;
+          updatePreviewIndicator();
+          loadContent();
+        }
+        break;
+    }
+  }
+  
+  /**
+   * Refresh the preview
+   */
+  function refreshPreview() {
+    // Clear cache and reload content
+    config.contentLoaded = false;
+    
+    // Update URL with cache-busting parameter
+    const url = new URL(window.location);
+    url.searchParams.set('t', Date.now());
+    window.history.replaceState({}, document.title, url);
+    
+    // Reload content
+    loadContent();
+  }
+  
+  /**
+   * Load content for preview
+   */
+  function loadContent() {
+    if (config.contentLoaded) return;
+    
+    console.log(`Loading ${config.isDraft ? 'draft' : 'live'} content for preview`);
+    
+    // If ContentService is available, use it to load content
+    if (typeof ContentService !== 'undefined') {
+      ContentService.loadMainContent(config.isDraft)
+        .then(data => {
+          if (!data) {
+            console.warn('No content found for preview');
+            return;
+          }
+          
+          updateContent(data);
+          config.contentLoaded = true;
+        })
+        .catch(error => {
+          console.error('Error loading preview content:', error);
+        });
+    } else if (typeof firebase !== 'undefined') {
+      // Direct Firebase fallback if ContentService is not available
+      try {
+        const db = firebase.firestore();
+        const docRef = db.collection('content').doc(config.isDraft ? 'draft' : 'main');
+        
+        docRef.get().then(doc => {
+          if (doc.exists) {
+            updateContent(doc.data());
+            config.contentLoaded = true;
+          } else {
+            console.warn('No content found for preview');
+          }
+        }).catch(error => {
+          console.error('Error loading preview content:', error);
+        });
+      } catch (error) {
+        console.error('Firebase error:', error);
+      }
+    } else {
+      console.error('Neither ContentService nor Firebase is available for loading content');
     }
     
-    if (typeof imageData === 'string') {
-      return { url: imageData, public_id: '', alt: '' };
-    }
+    // Also load word cloud if available
+    loadWordCloud();
+  }
+  
+  /**
+   * Load word cloud data
+   */
+  function loadWordCloud() {
+    const wordCloudList = config.displayElements.wordCloud;
+    if (!wordCloudList) return;
     
-    return {
-      url: imageData.url || imageData.secure_url || '',
-      public_id: imageData.public_id || '',
-      alt: imageData.alt || ''
-    };
+    if (typeof ContentService !== 'undefined') {
+      ContentService.loadWordCloud()
+        .then(words => {
+          if (!words || !words.length) {
+            console.warn('No word cloud data found');
+            return;
+          }
+          
+          renderWordCloud(wordCloudList, words);
+        })
+        .catch(error => {
+          console.error('Error loading word cloud:', error);
+        });
+    }
   }
   
   /**
    * Render word cloud
+   * @param {HTMLElement} container - Container element
    * @param {Array} words - Word cloud data
    */
-  function renderWordCloud(words) {
-    const cloudContainer = elements.contentElements.wordCloud;
-    if (!cloudContainer) return;
+  function renderWordCloud(container, words) {
+    if (!container || !words || !words.length) return;
     
-    // Clear container
-    cloudContainer.innerHTML = '';
+    container.innerHTML = '';
     
-    // Add words to cloud
     words.forEach(word => {
       const li = document.createElement('li');
       const a = document.createElement('a');
@@ -260,134 +243,93 @@ const PreviewModule = (function() {
       a.textContent = word.text || '';
       a.setAttribute('data-weight', word.weight || 5);
       
-      // Add animation styles
-      a.style.opacity = '0';
-      a.style.transform = 'translateY(20px)';
-      
       li.appendChild(a);
-      cloudContainer.appendChild(li);
-    });
-    
-    // Animate words
-    setTimeout(() => {
-      animateWordCloud();
-    }, 500);
-  }
-  
-  /**
-   * Animate word cloud items
-   */
-  function animateWordCloud() {
-    const wordElements = document.querySelectorAll('.word-cloud li a');
-    
-    wordElements.forEach((word, index) => {
-      setTimeout(() => {
-        word.style.opacity = '1';
-        word.style.transform = 'translateY(0)';
-      }, 50 * index);
+      container.appendChild(li);
     });
   }
   
   /**
-   * Refresh the preview
+   * Update content in the preview
+   * @param {Object} data - Content data
    */
-  function refreshPreview() {
-    // Update timestamp for cache busting
-    config.timestamp = Date.now();
+  function updateContent(data) {
+    if (!data) return;
     
-    // Reload content
-    loadContent();
+    const elements = config.displayElements;
     
-    // Visual feedback for refresh
-    if (elements.refreshBtn) {
-      elements.refreshBtn.classList.add('rotating');
-      setTimeout(() => {
-        elements.refreshBtn.classList.remove('rotating');
-      }, 1000);
-    }
-  }
-  
-  /**
-   * Toggle between draft and live modes
-   */
-  function toggleMode() {
-    config.isDraft = !config.isDraft;
-    
-    // Update indicator
-    if (elements.indicator) {
-      elements.indicator.classList.toggle('live', !config.isDraft);
-    }
-    
-    if (elements.modeText) {
-      elements.modeText.textContent = config.isDraft ? 'Draft' : 'Live';
-    }
-    
-    // Reload content
-    loadContent();
-  }
-  
-  /**
-   * Show loading indicator
-   */
-  function showLoading() {
-    if (!elements.loading) return;
-    
-    elements.loading.style.display = 'flex';
-    setTimeout(() => {
-      elements.loading.style.opacity = '1';
-    }, 10);
-  }
-  
-  /**
-   * Hide loading indicator
-   */
-  function hideLoading() {
-    if (!elements.loading) return;
-    
-    elements.loading.style.opacity = '0';
-    setTimeout(() => {
-      elements.loading.style.display = 'none';
-    }, config.fadeSpeed);
-  }
-  
-  /**
-   * Show error message
-   * @param {string} message - Error message
-   */
-  function showError(message) {
-    // Hide loading
-    hideLoading();
-    
-    // Show error in console
-    console.error('Preview error:', message);
-    
-    // Show error UI
-    const errorContainer = document.createElement('div');
-    errorContainer.className = 'preview-error w3-panel w3-red';
-    errorContainer.innerHTML = `
-      <h3><i class="fas fa-exclamation-circle"></i> Error</h3>
-      <p>${message}</p>
-      <button class="w3-button w3-white" onclick="PreviewModule.refreshPreview()">Try Again</button>
-    `;
-    
-    // Add to document
-    document.body.appendChild(errorContainer);
-    
-    // Remove after 10 seconds
-    setTimeout(() => {
-      if (errorContainer.parentNode) {
-        errorContainer.parentNode.removeChild(errorContainer);
+    // Helper function to update element content
+    const updateElement = (element, content) => {
+      if (element && content !== undefined) {
+        element.innerHTML = content;
       }
-    }, 10000);
+    };
+    
+    // Update text content
+    updateElement(elements.aboutTitle, data.aboutTitle);
+    updateElement(elements.aboutSubtitle, data.aboutSubtitle);
+    updateElement(elements.aboutText, data.aboutText);
+    
+    updateElement(elements.offeringsTitle, data.offeringsTitle);
+    updateElement(elements.offeringsSubtitle, data.offeringsSubtitle);
+    
+    updateElement(elements.offer1Title, data.offer1Title);
+    updateElement(elements.offer1Desc, data.offer1Desc);
+    
+    updateElement(elements.offer2Title, data.offer2Title);
+    updateElement(elements.offer2Desc, data.offer2Desc);
+    
+    updateElement(elements.offer3Title, data.offer3Title);
+    updateElement(elements.offer3Desc, data.offer3Desc);
+    
+    updateElement(elements.contactTitle, data.contactTitle);
+    updateElement(elements.contactSubtitle, data.contactSubtitle);
+    
+    // Update images
+    updateImages(data);
+    
+    // Display logo
+    if (config.elements.mainLogo) {
+      config.elements.mainLogo.style.display = 'block';
+    }
+  }
+  
+  /**
+   * Update images in the preview
+   * @param {Object} data - Content data
+   */
+  function updateImages(data) {
+    const elements = config.displayElements;
+    
+    // Helper function for updating images
+    const updateImage = (imgElement, imageData) => {
+      if (!imgElement) return;
+      
+      if (imageData && (imageData.url || typeof imageData === 'string')) {
+        const url = typeof imageData === 'string' ? imageData : imageData.url;
+        imgElement.src = url;
+        imgElement.style.display = 'block';
+        
+        if (imageData.alt) {
+          imgElement.alt = imageData.alt;
+        }
+      } else {
+        imgElement.style.display = 'none';
+      }
+    };
+    
+    updateImage(elements.offer1Image, data.offer1_image);
+    updateImage(elements.offer2Image, data.offer2_image);
+    updateImage(elements.offer3Image, data.offer3_image);
+    updateImage(elements.contactImage, data.contact_image);
   }
   
   // Public API
   return {
     init,
     refreshPreview,
-    toggleMode
+    updateContent
   };
 })();
 
-// Make available globally
-window.PreviewModule = PreviewModule; 
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', PreviewModule.init);

@@ -1,0 +1,155 @@
+ /**
+ * Card Components
+ * Reusable card patterns for displaying content blocks with consistent styling
+ */
+
+/* Base card component */
+.card {
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  overflow: hidden;
+  transition: transform var(--transition-standard), 
+              box-shadow var(--transition-standard);
+  margin-bottom: var(--spacing-md);
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--box-shadow-hover);
+}
+
+/* Card media (images, videos) */
+.card__media {
+  position: relative;
+  overflow: hidden;
+}
+
+.card__media img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform var(--transition-standard);
+}
+
+.card:hover .card__media img {
+  transform: scale(1.05);
+}
+
+/* Card content */
+.card__content {
+  padding: var(--spacing-md);
+}
+
+.card__title {
+  margin-top: 0;
+  margin-bottom: var(--spacing-sm);
+  font-weight: 600;
+  color: var(--secondary-color);
+}
+
+.card__subtitle {
+  margin-top: 0;
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-light);
+  font-size: 0.9em;
+}
+
+.card__description {
+  margin-bottom: var(--spacing-sm);
+}
+
+.card__footer {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Card variants */
+.card--primary {
+  border-top: 3px solid var(--primary-color);
+}
+
+.card--secondary {
+  border-top: 3px solid var(--secondary-color);
+}
+
+.card--accent {
+  border-top: 3px solid var(--accent-color);
+}
+
+.card--flat {
+  box-shadow: none;
+  border: 1px solid var(--border-color);
+}
+
+.card--flat:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Portfolio card (specific to the site's portfolio section) */
+.portfolio-item {
+  margin-bottom: var(--spacing-lg);
+}
+
+.portfolio-item .card__media {
+  height: 200px;
+}
+
+.portfolio-item .card__media img {
+  object-fit: cover;
+  height: 100%;
+  width: 100%;
+}
+
+/* Featured card */
+.card--featured {
+  border: none;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  color: white;
+}
+
+.card--featured .card__title,
+.card--featured .card__subtitle {
+  color: white;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .card__media {
+    height: auto;
+  }
+  
+  .card__content {
+    padding: var(--spacing-sm);
+  }
+  
+  .card__footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .card__footer .btn {
+    width: 100%;
+    margin-top: var(--spacing-xs);
+  }
+}
+
+/* Accessibility: respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .card__media img {
+    transition: none;
+  }
+  
+  .card:hover {
+    transform: none;
+  }
+  
+  .card:hover .card__media img {
+    transform: none;
+  }
+}

@@ -1,99 +1,128 @@
- /**
+/**
  * Main JavaScript
- * Haupteinstiegspunkt für die Website-Funktionalität
- * Initialisiert alle erforderlichen Module und Funktionen
+ * Core functionality for the Mannar website
  */
-
-// Unmittelbar ausgeführte Funktion für Namensraumschutz
 (function() {
   'use strict';
   
-  // Konfiguration
+  // Configuration
   const config = {
-    // Animationsverzögerung für gestaffelte Animationen
-    animationDelay: 50,
-    
-    // Scrolling-Schwellenwerte
-    scrollThresholds: {
+    selectors: {
+      navbar: '#myNavbar',
+      navToggle: '[aria-controls="navDemo"]',
+      navMenu: '#navDemo',
+      goTopBtn: '#goTopBtn',
+      logo: '#mainLogo',
+      wordCloud: '.textbubble',
+      wordItems: '.word-cloud li a',
+      portfolioItems: '.portfolio-item'
+    },
+    thresholds: {
       navbar: 100,
       goTopButton: 300
     },
-    
-    // Selektoren für DOM-Elemente
-    selectors: {
-      navbar: '#myNavbar',
-      navDemo: '#navDemo',
-      toggleBtn: '[aria-controls="navDemo"]',
-      goTopBtn: '#goTopBtn',
-      logo: '#mainLogo',
-      wordCloudContainer: '.textbubble',
-      wordCloudItems: '.word-cloud li a',
-      portfolioImages: '.portfolio-item img'
+    animation: {
+      enabled: !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+      delay: 50
     }
   };
   
-  // DOM-Elemente-Cache
-  let elements = {};
+  // DOM elements cache
+  const elements = {};
   
   /**
-   * DOM-Elemente für schnelleren Zugriff cachen
+   * Initialize main functionality
    */
-  function cacheElements() {
-    // Alle Selektoren durchlaufen und im elements-Objekt speichern
-    Object.entries(config.selectors).forEach(([key, selector]) => {
-      elements[key] = document.querySelector(selector);
-    });
+  function init() {
+    // Cache DOM elements
+    cacheElements();
     
-    // Spezialfall für Wortlisten-Elemente (NodeList)
-    elements.wordCloudItems = document.querySelectorAll(config.selectors.wordCloudItems);
-  }
-  
-  /**
-   * Alle benötigten Ereignislistener initialisieren
-   */
-  function setupEventListeners() {
-    // Scroll-Ereignis für Navbar und "Nach oben"-Button
-    window.addEventListener('scroll', handleScroll);
+    // Set up event listeners
+    setupEventListeners();
     
-    // Prüfen, ob bestimmte Elemente existieren, bevor Ereignislistener angehängt werden
+    // Trigger initial checks
+    handleScrollEvents();
     
-    // "Nach oben"-Button
-    if (elements.goTopBtn) {
-      elements.goTopBtn.addEventListener('click', scrollToTop);
+    // Initialize animations
+    if (config.animation.enabled) {
+      initAnimations();
     }
     
-    // Logo-Animation
+    // Show logo
     if (elements.logo) {
       elements.logo.style.display = 'block';
     }
     
-    // Smooth Scrolling für interne Links
-    setupSmoothScrolling();
-    
-    // Modal für Bilder
-    setupImageModal();
+    console.log('Core functionality initialized');
   }
   
   /**
-   * Scroll-Ereignisbehandlung
+   * Cache DOM elements for better performance
    */
-  function handleScroll() {
-    // Navbar-Verhalten
+  function cacheElements() {
+    Object.keys(config.selectors).forEach(key => {
+      const selector = config.selectors[key];
+      
+      if (selector.includes(' ')) {
+        // For multi-element selectors (like '.word-cloud li a'), store as NodeList
+        elements[key] = document.querySelectorAll(selector);
+      } else {
+        // For single element selectors, store as direct reference
+        elements[key] = document.querySelector(selector);
+      }
+    });
+  }
+  
+  /**
+   * Set up all event listeners
+   */
+  function setupEventListeners() {
+    // Scroll event handling
+    window.addEventListener('scroll', handleScrollEvents);
+    
+    // Go to top button
+    if (elements.goTopBtn) {
+      elements.goTopBtn.addEventListener('click', scrollToTop);
+    }
+    
+    // Navigation toggle (for mobile)
+    if (elements.navToggle) {
+      elements.navToggle.addEventListener('click', toggleNavigation);
+    }
+    
+    // Close navigation when clicking outside
+    document.addEventListener('click', closeNavOnClickOutside);
+    
+    // Set up modal for portfolio items
+    setupPortfolioModals();
+    
+    // Set up smooth scrolling for anchor links
+    setupSmoothScrolling();
+  }
+  
+  /**
+   * Handle scroll-based events
+   */
+  function handleScrollEvents() {
+    const scrollY = window.scrollY;
+    
+    // Navbar visibility/styling
     if (elements.navbar) {
-      if (window.scrollY > config.scrollThresholds.navbar) {
+      if (scrollY > config.thresholds.navbar) {
         elements.navbar.classList.add('scrolled');
         elements.navbar.classList.add('visible');
       } else {
         elements.navbar.classList.remove('scrolled');
-        if (window.scrollY <= 10) {
+        
+        if (scrollY <= 10) {
           elements.navbar.classList.remove('visible');
         }
       }
     }
     
-    // "Nach oben"-Button-Sichtbarkeit
+    // Go to top button visibility
     if (elements.goTopBtn) {
-      if (window.scrollY > config.scrollThresholds.goTopButton) {
+      if (scrollY > config.thresholds.goTopButton) {
         elements.goTopBtn.classList.add('visible');
       } else {
         elements.goTopBtn.classList.remove('visible');
@@ -102,243 +131,172 @@
   }
   
   /**
-   * Zum Seitenanfang scrollen
+   * Toggle mobile navigation menu
+   */
+  function toggleNavigation() {
+    if (!elements.navMenu) return;
+    
+    elements.navMenu.classList.toggle('w3-show');
+    
+    // Update ARIA attributes
+    if (elements.navToggle) {
+      const isExpanded = elements.navMenu.classList.contains('w3-show');
+      elements.navToggle.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+    }
+  }
+  
+  /**
+   * Close navigation when clicking outside
+   * @param {Event} event - Click event
+   */
+  function closeNavOnClickOutside(event) {
+    if (!elements.navMenu || !elements.navToggle) return;
+    
+    if (elements.navMenu.classList.contains('w3-show') && 
+        !elements.navMenu.contains(event.target) && 
+        !elements.navToggle.contains(event.target)) {
+      
+      elements.navMenu.classList.remove('w3-show');
+      elements.navToggle.setAttribute('aria-expanded', 'false');
+    }
+  }
+  
+  /**
+   * Scroll to top of page
    */
   function scrollToTop() {
     window.scrollTo({
       top: 0,
-      behavior: shouldReduceMotion() ? 'auto' : 'smooth'
+      behavior: config.animation.enabled ? 'smooth' : 'auto'
     });
   }
   
   /**
-   * Sanftes Scrollen für interne Links einrichten
+   * Set up smooth scrolling for anchor links
    */
   function setupSmoothScrolling() {
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       anchor.addEventListener('click', function(e) {
-        const targetId = this.getAttribute('href');
-        if (targetId === '#') return;
+        const href = this.getAttribute('href');
+        if (href === '#') return;
         
-        const targetElement = document.querySelector(targetId);
-        if (!targetElement) return;
+        const target = document.querySelector(href);
+        if (!target) return;
         
         e.preventDefault();
         
-        targetElement.scrollIntoView({
-          behavior: shouldReduceMotion() ? 'auto' : 'smooth',
+        target.scrollIntoView({
+          behavior: config.animation.enabled ? 'smooth' : 'auto',
           block: 'start'
         });
         
-        // Mobile Menü schließen, wenn offen
-        if (elements.navDemo && elements.navDemo.classList.contains('w3-show')) {
-          toggleMobileMenu();
+        // Close mobile menu if open
+        if (elements.navMenu && elements.navMenu.classList.contains('w3-show')) {
+          toggleNavigation();
         }
       });
     });
   }
   
   /**
-   * Bildmodal für Portfolio-Bilder einrichten
+   * Set up modals for portfolio items
    */
-  function setupImageModal() {
-    document.querySelectorAll('.portfolio-item img').forEach(img => {
+  function setupPortfolioModals() {
+    // Find portfolio images
+    const portfolioImages = document.querySelectorAll(`${config.selectors.portfolioItems} img`);
+    
+    // Ensure modal exists
+    const modal = document.getElementById('modal01') || createImageModal();
+    
+    // Add click event to each image
+    portfolioImages.forEach(img => {
       img.addEventListener('click', function() {
-        const modal = document.getElementById('modal01');
-        if (!modal) return;
-        
         const modalImg = document.getElementById('img01');
-        const captionText = document.getElementById('caption');
+        const caption = document.getElementById('caption');
         
         modal.style.display = 'block';
         modalImg.src = this.src;
-        captionText.innerHTML = this.alt || '';
+        
+        if (caption) {
+          caption.textContent = this.alt || '';
+        }
       });
     });
   }
   
   /**
-   * Mobile Menü umschalten
+   * Create image modal if it doesn't exist
+   * @returns {HTMLElement} Modal element
    */
-  function toggleMobileMenu() {
-    if (!elements.navDemo) return;
+  function createImageModal() {
+    const modal = document.createElement('div');
+    modal.id = 'modal01';
+    modal.className = 'w3-modal w3-black';
+    modal.onclick = function() { this.style.display = 'none'; };
     
-    elements.navDemo.classList.toggle('w3-show');
+    modal.innerHTML = `
+      <span class="w3-button w3-large w3-black w3-display-topright" title="Schließen"><i class="fas fa-times"></i></span>
+      <div class="w3-modal-content w3-animate-zoom w3-center w3-transparent w3-padding-64">
+        <img id="img01" class="w3-image" alt="Vergrößertes Bild">
+        <p id="caption" class="w3-opacity w3-large"></p>
+      </div>
+    `;
     
-    // ARIA-Attribute aktualisieren
-    if (elements.toggleBtn) {
-      const isExpanded = elements.navDemo.classList.contains('w3-show');
-      elements.toggleBtn.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
-    }
+    document.body.appendChild(modal);
+    return modal;
   }
   
   /**
-   * Funktion zur Wortwolken-Animation
+   * Initialize animations
+   */
+  function initAnimations() {
+    // Animate elements with class 'animate-item'
+    const animateItems = document.querySelectorAll('.animate-item');
+    
+    if (animateItems.length > 0) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+      
+      animateItems.forEach(item => {
+        observer.observe(item);
+      });
+    }
+    
+    // Animate word cloud if it exists
+    animateWordCloud();
+  }
+  
+  /**
+   * Animate word cloud elements
    */
   function animateWordCloud() {
-    if (!elements.wordCloudContainer || !elements.wordCloudItems.length || shouldReduceMotion()) return;
+    if (!elements.wordCloud || !elements.wordItems.length) return;
     
     const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
-        elements.wordCloudItems.forEach((word, index) => {
+        Array.from(elements.wordItems).forEach((word, index) => {
           setTimeout(() => {
             word.style.opacity = '1';
             word.style.transform = 'translateY(0)';
-          }, config.animationDelay * index);
+          }, config.animation.delay * index);
         });
         
         observer.disconnect();
       }
     }, { threshold: 0.1 });
     
-    observer.observe(elements.wordCloudContainer);
-    
-    // Sofort prüfen, ob bereits sichtbar
-    const rect = elements.wordCloudContainer.getBoundingClientRect();
-    if (rect.top < window.innerHeight && rect.bottom > 0) {
-      elements.wordCloudItems.forEach((word, index) => {
-        setTimeout(() => {
-          word.style.opacity = '1';
-          word.style.transform = 'translateY(0)';
-        }, config.animationDelay * index);
-      });
-    }
+    observer.observe(elements.wordCloud);
   }
   
-  /**
-   * Prüfen, ob die Einstellung für reduzierte Animation aktiviert ist
-   */
-  function shouldReduceMotion() {
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  }
+  // Make toggleFunction globally available (for backwards compatibility)
+  window.toggleFunction = toggleNavigation;
   
-  /**
-   * Website-Inhalte laden
-   */
-  function loadWebsiteContent() {
-    // ContentLoader verwenden, wenn verfügbar
-    if (window.ContentLoader && typeof ContentLoader.initPage === 'function') {
-      ContentLoader.initPage(false);
-    } else {
-      console.warn('ContentLoader nicht verfügbar. Fallback wird verwendet.');
-      
-      // Firebase-Dienst direkt verwenden, wenn verfügbar
-      if (window.FirebaseService) {
-        FirebaseService.content.load('content/main')
-          .then(data => {
-            if (!data) {
-              console.warn("Keine Inhalte in Firestore gefunden");
-              return;
-            }
-            
-            // Text-Felder füllen
-            document.querySelectorAll('[data-content-field]').forEach(element => {
-              const fieldName = element.dataset.contentField;
-              if (data[fieldName]) {
-                if (element.tagName === 'IMG') {
-                  // Bild-Element
-                  element.src = data[fieldName].url || data[fieldName];
-                  if (data[fieldName].alt) element.alt = data[fieldName].alt;
-                } else if (element.dataset.html === 'true') {
-                  // HTML-Inhalt
-                  element.innerHTML = data[fieldName];
-                } else {
-                  // Textinhalt
-                  element.textContent = data[fieldName];
-                }
-              }
-            });
-          })
-          .catch(error => {
-            console.error("Fehler beim Laden der Inhalte:", error);
-          });
-      }
-    }
-  }
-  
-  /**
-   * Versteckten Admin-Link zum Footer hinzufügen
-   */
-  function addAdminLink() {
-    const footerCopyright = document.querySelector('footer p');
-    if (footerCopyright) {
-      const adminSpan = document.createElement('span');
-      adminSpan.innerHTML = ' | <a href="admin-panel.php" style="opacity: 0.3; font-size: 0.8em; text-decoration: none;">Admin</a>';
-      footerCopyright.appendChild(adminSpan);
-    }
-  }
-  
-  /**
-   * Bilder Lazy-Loading initialisieren
-   */
-  function initLazyLoading() {
-    // Native Lazy Loading verwenden, wenn unterstützt
-    if ('loading' in HTMLImageElement.prototype) {
-      document.querySelectorAll('img').forEach(img => {
-        if (!img.hasAttribute('loading')) {
-          img.loading = 'lazy';
-        }
-      });
-    } else {
-      // Fallback mit Intersection Observer
-      if ('IntersectionObserver' in window) {
-        const lazyImages = document.querySelectorAll('img:not([loading])');
-        const imageObserver = new IntersectionObserver((entries) => {
-          entries.forEach(entry => {
-            if (entry.isIntersecting) {
-              const img = entry.target;
-              img.style.opacity = '0';
-              
-              const tempImg = new Image();
-              tempImg.src = img.src;
-              tempImg.onload = () => {
-                img.style.transition = 'opacity 0.5s ease';
-                img.style.opacity = '1';
-              };
-              
-              imageObserver.unobserve(img);
-            }
-          });
-        });
-        
-        lazyImages.forEach(img => {
-          imageObserver.observe(img);
-        });
-      }
-    }
-  }
-  
-  /**
-   * Hauptinitialisierungsfunktion
-   */
-  function init() {
-    // DOM-Elemente cachen
-    cacheElements();
-    
-    // Ereignislistener initialisieren
-    setupEventListeners();
-    
-    // Inhalte laden
-    loadWebsiteContent();
-    
-    // Wortwolke animieren
-    animateWordCloud();
-    
-    // Lazy Loading für Bilder
-    initLazyLoading();
-    
-    // Admin-Link hinzufügen
-    addAdminLink();
-    
-    // Globale Toggle-Funktion für mobile Navigation bereitstellen
-    window.toggleFunction = toggleMobileMenu;
-    
-    // Initialen Scroll-Zustand prüfen
-    handleScroll();
-    
-    console.log('Website-Initialisierung abgeschlossen');
-  }
-  
-  // Initialisierung bei DOM-Ladung
+  // Initialize when DOM is loaded
   document.addEventListener('DOMContentLoaded', init);
 })();

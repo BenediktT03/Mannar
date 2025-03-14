@@ -1,0 +1,62 @@
+# Apache Rewrite-Modul aktivieren
+RewriteEngine On
+
+# Erzwinge HTTPS für alle Anfragen
+RewriteCond %{HTTPS} !=on
+RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+
+# Entfernt "www." aus der URL
+RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
+RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
+
+# SEO-freundliche URLs - Leitet Anfragen an index.php weiter, falls keine Datei oder Verzeichnis existiert
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.+)$ index.php?url=$1 [QSA,L]
+
+# Zugriff auf sensible Verzeichnisse und Dateien blockieren
+<FilesMatch "(^\.htaccess|config\.php|database\.php|env\.php)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Schutz gegen Directory Listing
+Options -Indexes
+
+# Standard-Indexdatei festlegen
+DirectoryIndex index.php index.html
+
+# Caching für statische Inhalte verbessern
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 week"
+    ExpiresByType application/javascript "access plus 1 week"
+    ExpiresByType image/jpg "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+</IfModule>
+
+# Schützt die .htaccess-Datei selbst
+<Files ~ "^\.ht">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+# Blockiert bösartige User-Agent-Strings
+BrowserMatch "badbot" bots
+Order Allow,Deny
+Deny from env=bots
+
+# Verhindert MIME-Type Sniffing (Sicherheitsmaßnahme)
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+</IfModule>
+
+# Cross-Origin Resource Sharing (CORS) Einstellungen (falls benötigt)
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header set Access-Control-Allow-Headers "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range"
+    Header set Access-Control-Expose-Headers "Content-Length,Content-Range"
+</IfModule>
