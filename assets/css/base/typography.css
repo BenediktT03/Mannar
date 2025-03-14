@@ -1,403 +1,274 @@
 /**
- * Typography System
+ * Typography Styles
  * 
- * Defines consistent typography styles throughout the website including
- * font sizes, line heights, spacing, and text utilities. This system uses
- * CSS variables defined in variables.css for customization.
+ * Defines typography-related styles including headings, paragraphs,
+ * lists, quotes, and other text elements.
  */
 
-/* Base Typography */
-html {
-  font-size: var(--base-font-size, 16px);
-  -webkit-text-size-adjust: 100%;
-}
-
+/* Base typography */
 body {
-  font-family: var(--font-family, 'Lato', sans-serif);
-  font-weight: 400;
-  line-height: var(--line-height, 1.6);
-  color: var(--text-color, #333);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-normal);
+    color: var(--neutral-900);
 }
 
 /* Headings */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--heading-font, var(--font-family));
-  line-height: var(--heading-line-height, 1.3);
-  font-weight: 700;
-  margin-top: 0;
-  margin-bottom: 0.5em;
-  color: var(--heading-color, var(--secondary-color, #2c3e50));
-  scroll-margin-top: 2em; /* For anchor links */
+    font-family: var(--font-family-heading);
+    font-weight: var(--font-weight-bold);
+    line-height: var(--line-height-tight);
+    color: var(--secondary-color);
+    margin-top: 0;
+    margin-bottom: 0.5em;
 }
 
 h1 {
-  font-size: var(--h1-size, 2.5rem);
-  letter-spacing: var(--h1-letter-spacing, -0.02em);
-  margin-bottom: 0.67em;
+    font-size: var(--font-size-4xl);
 }
 
 h2 {
-  font-size: var(--h2-size, 2rem);
-  letter-spacing: var(--h2-letter-spacing, -0.01em);
-  margin-bottom: 0.83em;
+    font-size: var(--font-size-3xl);
 }
 
 h3 {
-  font-size: var(--h3-size, 1.5rem);
-  margin-bottom: 1em;
+    font-size: var(--font-size-2xl);
 }
 
 h4 {
-  font-size: var(--h4-size, 1.25rem);
-  margin-bottom: 1.33em;
+    font-size: var(--font-size-xl);
 }
 
 h5 {
-  font-size: var(--h5-size, 1rem);
-  margin-bottom: 1.67em;
+    font-size: var(--font-size-lg);
 }
 
 h6 {
-  font-size: var(--h6-size, 0.875rem);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 2.33em;
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-semibold);
 }
 
-/* Paragraphs and spacing */
+/* Paragraphs */
 p {
-  margin-top: 0;
-  margin-bottom: 1em;
-  max-width: var(--content-max-width, 70ch); /* Optimal reading length */
-}
-
-/* Improve readability of long content */
-.content-block p,
-article p {
-  margin-bottom: 1.5em;
-}
-
-/* Lead paragraph - larger introductory text */
-.lead {
-  font-size: var(--lead-size, 1.125rem);
-  line-height: 1.5;
-  margin-bottom: 1.5em;
-  color: var(--text-emphasized, #111);
-}
-
-/* Small text */
-small,
-.text-small {
-  font-size: var(--small-font-size, 0.875rem);
-  line-height: 1.5;
-}
-
-.text-large {
-  font-size: var(--large-font-size, 1.125rem);
-}
-
-/* Text emphasis */
-strong, b {
-  font-weight: 700;
-}
-
-em, i {
-  font-style: italic;
-}
-
-/* For even stronger emphasis */
-.text-bold {
-  font-weight: 700;
-}
-
-.text-extra-bold {
-  font-weight: 800;
-}
-
-.text-light {
-  font-weight: 300;
+    margin-top: 0;
+    margin-bottom: 1rem;
 }
 
 /* Links */
 a {
-  color: var(--link-color, var(--primary-color, #3498db));
-  text-decoration: none;
-  transition: color var(--transition-speed, 0.3s) ease;
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color var(--transition-fast) ease;
 }
 
 a:hover {
-  color: var(--link-hover-color, var(--primary-dark, #2980b9));
-  text-decoration: underline;
-}
-
-a:focus {
-  outline: 3px solid rgba(52, 152, 219, 0.3);
-  outline-offset: 2px;
-}
-
-/* Subtle links that only show on hover */
-.link-subtle {
-  color: inherit;
-  text-decoration: none;
-  border-bottom: 1px dotted var(--border-color, #ddd);
-}
-
-.link-subtle:hover {
-  color: var(--primary-color, #3498db);
-  border-bottom-color: currentColor;
+    color: var(--primary-dark);
+    text-decoration: underline;
 }
 
 /* Lists */
 ul, ol {
-  margin-top: 0;
-  margin-bottom: 1em;
-  padding-left: 2em;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    padding-left: 2rem;
+}
+
+ul {
+    list-style-type: disc;
+}
+
+ol {
+    list-style-type: decimal;
 }
 
 li {
-  margin-bottom: 0.5em;
+    margin-bottom: 0.5rem;
 }
 
-/* Remove bullets and padding */
-ul.list-unstyled,
-ol.list-unstyled {
-  list-style: none;
-  padding-left: 0;
+/* Nested lists */
+ul ul, ol ul {
+    list-style-type: circle;
+    margin-bottom: 0;
 }
 
-/* Inline lists */
-ul.list-inline,
-ol.list-inline {
-  list-style: none;
-  padding-left: 0;
+ul ol, ol ol {
+    list-style-type: lower-alpha;
+    margin-bottom: 0;
 }
 
-ul.list-inline li,
-ol.list-inline li {
-  display: inline-block;
-  margin-right: 1em;
-}
-
-/* Description lists */
+/* Definition lists */
 dl {
-  margin-top: 0;
-  margin-bottom: 1em;
+    margin-top: 0;
+    margin-bottom: 1rem;
 }
 
 dt {
-  font-weight: 700;
-  margin-bottom: 0.5em;
+    font-weight: var(--font-weight-bold);
+    margin-bottom: 0.25rem;
 }
 
 dd {
-  margin-left: 0;
-  margin-bottom: 1em;
+    margin-bottom: 1rem;
+    margin-left: 0;
 }
 
 /* Blockquotes */
 blockquote {
-  border-left: 4px solid var(--primary-color, #3498db);
-  padding-left: 1em;
-  margin-left: 0;
-  margin-right: 0;
-  margin-bottom: 1.5em;
-  font-style: italic;
-  color: var(--text-light, #777);
+    margin: 0 0 1rem;
+    padding: 1rem 1.5rem;
+    border-left: 4px solid var(--primary-color);
+    background-color: var(--neutral-100);
+    font-style: italic;
+}
+
+blockquote p:last-child {
+    margin-bottom: 0;
 }
 
 blockquote cite {
-  display: block;
-  font-style: normal;
-  font-weight: 600;
-  margin-top: 0.5em;
+    display: block;
+    font-style: normal;
+    font-size: var(--font-size-sm);
+    color: var(--neutral-600);
+    margin-top: 0.5rem;
 }
 
-/* Code and Preformatted Text */
+/* Code */
 code, pre, kbd, samp {
-  font-family: var(--mono-font, 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace);
-  font-size: 0.9em;
+    font-family: var(--font-family-mono);
+    font-size: 0.9em;
 }
 
 code {
-  padding: 0.2em 0.4em;
-  background-color: var(--code-bg, #f5f7f9);
-  border-radius: var(--border-radius, 4px);
-  color: var(--code-color, #476582);
+    padding: 0.2rem 0.4rem;
+    background-color: var(--neutral-200);
+    border-radius: var(--border-radius-sm);
 }
 
 pre {
-  padding: 1em;
-  margin-bottom: 1.5em;
-  overflow: auto;
-  background-color: var(--code-bg, #f5f7f9);
-  border-radius: var(--border-radius, 4px);
-  border: 1px solid var(--border-color, #ddd);
+    display: block;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background-color: var(--neutral-200);
+    border-radius: var(--border-radius);
+    overflow: auto;
 }
 
 pre code {
-  padding: 0;
-  background: none;
-  font-size: 0.9em;
+    padding: 0;
+    background-color: transparent;
+    border-radius: 0;
 }
 
 kbd {
-  display: inline-block;
-  padding: 0.2em 0.4em;
-  font-size: 0.85em;
-  color: #444;
-  background-color: #f7f7f7;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  box-shadow: 0 1px 1px rgba(0,0,0,0.2);
+    padding: 0.2rem 0.4rem;
+    font-size: var(--font-size-sm);
+    color: var(--neutral-50);
+    background-color: var(--neutral-800);
+    border-radius: var(--border-radius-sm);
+    box-shadow: inset 0 -0.1rem 0 rgba(0, 0, 0, 0.25);
 }
 
 /* Horizontal rule */
 hr {
-  border: 0;
-  border-top: 1px solid var(--border-color, #ddd);
-  margin: 2em 0;
+    margin: 2rem 0;
+    border: 0;
+    border-top: 1px solid var(--neutral-300);
 }
 
-/* Text alignment */
-.text-left {
-  text-align: left !important;
-}
-
-.text-center {
-  text-align: center !important;
-}
-
-.text-right {
-  text-align: right !important;
-}
-
-.text-justify {
-  text-align: justify !important;
-}
-
-/* Text transformation */
-.text-lowercase {
-  text-transform: lowercase !important;
-}
-
-.text-uppercase {
-  text-transform: uppercase !important;
-}
-
-.text-capitalize {
-  text-transform: capitalize !important;
-}
-
-/* Text colors */
+/* Text utilities */
 .text-primary {
-  color: var(--primary-color, #3498db) !important;
+    color: var(--primary-color) !important;
 }
 
 .text-secondary {
-  color: var(--secondary-color, #2c3e50) !important;
+    color: var(--secondary-color) !important;
 }
 
 .text-accent {
-  color: var(--accent-color, #e74c3c) !important;
-}
-
-.text-muted {
-  color: var(--text-light, #777) !important;
+    color: var(--accent-color) !important;
 }
 
 .text-success {
-  color: var(--success-color, #2ecc71) !important;
+    color: var(--success-color) !important;
 }
 
 .text-warning {
-  color: var(--warning-color, #f39c12) !important;
+    color: var(--warning-color) !important;
 }
 
-.text-danger {
-  color: var(--danger-color, #e74c3c) !important;
+.text-error {
+    color: var(--error-color) !important;
 }
 
-/* Text wrapping and overflow */
-.text-nowrap {
-  white-space: nowrap !important;
+.text-info {
+    color: var(--info-color) !important;
 }
 
-.text-truncate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.text-muted {
+    color: var(--neutral-600) !important;
 }
 
-.text-break {
-  word-wrap: break-word !important;
+.text-center {
+    text-align: center !important;
 }
 
-/* Line height utilities */
-.lh-1 {
-  line-height: 1 !important;
+.text-left {
+    text-align: left !important;
 }
 
-.lh-sm {
-  line-height: 1.3 !important;
+.text-right {
+    text-align: right !important;
 }
 
-.lh-base {
-  line-height: var(--line-height, 1.6) !important;
+.text-justify {
+    text-align: justify !important;
 }
 
-.lh-lg {
-  line-height: 1.8 !important;
+.text-uppercase {
+    text-transform: uppercase !important;
 }
 
-/* Responsive typography adjustments */
+.text-lowercase {
+    text-transform: lowercase !important;
+}
+
+.text-capitalize {
+    text-transform: capitalize !important;
+}
+
+.font-weight-light {
+    font-weight: var(--font-weight-light) !important;
+}
+
+.font-weight-normal {
+    font-weight: var(--font-weight-normal) !important;
+}
+
+.font-weight-semibold {
+    font-weight: var(--font-weight-semibold) !important;
+}
+
+.font-weight-bold {
+    font-weight: var(--font-weight-bold) !important;
+}
+
+.font-italic {
+    font-style: italic !important;
+}
+
+/* Responsive typography */
 @media (max-width: 768px) {
-  html {
-    font-size: calc(var(--base-font-size, 16px) * 0.95);
-  }
-  
-  h1 {
-    font-size: calc(var(--h1-size, 2.5rem) * 0.85);
-  }
-  
-  h2 {
-    font-size: calc(var(--h2-size, 2rem) * 0.85);
-  }
-  
-  h3 {
-    font-size: calc(var(--h3-size, 1.5rem) * 0.9);
-  }
-  
-  blockquote {
-    padding-left: 0.75em;
-    margin-left: 0;
-    margin-right: 0;
-  }
-}
-
-@media (max-width: 480px) {
-  html {
-    font-size: calc(var(--base-font-size, 16px) * 0.9);
-  }
-  
-  h1 {
-    font-size: calc(var(--h1-size, 2.5rem) * 0.7);
-    letter-spacing: normal;
-  }
-  
-  h2 {
-    font-size: calc(var(--h2-size, 2rem) * 0.75);
-    letter-spacing: normal;
-  }
-  
-  h3 {
-    font-size: calc(var(--h3-size, 1.5rem) * 0.8);
-  }
-  
-  .lead {
-    font-size: 1rem;
-  }
+    h1 {
+        font-size: var(--font-size-3xl);
+    }
+    
+    h2 {
+        font-size: var(--font-size-2xl);
+    }
+    
+    h3 {
+        font-size: var(--font-size-xl);
+    }
 }

@@ -1,133 +1,105 @@
- <?php
+<?php
 /**
  * Application Configuration
- * Central configuration file for application settings
+ * 
+ * Central configuration file for the Mannar website that defines
+ * application-wide settings, feature toggles, and environment variables.
  */
 
-// Prevent direct access
-if (!defined('APP_PATH')) {
-    define('APP_PATH', dirname(__DIR__));
-    exit('Direct script access is not allowed.');
+// Basic application settings
+define('APP_NAME', 'Mannar');
+define('APP_VERSION', '1.0.3');
+define('DEBUG_MODE', true); // Set to false in production
+
+// Path constants
+define('APP_PATH', realpath(__DIR__ . '/../'));
+define('SRC_PATH', APP_PATH . '/src');
+define('TEMPLATES_PATH', SRC_PATH . '/templates');
+define('PUBLIC_PATH', APP_PATH . '/public');
+define('UPLOAD_DIR', PUBLIC_PATH . '/uploads');
+define('ASSET_PATH', './assets'); // Path for frontend assets
+
+// URL constants
+define('BASE_URL', 'https://mannar.example.com'); // Change in production
+define('API_URL', BASE_URL . '/api');
+
+// Asset versioning for cache busting
+define('ASSET_VERSION', '1.0.3');
+define('AUTO_VERSION_INCREMENT', true);
+
+// Timezone setting
+date_default_timezone_set('Europe/Berlin');
+
+// Default locale
+setlocale(LC_ALL, 'de_DE.UTF-8');
+
+// Error reporting - adjust for production
+if (DEBUG_MODE) {
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+} else {
+    error_reporting(E_ERROR | E_PARSE);
+    ini_set('display_errors', 0);
 }
 
-// Define application environment
-define('APP_ENV', 'development'); // 'development' or 'production'
+// Error logging
+ini_set('log_errors', 1);
+ini_set('error_log', APP_PATH . '/data/logs/error.log');
 
-// Debug mode (enable for development, disable for production)
-define('APP_DEBUG', APP_ENV === 'development');
+// Session configuration
+ini_set('session.cookie_httponly', 1);
+ini_set('session.use_only_cookies', 1);
+ini_set('session.cookie_secure', isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on');
+ini_set('session.cookie_samesite', 'Strict');
+ini_set('session.gc_maxlifetime', 3600); // 1 hour
+ini_set('session.use_strict_mode', 1);
 
-// Base URLs
-define('BASE_URL', 'https://' . $_SERVER['HTTP_HOST']);
-define('ASSETS_URL', BASE_URL . '/assets');
-
-// Application paths
-define('CORE_PATH', APP_PATH . '/src/core');
-define('TEMPLATES_PATH', APP_PATH . '/src/templates');
-define('ASSETS_PATH', APP_PATH . '/public/assets');
-define('API_PATH', APP_PATH . '/public/api');
-
-// Asset version for cache busting
-define('ASSET_VERSION', '1.0.3');
-
-// Database settings (if needed)
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'mannar_db');
-define('DB_USER', 'mannar_user');
-define('DB_PASS', 'secure_password');
-
-// Firebase configuration
-define('FIREBASE_CONFIG', [
-    'apiKey' => "AIzaSyAQszUApKHZ3lPrpc7HOINpdOWW3SgvUBM",
-    'authDomain' => "mannar-129a5.firebaseapp.com",
-    'projectId' => "mannar-129a5",
-    'storageBucket' => "mannar-129a5.firebasestorage.app",
-    'messagingSenderId' => "687710492532",
-    'appId' => "1:687710492532:web:c7b675da541271f8d83e21",
-    'measurementId' => "G-NXBLYJ5CXL"
+// Enable/disable features
+define('FEATURES', [
+    'enable_contact_form' => true,
+    'enable_word_cloud' => true,
+    'enable_admin_panel' => true,
+    'enable_caching' => true,
+    'enable_analytics' => false, // Google Analytics
+    'enable_firebase_auth' => true,
+    'enable_firebase_storage' => true,
+    'enable_cloudinary' => true
 ]);
 
-// Cloudinary settings
-define('CLOUDINARY_CONFIG', [
-    'cloud_name' => 'dlegnsmho',
-    'api_key' => '811453586293945',
-    'api_secret' => 'ygiBwVjmJJNsPmmVJ9lhAUDz9lQ',
-    'upload_preset' => 'ml_default'
-]);
+// Caching settings
+define('CACHE_LIFETIME', 3600); // 1 hour
+define('ENABLE_CACHING', FEATURES['enable_caching']);
 
-// Mail settings
+// Contact form settings
 define('EMAIL_CONFIG', [
-    'host' => 'smtp.example.com',
-    'port' => 587,
-    'username' => 'noreply@example.com',
-    'password' => 'mail_password',
-    'encryption' => 'tls',
-    'from_email' => 'noreply@example.com',
-    'from_name' => 'Mannar Website',
-    'contact_email' => 'kontakt@beispiel.de'
+    'contact_email' => 'kontakt@mannar.example.com',
+    'admin_email' => 'admin@mannar.example.com',
+    'use_smtp' => true,
+    'smtp_host' => 'smtp.example.com',
+    'smtp_port' => 587,
+    'smtp_username' => 'smtp_user',
+    'smtp_password' => 'smtp_password',
+    'smtp_secure' => 'tls'
 ]);
 
-// Default page settings
-define('DEFAULT_META', [
-    'title' => 'Mannar - Peer, Genesungsbegeleiter',
-    'description' => 'Mannar - Peer und Genesungsbegleiter für psychische Gesundheit.',
-    'keywords' => 'Peer, Genesungsbegleiter, psychische Gesundheit, Achtsamkeit, Selbstreflexion',
-    'author' => 'Mannar',
-    'og_image' => ASSETS_URL . '/img/og-image.jpg'
-]);
-
-// Content security settings
-define('ALLOWED_HTML_TAGS', '<p><h1><h2><h3><h4><h5><h6><ul><ol><li><a><strong><em><blockquote><br><div><span><img><figure><figcaption><table><tr><td><th><thead><tbody>');
-
-// Security settings
-define('CSRF_TOKEN_EXPIRY', 3600); // 1 hour in seconds
-define('SESSION_LIFETIME', 86400); // 24 hours in seconds
-define('MAX_LOGIN_ATTEMPTS', 5);
-define('LOGIN_TIMEOUT', 1800); // 30 minutes in seconds
-
-// Upload settings
-define('MAX_UPLOAD_SIZE', 5 * 1024 * 1024); // 5MB
+// MIME types allowed for uploads
 define('ALLOWED_UPLOAD_TYPES', [
     'image/jpeg',
     'image/png',
     'image/gif',
-    'image/svg+xml'
+    'image/svg+xml',
+    'application/pdf'
 ]);
 
-// Feature flags
-define('FEATURES', [
-    'enable_caching' => true,
-    'enable_minification' => APP_ENV === 'production',
-    'enable_analytics' => APP_ENV === 'production',
-    'enable_word_cloud' => true,
-    'enable_dynamic_pages' => true
+// Maximum upload size (5MB)
+define('MAX_UPLOAD_SIZE', 5 * 1024 * 1024);
+
+// Content Security Policy settings
+define('CSP_ENABLED', true);
+
+// Allowed origins for CORS
+define('ALLOWED_ORIGINS', [
+    'https://mannar.example.com',
+    'https://www.mannar.example.com',
+    'http://localhost:8080'
 ]);
-
-// Convenience constants for feature flags
-define('ENABLE_CACHING', FEATURES['enable_caching']);
-define('ENABLE_MINIFICATION', FEATURES['enable_minification']);
-define('ENABLE_ANALYTICS', FEATURES['enable_analytics']);
-define('ENABLE_WORD_CLOUD', FEATURES['enable_word_cloud']);
-define('ENABLE_DYNAMIC_PAGES', FEATURES['enable_dynamic_pages']);
-define('ENABLE_CONTACT_FORM', true);
-
-// Error reporting settings
-if (APP_DEBUG) {
-    error_reporting(E_ALL);
-    ini_set('display_errors', 1);
-} else {
-    error_reporting(0);
-    ini_set('display_errors', 0);
-}
-
-// Set default timezone
-date_default_timezone_set('Europe/Berlin');
-
-// Start session if not already started
-if (session_status() === PHP_SESSION_NONE) {
-    session_start([
-        'cookie_lifetime' => SESSION_LIFETIME,
-        'cookie_httponly' => true,
-        'cookie_secure' => isset($_SERVER['HTTPS']),
-        'cookie_samesite' => 'Lax'
-    ]);
-}

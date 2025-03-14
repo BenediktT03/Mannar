@@ -1,356 +1,171 @@
 # Mannar Website
 
-## Overview
+## Übersicht
 
-The Mannar Website is a PHP and Firebase-based platform for a Peer and Genesungsbegleiter (recovery companion) that offers both public-facing content and an administrative backend for content management. The website uses modern web development technologies and follows a modular, maintainable architecture.
+Diese Website wurde für Mannar, einen Peer- und Genesungsbegleiter, entwickelt. Sie bietet eine Plattform, um Informationen über Angebote bereitzustellen und Kontaktmöglichkeiten anzubieten. Die Website basiert auf PHP mit Firebase als Backend und nutzt eine modulare Architektur für leichte Erweiterbarkeit und Wartung.
 
-## 🚀 Features
+## Technologien
 
-- Responsive, mobile-friendly design
-- Content management system with Firebase backend
-- Dynamic page creation and management
-- Real-time preview of content changes
-- Word cloud component with customizable tags
-- Contact form with server-side validation
-- User authentication for admin area
-- Image upload and management via Cloudinary
+- **Backend:** PHP 7.4+
+- **Datenbank:** Firebase Firestore
+- **Authentifizierung:** Firebase Authentication
+- **Speicher:** Firebase Storage und Cloudinary
+- **Frontend:** HTML5, CSS3, JavaScript (ES6+)
+- **CSS-Framework:** W3.CSS mit eigenen Erweiterungen
+- **Bibliotheken:** FontAwesome, Sortable.js, Quill Editor
 
-## 📂 Directory Structure
+## Projektstruktur
 
 ```
 mannar/
-├── config/                  # Configuration files
-│   ├── app.php              # Main application configuration
-│   ├── database.php         # Database configuration
-│   ├── firebase.php         # Firebase configuration
-│   └── constants.php        # Application constants
-├── public/                  # Webroot for public access
-│   ├── index.php            # Main entry point
-│   ├── admin.php            # Admin area entry point
-│   ├── preview.html         # Preview page
-│   ├── assets/              # Compiled/public assets
-│   │   ├── css/             # CSS files
-│   │   ├── js/              # JavaScript files
-│   │   └── img/             # Image files
-│   ├── api/                 # API endpoints
-│   │   ├── contact.php      # Contact form handler
-│   │   └── upload.php       # File upload handler
-│   └── .htaccess            # Server configuration
-├── src/                     # Application source code
-│   ├── core/                # Core functionality
-│   │   ├── controller.php   # Base controller
-│   │   ├── database.php     # Database connection
-│   │   ├── router.php       # URL router
-│   │   ├── init.php         # Application initialization
-│   │   └── version.php      # Version information
-│   ├── utils/               # Utility functions
-│   │   ├── security.php     # Security utilities (CSRF, etc.)
-│   │   ├── formatting.php   # Text formatting functions
-│   │   └── filesystem.php   # Filesystem operations
-│   ├── services/            # Service layer
-│   │   ├── authservice.php  # Authentication service
-│   │   ├── contentservice.php # Content service
-│   │   └── uploadservice.php # Upload service
-│   └── templates/           # Template files
-│       ├── components/      # Reusable components
-│       │   ├── header.php   # Header component
-│       │   ├── footer.php   # Footer component
-│       │   └── navigation.php # Navigation component
-│       ├── layouts/         # Page layouts
-│       │   ├── base.php     # Base layout
-│       │   └── admin.php    # Admin layout
-│       └── pages/           # Page-specific templates
-│           ├── home.php     # Homepage
-│           ├── admin-panel.php # Admin panel
-│           ├── preview.php  # Preview page
-│           └── page.php     # Dynamic page
-├── assets/                  # Source assets
-│   ├── css/                 # CSS source files
-│   │   ├── base/            # Base styles
-│   │   ├── components/      # Component styles
-│   │   ├── layout/          # Layout styles
-│   │   ├── pages/           # Page-specific styles
-│   │   ├── utils/           # Utility styles
-│   │   └── main.css         # Main CSS file (imports)
-│   ├── js/                  # JavaScript source files
-│   │   ├── admin/           # Admin scripts
-│   │   ├── components/      # Component scripts
-│   │   ├── services/        # Service scripts
-│   │   ├── utils/           # Utility scripts
-│   │   ├── app.js           # Main application script
-│   │   └── main.js          # Main JavaScript file
-│   └── img/                 # Image source files
-├── data/                    # Data storage
-│   ├── cache/               # Cache files
-│   ├── logs/                # Log files
-│   └── messages/            # Contact form messages
-├── bootstrap.php            # Application bootstrap
-└── README.md                # Project documentation
+├── assets/                  # Quell-Assets (unoptimiert)
+│   ├── css/                 # CSS-Dateien
+│   ├── js/                  # JavaScript-Dateien
+│   └── img/                 # Quellbilder
+├── bootstrap.php            # Anwendungs-Bootstrap
+├── config/                  # Konfigurationsdateien
+│   ├── app.php              # Hauptkonfiguration
+│   ├── database.php         # Datenbankkonfiguration
+│   ├── firebase.php         # Firebase-Konfiguration
+│   └── constants.php        # Anwendungskonstanten
+├── data/                    # Datenspeicher
+│   ├── cache/               # Cache-Dateien
+│   ├── logs/                # Log-Dateien
+│   └── messages/            # Kontaktformular-Nachrichten
+├── public/                  # Webroot für öffentlichen Zugriff
+│   ├── index.php            # Haupteinstiegspunkt
+│   ├── admin.php            # Admin-Bereich-Einstiegspunkt
+│   ├── assets/              # Kompilierte Assets
+│   ├── api/                 # API-Endpunkte
+│   └── .htaccess            # Server-Konfiguration
+└── src/                     # Quellcode der Anwendung
+    ├── core/                # Kernfunktionalität
+    ├── services/            # Service-Klassen
+    ├── templates/           # Template-Dateien
+    │   ├── components/      # Wiederverwendbare Komponenten
+    │   ├── layouts/         # Seitenlayouts
+    │   └── pages/           # Seitenspezifische Templates
+    └── utils/               # Hilfsfunktionen
 ```
 
-## 🔧 Installation
+## Funktionen
 
-### Prerequisites
+- **Responsive Design:** Optimiert für alle Geräte (Mobiltelefone, Tablets, Desktops)
+- **Content Management:** Admin-Bereich zur Verwaltung von Inhalten
+- **Dynamische Seiten:** Erstellung verschiedener Seitentypen mit verschiedenen Vorlagen
+- **Word Cloud:** Interaktive Darstellung relevanter Begriffe
+- **Kontaktformular:** Einfache Kontaktaufnahme für Besucher
+- **Bildverwaltung:** Upload und Verwaltung von Bildern via Cloudinary
+- **SEO-Optimiert:** Meta-Tags, strukturierte URLs und Barrierefreiheit
 
-- PHP 7.4 or higher
-- Apache or Nginx web server
-- Firebase account with Firestore enabled
-- Cloudinary account (for image uploads)
+## Installation
 
-### Step-by-Step Installation
+### Voraussetzungen
 
-1. **Clone the repository**
+- PHP 7.4 oder höher
+- Composer (für Abhängigkeiten)
+- Firebase-Projekt
+- Cloudinary-Konto (optional)
 
-```bash
-git clone https://github.com/yourusername/mannar-website.git
-cd mannar-website
-```
+### Installation
 
-2. **Create required directories**
+1. Repository klonen:
+   ```bash
+   git clone https://github.com/username/mannar-website.git
+   cd mannar-website
+   ```
 
-```bash
-mkdir -p data/cache data/logs data/messages
-chmod -R 755 data
-```
+2. Abhängigkeiten installieren:
+   ```bash
+   composer install
+   ```
 
-3. **Configure the application**
+3. Konfigurationsdateien einrichten:
+   - `config/app.php`: Allgemeine Anwendungseinstellungen
+   - `config/firebase.php`: Firebase-Konfiguration
+   - `config/constants.php`: Anwendungskonstanten
 
-Copy and edit configuration files:
+4. Verzeichnisberechtigungen einrichten:
+   ```bash
+   chmod -R 755 public/
+   chmod -R 775 data/
+   ```
 
-```bash
-cp config/app.example.php config/app.php
-cp config/firebase.example.php config/firebase.php
-# Edit the configuration files with your settings
-```
+5. Einen Webserver mit der `public/`-Verzeichnis als Document Root konfigurieren.
 
-4. **Set up Firebase**
+### Entwicklungsumgebung einrichten
 
-- Create a Firebase project in the [Firebase Console](https://console.firebase.google.com/)
-- Enable Firestore database
-- Set up Authentication with Email/Password provider
-- Create a web app and copy the configuration to `config/firebase.php`
+1. Entwicklungsserver starten:
+   ```bash
+   php -S localhost:8000 -t public/
+   ```
 
-5. **Set up Cloudinary (optional)**
+2. Frontend-Assets während der Entwicklung beobachten und kompilieren:
+   ```bash
+   # Diese Schritte erfordern Node.js und npm
+   npm install
+   npm run watch
+   ```
 
-If you're using Cloudinary for image uploads:
+## Verwendung
 
-- Create a Cloudinary account
-- Copy your Cloud name, API Key, and API Secret to `config/app.php`
+### Admin-Bereich
 
-6. **Set up the web server**
+Der Admin-Bereich ist unter `/admin.php` verfügbar. Anmeldeinformationen werden während der Installation festgelegt.
 
-For Apache, ensure that the `.htaccess` file is correctly set up:
+Der Admin-Bereich ermöglicht:
 
-```apache
-<IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteBase /
-    RewriteRule ^index\.php$ - [L]
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule . /index.php [L]
-</IfModule>
-```
+- Verwaltung von Inhalten für die Homepage
+- Erstellung und Bearbeitung von dynamischen Seiten
+- Verwaltung der Word Cloud
+- Vorschau von Änderungen vor der Veröffentlichung
+- Anpassung von globalen Einstellungen
 
-For Nginx, use a configuration like:
+### Dynamische Seiten
 
-```nginx
-server {
-    listen 80;
-    server_name mannar.example.com;
-    root /path/to/mannar/public;
+Die Website unterstützt verschiedene Seitenvorlagen:
 
-    index index.php index.html;
+- **Basic:** Einfache Textseite
+- **Text-Image:** Text mit Bild auf der rechten Seite
+- **Image-Text:** Bild auf der linken Seite mit Text rechts
+- **Gallery:** Bildergalerie
+- **Landing:** Landingpage mit Hero-Bereich und Features
+- **Portfolio:** Sammlung von Projekten oder Angeboten
+- **Contact:** Kontaktinformationen und Formular
+- **Blog:** Blogbeitrag mit Metadaten
 
-    location / {
-        try_files $uri $uri/ /index.php?$args;
-    }
+## Wartung und Updates
 
-    location ~ \.php$ {
-        include fastcgi_params;
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-        fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;
-        fastcgi_index index.php;
-    }
-}
-```
+### Caching
 
-7. **Initialize the database**
+Die Website verwendet Caching für eine bessere Performance:
 
-For Firebase, the initial data structure needs to be set up:
+- Firestore-Daten werden im Speicher gecached
+- Browser-Caching für statische Assets wird über HTTP-Header konfiguriert
+- Die Caching-Einstellungen können in `config/app.php` angepasst werden
 
-- Create a `content` collection with `main` and `draft` documents
-- Create a `wordCloud` document in the `content` collection
-- Create a `settings` collection with a `global` document
+### Versionierung
 
-8. **Create admin user**
+Die Dateien `src/core/version.php` und `assets/js/main.js` enthalten Versionsinformationen. Bei Updates bitte diese Versionsnummern erhöhen, um Browser-Caching zu umgehen.
 
-In the Firebase Console:
-- Go to Authentication
-- Add a new user with email and password
-- This user will be able to log in to the admin panel
-
-## ⚙️ Configuration
+### Fehlerprotokollierung
 
-### Firebase Configuration
+Fehler werden in `data/logs/` protokolliert. Überprüfen Sie dieses Verzeichnis bei Problemen.
 
-The Firebase configuration (`config/firebase.php`) requires the following:
+## Sicherheit
 
-```php
-<?php
-// Firebase Configuration
-define('FIREBASE_CONFIG', [
-    'apiKey' => "your-api-key",
-    'authDomain' => "your-project-id.firebaseapp.com",
-    'projectId' => "your-project-id",
-    'storageBucket' => "your-project-id.appspot.com",
-    'messagingSenderId' => "your-messaging-sender-id",
-    'appId' => "your-app-id"
-]);
-```
+Die Website enthält verschiedene Sicherheitsmaßnahmen:
 
-### Application Configuration
+- CSRF-Schutz für alle Formulare
+- Input-Validierung und -Bereinigung
+- Firebase-Authentifizierung für den Admin-Bereich
+- Sichere HTTP-Header (.htaccess)
+- Schutz vor XSS und SQL-Injection
 
-The main application configuration (`config/app.php`) includes:
+## Autor
 
-```php
-<?php
-// Application Configuration
-define('APP_NAME', 'Mannar');
-define('APP_ENV', 'production'); // 'production', 'development', or 'testing'
-define('APP_DEBUG', false);
+Entwickelt für Mannar von Ihrem Entwicklungsteam.
 
-// URLs
-define('BASE_URL', 'https://your-domain.com');
-define('ASSETS_URL', BASE_URL . '/assets');
+## Lizenz
 
-// Features
-define('ENABLE_CONTACT_FORM', true);
-define('ENABLE_WORD_CLOUD', true);
-
-// Email settings
-define('EMAIL_CONFIG', [
-    'contact_email' => 'contact@example.com',
-    'from_email' => 'noreply@example.com',
-    'from_name' => 'Mannar Website'
-]);
-
-// Cloudinary settings
-define('CLOUDINARY_CONFIG', [
-    'cloud_name' => 'your-cloud-name',
-    'api_key' => 'your-api-key',
-    'api_secret' => 'your-api-secret',
-    'upload_preset' => 'your-upload-preset'
-]);
-```
-
-## 🔄 Development Workflow
-
-### Local Development
-
-1. Clone the repository to your local environment
-2. Configure your local web server to point to the `public` directory
-3. Copy configuration files and update with your development settings
-4. Run the application and start developing
-
-### Code Structure
-
-- Separate business logic from presentation
-- Use services for external API interactions
-- Keep templates focused on presentation
-- Use utilities for common functions
-
-### JavaScript Development
-
-- Maintain the modular structure
-- Follow the established patterns for services and components
-- Use the provided utility functions
-
-### CSS Development
-
-- Use the existing CSS organization
-- Maintain the component-based approach
-- Follow the BEM methodology for naming
-
-## 📤 Deployment
-
-### Production Deployment
-
-1. Set up your production server with the required PHP version
-2. Configure your web server to point to the `public` directory
-3. Ensure all directories have the correct permissions
-4. Update configuration files for production settings
-5. Deploy the code to your server
-
-### Important Production Settings
-
-- Set `APP_ENV` to 'production' in `config/app.php`
-- Set `APP_DEBUG` to false
-- Ensure all log directories are writable
-- Configure proper error handling
-- Set up SSL certificate
-
-## 🛠️ Technologies Used
-
-- **Backend**: PHP 7.4+
-- **Database**: Firebase Firestore
-- **Authentication**: Firebase Authentication
-- **Frontend**: HTML5, CSS3, JavaScript
-- **CSS Framework**: W3.CSS
-- **JavaScript Libraries**: None (vanilla JS)
-- **Image Storage**: Cloudinary
-- **Fonts**: Font Awesome, Google Fonts
-
-## 🔍 Troubleshooting
-
-### Common Issues
-
-#### Firebase Connection Issues
-
-If you encounter problems connecting to Firebase:
-
-1. Check that your Firebase configuration is correct
-2. Ensure your Firebase project has Firestore enabled
-3. Verify that your IP is not blocked by Firebase security rules
-
-#### File Upload Issues
-
-If file uploads are not working:
-
-1. Check your Cloudinary configuration
-2. Ensure PHP file upload settings are correctly configured
-3. Verify folder permissions for local file storage
-
-#### Admin Login Issues
-
-If you can't log in to the admin panel:
-
-1. Check that your Firebase Authentication is set up correctly
-2. Verify that your user exists in Firebase Authentication
-3. Clear browser cache and cookies
-
-### Logging
-
-Logs are stored in the `data/logs` directory:
-
-- `error.log`: General errors
-- `exception.log`: Caught exceptions
-- `fatal.log`: Fatal errors
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📜 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
----
-
-## Credits
-
-Developed by [Your Name/Company] - 2025 
+Dieses Projekt ist urheberrechtlich geschützt. Alle Rechte vorbehalten.

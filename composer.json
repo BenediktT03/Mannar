@@ -1,9 +1,9 @@
 {
-    "name": "benediktt03/mannar",
-    "description": "Ein PHP-Projekt mit Htaccess-Unterstützung",
+    "name": "mannar/website",
+    "description": "Mannar Website",
     "type": "project",
     "require": {
-        "tivie/php-htaccess-parser": "^1.2" 
+        "php": ">=7.4"
     },
     "autoload": {
         "psr-4": {
@@ -11,7 +11,10 @@
         }
     },
     "config": {
-        "optimize-autoloader": true
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
     },
-    "minimum-stability": "stable"
+    "minimum-stability": "stable",
+    "prefer-stable": true
 }

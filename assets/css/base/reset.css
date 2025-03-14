@@ -1,222 +1,170 @@
 /**
- * Modern CSS Reset
- * A comprehensive CSS reset with focus on accessibility and modern best practices
+ * CSS Reset
  * 
- * This reset establishes a consistent baseline across browsers while preserving
- * useful browser defaults and focusing on accessibility.
+ * Normalizes browser default styles for consistent cross-browser rendering.
+ * Based on modern best practices while maintaining compatibility.
  */
 
 /* Box sizing rules */
 *,
 *::before,
 *::after {
-  box-sizing: border-box;
+    box-sizing: border-box;
 }
 
 /* Remove default margin and padding */
 html,
 body,
-h1, h2, h3, h4, h5, h6,
-p, figure, blockquote, dl, dd {
-  margin: 0;
-  padding: 0;
-}
-
-/* Set core root defaults */
-html {
-  scroll-behavior: smooth;
-  font-size: var(--base-font-size, 16px);
-  overflow-x: hidden;
-  -webkit-text-size-adjust: 100%;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+ol,
+ul,
+li,
+figure,
+figcaption,
+blockquote,
+dl,
+dd {
+    margin: 0;
+    padding: 0;
 }
 
 /* Set core body defaults */
 body {
-  min-height: 100vh;
-  text-rendering: optimizeSpeed;
-  line-height: var(--line-height, 1.6);
-  font-family: var(--font-family, 'Lato', sans-serif);
-  color: var(--text-color, #333);
-  background-color: var(--body-bg, #f5f7f9);
-  overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+    scroll-behavior: smooth;
+    text-rendering: optimizeSpeed;
+    line-height: 1.5;
+    font-family: var(--font-family-base, 'Lato', sans-serif);
+    font-size: var(--font-size-base, 16px);
+    color: var(--neutral-900, #212529);
+    background-color: var(--neutral-50, #f8f9fa);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
-/* Improve media defaults */
-img, picture, video, canvas, svg {
-  display: block;
-  max-width: 100%;
-  height: auto;
+/* Remove list styles */
+ol,
+ul {
+    list-style: none;
 }
 
-/* Remove list styles on ul, ol elements with a list role, which suggests default styling will be removed */
-ul[role="list"],
-ol[role="list"] {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+/* Make images easier to work with */
+img,
+picture {
+    max-width: 100%;
+    display: block;
 }
 
-/* Default styling for lists that don't have role="list" */
-ul:not([role="list"]),
-ol:not([role="list"]) {
-  padding-left: 2em;
+/* Inherit fonts for inputs and buttons */
+input,
+button,
+textarea,
+select {
+    font: inherit;
 }
 
-/* Make sure unclassed lists still have styling */
-ul:not([class]),
-ol:not([class]) {
-  padding-left: 2em;
+/* Remove all animations and transitions for people that prefer not to see them */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
 
-/* Remove default styling from links */
+/* Set base link styles */
 a {
-  text-decoration: none;
-  color: var(--primary-color, #3498db);
-  transition: color var(--transition-speed, 0.3s) ease;
-  background-color: transparent;
+    color: var(--primary-color, #3498db);
+    text-decoration: none;
+    transition: color var(--transition-fast, 150ms) ease;
 }
 
 a:hover {
-  color: var(--primary-dark, #2980b9);
+    color: var(--primary-dark, #2980b9);
 }
 
-a:focus-visible {
-  outline: 3px solid var(--primary-color, #3498db);
-  outline-offset: 2px;
+/* Set responsive media defaults */
+audio,
+canvas,
+iframe,
+svg,
+video {
+    display: inline-block;
+    max-width: 100%;
 }
 
-/* Built in elements */
-hr {
-  border: 0;
-  border-top: 1px solid var(--border-color, #ddd);
-  margin: 1em 0;
+/* Set heading styles */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-family-heading, 'Lato', sans-serif);
+    font-weight: var(--font-weight-bold, 700);
+    line-height: var(--line-height-tight, 1.25);
+    color: var(--secondary-color, #2c3e50);
+    margin-bottom: 0.5em;
 }
 
-/* Better default focus styles */
+h1 {
+    font-size: var(--font-size-4xl, 2.25rem);
+}
+
+h2 {
+    font-size: var(--font-size-3xl, 1.875rem);
+}
+
+h3 {
+    font-size: var(--font-size-2xl, 1.5rem);
+}
+
+h4 {
+    font-size: var(--font-size-xl, 1.25rem);
+}
+
+h5 {
+    font-size: var(--font-size-lg, 1.125rem);
+}
+
+h6 {
+    font-size: var(--font-size-md, 1rem);
+}
+
+/* Set paragraph styles */
+p {
+    margin-bottom: 1em;
+}
+
+/* Remove outline for non-keyboard focus */
+:focus:not(:focus-visible) {
+    outline: 0;
+}
+
+/* Improve focus styles for keyboard navigation */
 :focus-visible {
-  outline: 3px solid var(--primary-color, #3498db);
-  outline-offset: 2px;
+    outline: 2px solid var(--primary-color, #3498db);
+    outline-offset: 2px;
 }
 
-/* Form elements */
-button,
-input,
-optgroup,
-select,
-textarea {
-  font-family: inherit;
-  font-size: 100%;
-  line-height: 1.15;
-  margin: 0;
+/* Set default button styles */
+button {
+    cursor: pointer;
+    background: none;
+    border: none;
 }
 
-button,
-input {
-  overflow: visible;
-}
-
-button,
-select {
-  text-transform: none;
-}
-
-button,
-[type="button"],
-[type="reset"],
-[type="submit"] {
-  -webkit-appearance: button;
-  appearance: button;
-}
-
-/* Fix button styling issues in Firefox */
-button::-moz-focus-inner,
-[type="button"]::-moz-focus-inner,
-[type="reset"]::-moz-focus-inner,
-[type="submit"]::-moz-focus-inner {
-  border-style: none;
-  padding: 0;
-}
-
-/* Make sure textareas without a rows attribute are not tiny */
-textarea:not([rows]) {
-  min-height: 10em;
-}
-
-/* Natural flow and rhythm in articles */
-article > * + * {
-  margin-top: 1em;
-}
-
-/* Accessible hiding */
+/* Add accessible hiding class */
 .sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
-}
-
-/* Skip links for keyboard navigation */
-.skip-link {
-  position: absolute;
-  top: -40px;
-  left: 0;
-  background: var(--dark-color, #34495e);
-  color: white;
-  padding: 8px;
-  z-index: 9999;
-  transition: top 0.3s;
-}
-
-.skip-link:focus {
-  top: 0;
-}
-
-/* Remove all animations, transitions and smooth scrolling for people that prefer not to see them */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-  
-  html {
-    scroll-behavior: auto;
-  }
-}
-
-/* Selection style */
-::selection {
-  background-color: var(--primary-color, #3498db);
-  color: white;
-  text-shadow: none;
-}
-
-/* Remove tap delay on iOS */
-a, button, input, select, textarea, label, summary {
-  touch-action: manipulation;
-}
-
-/* Set system font stack as fallback */
-body {
-  font-family: var(--font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol");
-}
-
-/* Tables */
-table {
-  border-collapse: collapse;
-  width: 100%;
-}
-
-th {
-  text-align: left;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
 }

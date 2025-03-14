@@ -1,740 +1,651 @@
 /**
- * Application Module
- * Central initialization and management of the Mannar website
+ * Main Application JavaScript
+ * 
+ * This is the main JavaScript file that initializes all core functionality
+ * for the Mannar website. It loads and configures modules, sets up event listeners,
+ * and manages application state.
  */
-const App = (function() {
-  // Configuration
-  const config = {
-    // Environment: 'development' or 'production'
-    environment: window.location.hostname === 'localhost' ? 'development' : 'production',
-    // Debug mode (enabled in development by default)
-    debug: window.location.hostname === 'localhost',
-    // Feature flags
-    features: {
-      // Enable animations by default, but respect user preferences
-      animations: !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-      // Enable analytics in production only
-      analytics: window.location.hostname !== 'localhost',
-      // Enable dynamic content loading
-      dynamicContent: true,
-      // Enable service worker (for offline support - currently disabled)
-      serviceWorker: false
-    }
-  };
-  
-  // Initialization state
-  let initialized = false;
-  
-  /**
-   * Initialize the application
-   * @param {Object} options - Initialization options
-   * @returns {Promise<boolean>} True if initialization successful
-   */
-  async function init(options = {}) {
-    if (initialized) return true;
-    
-    try {
-      // Merge options with default config
-      if (options.config) {
-        Object.assign(config, options.config);
-      }
-      
-      // Configure logging based on environment
-      configureLogging();
-      
-      // Initialize services
-      await initServices();
-      
-      // Initialize UI components
-      initUIComponents();
-      
-      // Initialize page-specific functionality
-      initPageFunctionality();
-      
-      // Mark as initialized
-      initialized = true;
-      
-      log('Application initialized successfully');
-      return true;
-    } catch (error) {
-      console.error('Error initializing application:', error);
-      return false;
-    }
-  }
-  
-  /**
-   * Configure logging based on environment
-   */
-  function configureLogging() {
-    if (config.environment !== 'development' && !config.debug) {
-      // Disable console.log in production unless debug mode is enabled
-      const noop = () => {};
-      
-      // Store original console methods
-      const originalConsole = {
-        log: console.log,
-        info: console.info,
-        debug: console.debug
-      };
-      
-      // Override non-critical console methods
-      console.log = noop;
-      console.info = noop;
-      console.debug = noop;
-      
-      // Add method to restore console
-      console.enableLogging = () => {
-        console.log = originalConsole.log;
-        console.info = originalConsole.info;
-        console.debug = originalConsole.debug;
-        console.log('Logging enabled');
-      };
-    }
-  }
-  
-  /**
-   * Initialize services
-   * @returns {Promise<boolean>} True if services initialized successfully
-   */
-  async function initServices() {
-    // Initialize Firebase
-    if (typeof FirebaseService !== 'undefined') {
-      if (!FirebaseService.init()) {
-        console.error('Failed to initialize Firebase');
-      }
-    } else {
-      log('FirebaseService not available');
-    }
-    
-    // Initialize other services if they exist
-    const services = [
-      'ContentService',
-      'AuthService',
-      'UploadService',
-      'UIService'
-    ];
-    
-    services.forEach(service => {
-      if (typeof window[service] !== 'undefined') {
-        log(`${service} available`);
-        if (typeof window[service].init === 'function') {
-          window[service].init();
-        }
-      }
-    });
-    
-    return true;
-  }
-  
-  /**
-   * Initialize UI components
-   */
-  function initUIComponents() {
-    // Initialize UI utilities if available
-    if (typeof UIService !== 'undefined') {
-      // Initialize lazy loading for images
-      UIService.initLazyLoading();
-      
-      // Initialize animations if enabled
-      if (config.features.animations) {
-        UIService.initAnimations();
-      }
-      
-      // Initialize go-to-top button
-      UIService.initGoToTopButton();
-      
-      // Initialize smooth scrolling
-      UIService.initSmoothScrolling();
-    } else if (typeof UIUtils !== 'undefined') {
-      // Fallback to UIUtils if UIService isn't available
-      UIUtils.initAll();
-    }
-    
-    // Initialize navigation
-    initNavigation();
-  }
-  
-  /**
-   * Initialize navigation functionality
-   */
-  function initNavigation() {
-    // Mobile navigation toggle
-    window.toggleFunction = function() {
-      const navDemo = document.getElementById('navDemo');
-      if (!navDemo) return;
-      
-      navDemo.classList.toggle('w3-show');
-      
-      // Update ARIA attributes
-      const toggleBtn = document.querySelector('[aria-controls="navDemo"]');
-      if (toggleBtn) {
-        toggleBtn.setAttribute(
-          'aria-expanded', 
-          navDemo.classList.contains('w3-show') ? 'true' : 'false'
-        );
-      }
-    };
-    
-    // Close mobile menu when clicking outside
-    document.addEventListener('click', (event) => {
-      const navDemo = document.getElementById('navDemo');
-      
-      if (navDemo && 
-          navDemo.classList.contains('w3-show') && 
-          !event.target.closest('#navDemo') && 
-          !event.target.closest('[aria-controls="navDemo"]')) {
-        navDemo.classList.remove('w3-show');
-        
-        // Update ARIA attributes
-        const toggleBtn = document.querySelector('[aria-controls="navDemo"]');
-        if (toggleBtn) {
-          toggleBtn.setAttribute('aria-expanded', 'false');
-        }
-      }
-    });
-    
-    // Handle navigation scroll behavior
-    const navbar = document.getElementById('myNavbar');
-    if (navbar) {
-      const handleScroll = () => {
-        if (window.scrollY > 100) {
-          navbar.classList.add('scrolled');
-          navbar.classList.add('visible');
-        } else {
-          navbar.classList.remove('scrolled');
-          
-          if (window.scrollY <= 10) {
-            navbar.classList.remove('visible');
-          }
-        }
-      };
-      
-      // Initial call and event listener
-      handleScroll();
-      window.addEventListener('scroll', handleScroll);
-    }
-  }
-  
-  /**
-   * Initialize page-specific functionality
-   */
-  function initPageFunctionality() {
-    // Detect current page
-    const currentPage = detectCurrentPage();
-    
-    // Initialize based on page type
-    switch (currentPage) {
-      case 'home':
-        initHomePage();
-        break;
-        
-      case 'admin':
-        initAdminPage();
-        break;
-        
-      case 'page':
-        initDynamicPage();
-        break;
-        
-      case 'preview':
-        initPreviewPage();
-        break;
-    }
-  }
-  
-  /**
-   * Detect current page based on URL
-   * @returns {string} Page type identifier
-   */
-  function detectCurrentPage() {
-    const path = window.location.pathname;
-    
-    if (path.includes('admin') || path.includes('admin-panel.php')) {
-      return 'admin';
-    } else if (path.includes('preview') || path.includes('preview.html')) {
-      return 'preview';
-    } else if (path.includes('page.php')) {
-      return 'page';
-    } else {
-      return 'home';
-    }
-  }
-  
-  /**
-   * Initialize home page functionality
-   */
-  function initHomePage() {
-    log('Initializing home page');
-    
-    // Initialize word cloud if present
-    const wordCloudContainer = document.querySelector('.textbubble');
-    if (wordCloudContainer) {
-      initWordCloud();
-    }
-    
-    // Initialize main content from Firebase if not in admin mode
-    if (typeof ContentService !== 'undefined' && config.features.dynamicContent) {
-      ContentService.loadMainContent(false)
-        .then(data => {
-          if (!data) {
-            log('No content found for home page');
-            return;
-          }
-          
-          // Update page content
-          updateHomePageContent(data);
-        })
-        .catch(error => {
-          console.error('Error loading home page content:', error);
-        });
-    }
-  }
-  
-  /**
-   * Initialize word cloud
-   */
-  function initWordCloud() {
-    if (typeof ContentService === 'undefined') return;
-    
-    const wordCloudList = document.getElementById('wordCloudList');
-    if (!wordCloudList) return;
-    
-    // Load word cloud data
-    ContentService.loadWordCloud()
-      .then(words => {
-        if (!words || !words.length) {
-          log('No word cloud data found');
-          return;
-        }
-        
-        // Render word cloud
-        renderWordCloud(wordCloudList, words);
-        
-        // Animate word cloud if animations are enabled
-        if (config.features.animations) {
-          animateWordCloud(document.querySelector('.textbubble'));
-        }
-      })
-      .catch(error => {
-        console.error('Error loading word cloud:', error);
-      });
-  }
-  
-  /**
-   * Render word cloud
-   * @param {HTMLElement} container - Container element
-   * @param {Array} words - Word cloud data
-   */
-  function renderWordCloud(container, words) {
-    if (!container || !words || !words.length) return;
-    
-    container.innerHTML = '';
-    
-    words.forEach(word => {
-      const li = document.createElement('li');
-      const a = document.createElement('a');
-      
-      a.href = word.link || '#';
-      a.textContent = word.text || '';
-      a.setAttribute('data-weight', word.weight || 5);
-      
-      // Add appropriate ARIA attributes for accessibility
-      a.setAttribute('role', 'button');
-      if (word.description) {
-        a.setAttribute('aria-label', word.description);
-      }
-      
-      li.appendChild(a);
-      container.appendChild(li);
-    });
-  }
-  
-  /**
-   * Animate word cloud appearance
-   * @param {HTMLElement} container - Container element
-   */
-  function animateWordCloud(container) {
-    if (!container || !config.features.animations) return;
-    
-    const wordElements = container.querySelectorAll('.word-cloud li a');
-    
-    wordElements.forEach((word, index) => {
-      setTimeout(() => {
-        word.style.opacity = '1';
-        word.style.transform = 'translateY(0)';
-      }, 50 * index);
-    });
-  }
-  
-  /**
-   * Update home page content with loaded data
-   * @param {Object} data - Content data
-   */
-  function updateHomePageContent(data) {
-    const updateElement = (id, property, value) => {
-      const element = document.getElementById(id);
-      if (element && value) {
-        if (property === 'innerHTML') {
-          element.innerHTML = value;
-        } else if (property === 'textContent') {
-          element.textContent = value;
-        } else {
-          element[property] = value;
-        }
-      }
-    };
-    
-    // Update section titles and content
-    updateElement('aboutTitle', 'innerHTML', data.aboutTitle);
-    updateElement('aboutSubtitle', 'innerHTML', data.aboutSubtitle);
-    updateElement('aboutText', 'innerHTML', data.aboutText);
-    
-    updateElement('offeringsTitle', 'innerHTML', data.offeringsTitle);
-    updateElement('offeringsSubtitle', 'innerHTML', data.offeringsSubtitle);
-    
-    // Update offerings
-    for (let i = 1; i <= 3; i++) {
-      updateElement(`offer${i}Title`, 'innerHTML', data[`offer${i}Title`]);
-      updateElement(`offer${i}Desc`, 'innerHTML', data[`offer${i}Desc`]);
-    }
-    
-    // Update contact section
-    updateElement('contactTitle', 'innerHTML', data.contactTitle);
-    updateElement('contactSubtitle', 'innerHTML', data.contactSubtitle);
-    
-    // Update images if ContentService has the method
-    if (typeof ContentService !== 'undefined' && typeof ContentService.updateImagePreviews === 'function') {
-      ContentService.updateImagePreviews(data, {
-        offer1Img: document.getElementById('offer1Image'),
-        offer2Img: document.getElementById('offer2Image'),
-        offer3Img: document.getElementById('offer3Image'),
-        contactImg: document.getElementById('contactImage')
-      });
-    } else {
-      // Fallback image updating
-      updateImages(data);
-    }
-  }
-  
-  /**
-   * Update images on the page (fallback method)
-   * @param {Object} data - Content data with image information
-   */
-  function updateImages(data) {
-    const updateImage = (id, imageData) => {
-      const img = document.getElementById(id);
-      if (!img) return;
-      
-      if (imageData && (imageData.url || typeof imageData === 'string')) {
-        const url = typeof imageData === 'string' ? imageData : imageData.url;
-        img.src = url;
-        img.style.display = 'block';
-        
-        if (imageData.alt) {
-          img.alt = imageData.alt;
-        }
-      } else {
-        img.style.display = 'none';
-      }
-    };
-    
-    updateImage('offer1Image', data.offer1_image);
-    updateImage('offer2Image', data.offer2_image);
-    updateImage('offer3Image', data.offer3_image);
-    updateImage('contactImage', data.contact_image);
-  }
-  
-  /**
-   * Initialize admin page
-   */
-  function initAdminPage() {
-    log('Initializing admin page');
-    // Admin functionality is handled in separate admin-specific scripts
-    // This just ensures they're properly triggered
-    
-    // Make sure AdminCore is initialized if available
-    if (typeof AdminCore !== 'undefined' && typeof AdminCore.init === 'function') {
-      setTimeout(() => AdminCore.init(), 100);
-    }
-  }
-  
-  /**
-   * Initialize dynamic page
-   */
-  function initDynamicPage() {
-    log('Initializing dynamic page');
-    
-    // Get page ID from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const pageId = urlParams.get('id');
-    
-    if (!pageId) {
-      log('No page ID found');
-      return;
-    }
-    
-    // Load page content if ContentService is available
-    if (typeof ContentService !== 'undefined') {
-      ContentService.loadPage(pageId)
-        .then(pageData => {
-          if (!pageData) {
-            log(`Page ${pageId} not found`);
-            showPageError('Die angeforderte Seite wurde nicht gefunden.');
-            return;
-          }
-          
-          log(`Loaded page: ${pageData.title}`);
-          
-          // Update page content
-          updateDynamicPageContent(pageData);
-        })
-        .catch(error => {
-          console.error(`Error loading page ${pageId}:`, error);
-          showPageError(`Fehler beim Laden der Seite: ${error.message}`);
-        });
-    }
-  }
-  
-  /**
-   * Show page error message
-   * @param {string} message - Error message to display
-   */
-  function showPageError(message) {
-    const pageContent = document.getElementById('pageContent');
-    const pageLoading = document.getElementById('pageLoading');
-    
-    if (pageLoading) {
-      pageLoading.style.display = 'none';
-    }
-    
-    if (pageContent) {
-      pageContent.innerHTML = `
-        <div class="w3-container w3-padding-64">
-          <div class="w3-panel w3-red">
-            <h3>Fehler</h3>
-            <p>${message}</p>
-            <a href="index.php" class="w3-button w3-blue">Zurück zur Startseite</a>
-          </div>
-        </div>
-      `;
-      pageContent.style.opacity = '1';
-    }
-  }
-  
-  /**
-   * Update dynamic page content
-   * @param {Object} pageData - Page data
-   */
-  function updateDynamicPageContent(pageData) {
-    // Set page title
-    document.title = pageData.title + ' - Mannar';
-    
-    // Get page content container
-    const pageContent = document.getElementById('pageContent');
-    const pageLoading = document.getElementById('pageLoading');
-    
-    if (pageLoading) {
-      pageLoading.style.opacity = '0';
-      setTimeout(() => {
-        pageLoading.style.display = 'none';
-      }, 300);
-    }
-    
-    if (!pageContent) return;
-    
-    // Show content container
-    pageContent.style.opacity = '1';
-    
-    // Generate content based on template
-    const templateId = pageData.template;
-    const data = pageData.data || {};
-    
-    // Set the page title and subtitle in the content
-    const titleEl = document.createElement('h1');
-    titleEl.className = 'page-title w3-center';
-    titleEl.textContent = pageData.title || '';
-    
-    pageContent.innerHTML = '';
-    pageContent.appendChild(titleEl);
-    
-    if (data.subtitle) {
-      const subtitleEl = document.createElement('h2');
-      subtitleEl.className = 'page-subtitle w3-center';
-      subtitleEl.textContent = data.subtitle;
-      pageContent.appendChild(subtitleEl);
-    }
-    
-    // Create a container for the main content
-    const contentContainer = document.createElement('div');
-    pageContent.appendChild(contentContainer);
-    
-    // Render the template content
-    try {
-      contentContainer.innerHTML = renderTemplate(templateId, data);
-      
-      // Initialize any template-specific functionality
-      initTemplateComponents(templateId, data);
-    } catch (error) {
-      console.error('Error rendering template:', error);
-      contentContainer.innerHTML = `
-        <div class="w3-panel w3-red">
-          <h3>Fehler beim Rendern der Seite</h3>
-          <p>${error.message}</p>
-        </div>
-      `;
-    }
-  }
-  
-  /**
-   * Render a template with data
-   * @param {string} templateId - Template identifier
-   * @param {Object} data - Template data
-   * @returns {string} Rendered HTML
-   */
-  function renderTemplate(templateId, data) {
-    // This would be a switch statement or function calls to different template renderers
-    // Simplified here, but in the real implementation you would have template-specific renderers
-    return `
-      <div class="w3-container w3-padding">
-        <div class="w3-content">
-          ${data.content || 'No content available'}
-        </div>
-      </div>
-    `;
-  }
-  
-  /**
-   * Initialize template-specific components
-   * @param {string} templateId - Template identifier
-   * @param {Object} data - Template data
-   */
-  function initTemplateComponents(templateId, data) {
-    // Initialize components based on template type
-    // This is where you would add template-specific initialization
-    switch (templateId) {
-      case 'gallery':
-        initGallery();
-        break;
-      case 'contact':
-        initContactForm();
-        break;
-    }
-  }
-  
-  /**
-   * Initialize preview page
-   */
-  function initPreviewPage() {
-    log('Initializing preview page');
-    
-    // If PreviewModule exists, use it
-    if (typeof PreviewModule !== 'undefined' && typeof PreviewModule.init === 'function') {
-      PreviewModule.init();
-      return;
-    }
-    
-    // Otherwise handle preview functionality directly
-    const urlParams = new URLSearchParams(window.location.search);
-    const isDraft = urlParams.get('draft') === 'true';
-    
-    // Update preview indicator
-    const previewIndicator = document.getElementById('previewIndicator');
-    const previewMode = document.getElementById('previewMode');
-    
-    if (previewIndicator && previewMode) {
-      if (isDraft) {
-        previewMode.textContent = 'Entwurf';
-        previewIndicator.classList.remove('live');
-      } else {
-        previewMode.textContent = 'Live-Website';
-        previewIndicator.classList.add('live');
-      }
-    }
-    
-    // Load preview content
-    if (typeof ContentService !== 'undefined') {
-      ContentService.loadMainContent(isDraft)
-        .then(data => {
-          if (!data) {
-            log('No content found for preview');
-            return;
-          }
-          
-          // Update preview content
-          updatePreviewContent(data);
-        })
-        .catch(error => {
-          console.error('Error loading preview content:', error);
-        });
-    }
-  }
-  
-  /**
-   * Update preview content
-   * @param {Object} data - Content data
-   */
-  function updatePreviewContent(data) {
-    // Helper function to update elements
-    const updateElement = (id, content) => {
-      const element = document.getElementById(id);
-      if (element && content) {
-        element.innerHTML = content;
-      }
-    };
-    
-    // Update about section
-    updateElement('aboutTitleDisplay', data.aboutTitle);
-    updateElement('aboutSubtitleDisplay', data.aboutSubtitle);
-    updateElement('aboutTextDisplay', data.aboutText);
-    
-    // Update offerings section
-    updateElement('offeringsTitleDisplay', data.offeringsTitle);
-    updateElement('offeringsSubtitleDisplay', data.offeringsSubtitle);
-    
-    // Update offerings
-    for (let i = 1; i <= 3; i++) {
-      updateElement(`offer${i}TitleDisplay`, data[`offer${i}Title`]);
-      updateElement(`offer${i}DescDisplay`, data[`offer${i}Desc`]);
-    }
-    
-    // Update contact section
-    updateElement('contactTitleDisplay', data.contactTitle);
-    updateElement('contactSubtitleDisplay', data.contactSubtitle);
-    
-    // Update images
-    if (typeof ContentService !== 'undefined' && typeof ContentService.updateImagePreviews === 'function') {
-      ContentService.updateImagePreviews(data, {
-        offer1Img: document.getElementById('offer1ImageDisplay'),
-        offer2Img: document.getElementById('offer2ImageDisplay'),
-        offer3Img: document.getElementById('offer3ImageDisplay'),
-        contactImg: document.getElementById('contactImageDisplay')
-      });
-    }
-  }
-  
-  /**
-   * Log message if in development or debug mode
-   * @param {...any} args - Arguments to log
-   */
-  function log(...args) {
-    if (config.environment === 'development' || config.debug) {
-      console.log('[App]', ...args);
-    }
-  }
-  
-  // Public API
-  return {
-    init,
-    config,
-    log,
-    updateHomePageContent,
-    updatePreviewContent
-  };
-})();
 
-// Initialize app when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-  App.init().catch(error => {
-    console.error('Failed to initialize application:', error);
-  });
+// Import utility modules
+import { UIUtils } from './utils/ui-utils.js';
+import { ErrorHandler } from './utils/error-handler.js';
+
+// Import service modules
+import { FirebaseService } from './services/firebase.js';
+import { ContentService } from './services/content.js';
+import { AuthService } from './services/auth.js';
+import { UploadService } from './services/upload.js';
+import { UIService } from './services/ui.js';
+
+// Import component modules
+import { Navigation } from './components/navigation.js';
+import { WordCloud } from './components/wordcloud.js';
+import { Gallery } from './components/gallery.js';
+
+/**
+ * Application namespace
+ * @namespace App
+ */
+const App = {
+    /**
+     * Current application state
+     * @type {Object}
+     */
+    state: {
+        initialized: false,
+        loading: true,
+        authenticated: false,
+        userData: null,
+        currentPage: null,
+        darkMode: false
+    },
+    
+    /**
+     * Initialize the application
+     * @param {Object} options - Configuration options
+     */
+    init: function(options = {}) {
+        // Prevent multiple initializations
+        if (this.state.initialized) {
+            return;
+        }
+        
+        // Configure error handling
+        ErrorHandler.init({
+            logErrors: true,
+            showErrors: options.debug || false
+        });
+        
+        try {
+            // Set initial application state
+            this.state.currentPage = document.body.id || 'unknown';
+            
+            // Initialize services
+            this.initServices(options);
+            
+            // Initialize UI components
+            this.initUI();
+            
+            // Set up event listeners
+            this.setupEventListeners();
+            
+            // Perform page-specific initialization
+            this.initPageSpecific();
+            
+            // Mark as initialized
+            this.state.initialized = true;
+            this.state.loading = false;
+            
+            // Log initialization complete
+            console.log('Mannar application initialized');
+        } catch (error) {
+            ErrorHandler.handleError(error, 'App initialization failed');
+        }
+    },
+    
+    /**
+     * Initialize application services
+     * @param {Object} options - Configuration options
+     */
+    initServices: function(options) {
+        // Initialize Firebase service
+        FirebaseService.init({
+            apiKey: options.firebaseApiKey || "AIzaSyAQszUApKHZ3lPrpc7HOINpdOWW3SgvUBM",
+            authDomain: options.firebaseAuthDomain || "mannar-129a5.firebaseapp.com",
+            projectId: options.firebaseProjectId || "mannar-129a5",
+            storageBucket: options.firebaseStorageBucket || "mannar-129a5.firebasestorage.app",
+            messagingSenderId: options.firebaseMessagingSenderId || "687710492532",
+            appId: options.firebaseAppId || "1:687710492532:web:c7b675da541271f8d83e21",
+            measurementId: options.firebaseMeasurementId || "G-NXBLYJ5CXL"
+        });
+        
+        // Initialize content service
+        ContentService.init({
+            firebaseService: FirebaseService,
+            enableCaching: options.enableContentCaching || true
+        });
+        
+        // Initialize auth service if needed
+        if (options.authEnabled) {
+            AuthService.init({
+                firebaseService: FirebaseService,
+                onAuthStateChanged: (user) => {
+                    this.state.authenticated = !!user;
+                    this.state.userData = user;
+                    
+                    // Trigger auth state change event
+                    this.triggerEvent('authStateChanged', { user });
+                }
+            });
+        }
+        
+        // Initialize upload service if needed
+        if (options.uploadEnabled) {
+            UploadService.init({
+                firebaseService: FirebaseService,
+                cloudinaryEnabled: options.cloudinaryEnabled || true,
+                cloudinaryConfig: options.cloudinaryConfig || null
+            });
+        }
+        
+        // Initialize UI service
+        UIService.init();
+    },
+    
+    /**
+     * Initialize UI components
+     */
+    initUI: function() {
+        // Initialize navigation
+        Navigation.init();
+        
+        // Initialize word cloud if element exists
+        if (document.querySelector('.word-cloud')) {
+            WordCloud.init();
+        }
+        
+        // Initialize gallery if element exists
+        if (document.querySelector('.gallery-container')) {
+            Gallery.init();
+        }
+        
+        // Initialize UI utilities
+        UIUtils.initAll();
+    },
+    
+    /**
+     * Set up global event listeners
+     */
+    setupEventListeners: function() {
+        // Listen for dark mode changes
+        const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        this.state.darkMode = darkModeMediaQuery.matches;
+        
+        darkModeMediaQuery.addEventListener('change', (e) => {
+            this.state.darkMode = e.matches;
+            this.triggerEvent('darkModeChanged', { darkMode: e.matches });
+        });
+        
+        // Handle scroll events
+        window.addEventListener('scroll', this.handleScroll.bind(this));
+        
+        // Handle resize events
+        window.addEventListener('resize', this.debounce(this.handleResize.bind(this), 250));
+        
+        // Handle visibility change events
+        document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
+    },
+    
+    /**
+     * Initialize page-specific functionality
+     */
+    initPageSpecific: function() {
+        const pageId = this.state.currentPage;
+        
+        switch (pageId) {
+            case 'home-page':
+                this.initHomePage();
+                break;
+                
+            case 'contact-page':
+                this.initContactPage();
+                break;
+                
+            case 'admin-login-page':
+                this.initAdminLoginPage();
+                break;
+                
+            default:
+                // Check if this is a dynamic page
+                if (document.querySelector('.dynamic-page')) {
+                    this.initDynamicPage();
+                }
+                break;
+        }
+    },
+    
+    /**
+     * Initialize home page specific functionality
+     */
+    initHomePage: function() {
+        // Load content from Firebase
+        ContentService.loadContent('main')
+            .then(data => {
+                if (data) {
+                    this.updatePageContent(data);
+                }
+            })
+            .catch(error => {
+                ErrorHandler.handleError(error, 'Error loading home page content');
+            });
+        
+        // Load word cloud data if element exists
+        if (document.getElementById('wordCloudList')) {
+            ContentService.loadWordCloud()
+                .then(words => {
+                    WordCloud.renderWordCloud(words);
+                })
+                .catch(error => {
+                    ErrorHandler.handleError(error, 'Error loading word cloud');
+                });
+        }
+    },
+    
+    /**
+     * Initialize contact page specific functionality
+     */
+    initContactPage: function() {
+        // Initialize contact form handling
+        const contactForm = document.getElementById('contactForm');
+        
+        if (contactForm) {
+            contactForm.addEventListener('submit', this.handleContactFormSubmit.bind(this));
+        }
+    },
+    
+    /**
+     * Initialize admin login page specific functionality
+     */
+    initAdminLoginPage: function() {
+        // If already authenticated, redirect to admin panel
+        if (this.state.authenticated) {
+            window.location.href = 'admin.php';
+        }
+        
+        // Initialize login form handling
+        const loginForm = document.getElementById('loginForm');
+        
+        if (loginForm) {
+            loginForm.addEventListener('submit', this.handleLoginFormSubmit.bind(this));
+        }
+    },
+    
+    /**
+     * Initialize dynamic page specific functionality
+     */
+    initDynamicPage: function() {
+        // Get page ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const pageId = urlParams.get('id');
+        
+        if (pageId) {
+            ContentService.loadPage(pageId)
+                .then(data => {
+                    if (data) {
+                        this.renderDynamicPage(data);
+                    } else {
+                        ErrorHandler.showError('Page not found');
+                    }
+                })
+                .catch(error => {
+                    ErrorHandler.handleError(error, 'Error loading page content');
+                });
+        }
+    },
+    
+    /**
+     * Update home page content with data from Firebase
+     * @param {Object} data - Content data
+     */
+    updatePageContent: function(data) {
+        // Update about section
+        UIUtils.updateElementText('aboutTitle', data.aboutTitle);
+        UIUtils.updateElementText('aboutSubtitle', data.aboutSubtitle);
+        UIUtils.updateElementHTML('aboutText', data.aboutText);
+        
+        // Update offerings section
+        UIUtils.updateElementText('offeringsTitle', data.offeringsTitle);
+        UIUtils.updateElementText('offeringsSubtitle', data.offeringsSubtitle);
+        
+        // Update offerings
+        this.updateOffering(1, data);
+        this.updateOffering(2, data);
+        this.updateOffering(3, data);
+        
+        // Update contact section
+        UIUtils.updateElementText('contactTitle', data.contactTitle);
+        UIUtils.updateElementText('contactSubtitle', data.contactSubtitle);
+        
+        // Update images
+        this.updateImages(data);
+    },
+    
+    /**
+     * Update an offering section
+     * @param {number} index - Offering index (1-3)
+     * @param {Object} data - Content data
+     */
+    updateOffering: function(index, data) {
+        const titleKey = `offer${index}Title`;
+        const descKey = `offer${index}Desc`;
+        
+        UIUtils.updateElementText(titleKey, data[titleKey]);
+        UIUtils.updateElementHTML(descKey, data[descKey]);
+    },
+    
+    /**
+     * Update images with content data
+     * @param {Object} data - Content data
+     */
+    updateImages: function(data) {
+        // Map of image elements and their data keys
+        const imageMap = {
+            "offer1Image": "offer1_image",
+            "offer2Image": "offer2_image", 
+            "offer3Image": "offer3_image",
+            "contactImage": "contact_image"
+        };
+        
+        for (const [elemId, dataKey] of Object.entries(imageMap)) {
+            if (data[dataKey] && data[dataKey].url) {
+                const imgElement = document.getElementById(elemId);
+                if (imgElement) {
+                    imgElement.src = data[dataKey].url;
+                    if (data[dataKey].alt) {
+                        imgElement.alt = data[dataKey].alt;
+                    }
+                }
+            }
+        }
+    },
+    
+    /**
+     * Render dynamic page content
+     * @param {Object} data - Page data
+     */
+    renderDynamicPage: function(data) {
+        // This function would render a dynamic page based on its template
+        // It's a placeholder for the actual implementation
+        console.log('Rendering dynamic page with data:', data);
+    },
+    
+    /**
+     * Handle contact form submission
+     * @param {Event} event - Form submit event
+     */
+    handleContactFormSubmit: function(event) {
+        event.preventDefault();
+        
+        const form = event.target;
+        const formData = new FormData(form);
+        
+        // Get form elements
+        const submitBtn = form.querySelector('[type="submit"]');
+        const formMessage = document.getElementById('formMessage');
+        
+        // Show loading state
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Senden...';
+        }
+        
+        if (formMessage) {
+            formMessage.style.display = 'none';
+        }
+        
+        // Send form data via fetch API
+        fetch(form.action || 'api/contact.php', {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Reset button
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Nachricht senden';
+            }
+            
+            // Handle response
+            if (data.success) {
+                // Show success message
+                if (formMessage) {
+                    formMessage.className = 'form-message success';
+                    formMessage.textContent = data.message || 'Vielen Dank für Ihre Nachricht. Wir werden uns so schnell wie möglich bei Ihnen melden.';
+                    formMessage.style.display = 'block';
+                }
+                
+                // Reset form
+                form.reset();
+            } else {
+                // Show error message
+                if (formMessage) {
+                    formMessage.className = 'form-message error';
+                    formMessage.textContent = data.error || 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.';
+                    formMessage.style.display = 'block';
+                }
+            }
+            
+            // Scroll to message
+            if (formMessage) {
+                formMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        })
+        .catch(error => {
+            // Reset button
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Nachricht senden';
+            }
+            
+            // Show error message
+            if (formMessage) {
+                formMessage.className = 'form-message error';
+                formMessage.textContent = 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.';
+                formMessage.style.display = 'block';
+            }
+            
+            ErrorHandler.handleError(error, 'Contact form submission error');
+        });
+    },
+    
+    /**
+     * Handle login form submission
+     * @param {Event} event - Form submit event
+     */
+    handleLoginFormSubmit: function(event) {
+        event.preventDefault();
+        
+        const form = event.target;
+        const email = form.querySelector('#emailField').value.trim();
+        const password = form.querySelector('#passField').value;
+        const csrfToken = form.querySelector('#csrfToken').value;
+        
+        // Get form elements
+        const submitBtn = form.querySelector('[type="submit"]');
+        const loginError = document.getElementById('loginError');
+        
+        // Validate form data
+        if (!email || !password) {
+            if (loginError) {
+                loginError.textContent = 'Bitte füllen Sie alle Felder aus.';
+                loginError.style.display = 'block';
+            }
+            return;
+        }
+        
+        // Show loading state
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Anmelden...';
+        }
+        
+        if (loginError) {
+            loginError.style.display = 'none';
+        }
+        
+        // Create form data
+        const formData = new FormData();
+        formData.append('email', email);
+        formData.append('password', password);
+        formData.append('csrf_token', csrfToken);
+        
+        // Send login request
+        fetch('admin.php?action=login', {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Redirect to admin panel
+                window.location.href = 'admin.php';
+            } else {
+                // Show error message
+                if (loginError) {
+                    loginError.textContent = data.error || 'Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.';
+                    loginError.style.display = 'block';
+                }
+                
+                // Reset form
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Anmelden';
+                }
+                
+                form.querySelector('#passField').value = '';
+                form.querySelector('#passField').focus();
+            }
+        })
+        .catch(error => {
+            // Show error message
+            if (loginError) {
+                loginError.textContent = 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.';
+                loginError.style.display = 'block';
+            }
+            
+            // Reset form
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Anmelden';
+            }
+            
+            ErrorHandler.handleError(error, 'Login form submission error');
+        });
+    },
+    
+    /**
+     * Handle scroll events
+     * @param {Event} event - Scroll event
+     */
+    handleScroll: function(event) {
+        // Handle scroll-based functionality like showing/hiding the go-to-top button
+        const goTopBtn = document.getElementById('goTopBtn');
+        
+        if (goTopBtn) {
+            if (window.scrollY > 300) {
+                goTopBtn.classList.add('visible');
+            } else {
+                goTopBtn.classList.remove('visible');
+            }
+        }
+        
+        // Handle navigation bar styling on scroll
+        const navbar = document.getElementById('myNavbar');
+        
+        if (navbar) {
+            if (window.scrollY > 100) {
+                navbar.classList.add('scrolled');
+                navbar.classList.add('visible');
+            } else {
+                navbar.classList.remove('scrolled');
+                if (window.scrollY <= 10) {
+                    navbar.classList.remove('visible');
+                }
+            }
+        }
+        
+        // Trigger scroll event for other components
+        this.triggerEvent('scroll', { scrollY: window.scrollY });
+    },
+    
+    /**
+     * Handle resize events
+     * @param {Event} event - Resize event
+     */
+    handleResize: function(event) {
+        // Update state with new window dimensions
+        this.state.windowWidth = window.innerWidth;
+        this.state.windowHeight = window.innerHeight;
+        
+        // Trigger resize event for other components
+        this.triggerEvent('resize', {
+            width: window.innerWidth,
+            height: window.innerHeight
+        });
+    },
+    
+    /**
+     * Handle visibility change events
+     * @param {Event} event - Visibility change event
+     */
+    handleVisibilityChange: function(event) {
+        if (document.visibilityState === 'visible') {
+            // Page is now visible, refresh content if needed
+            this.triggerEvent('visibilityVisible');
+        } else {
+            // Page is now hidden
+            this.triggerEvent('visibilityHidden');
+        }
+    },
+    
+    /**
+     * Trigger a custom event
+     * @param {string} eventName - Name of the event
+     * @param {Object} data - Event data
+     */
+    triggerEvent: function(eventName, data = {}) {
+        const event = new CustomEvent('app:' + eventName, { detail: data });
+        document.dispatchEvent(event);
+    },
+    
+    /**
+     * Debounce a function to prevent excessive calls
+     * @param {Function} func - Function to debounce
+     * @param {number} wait - Milliseconds to wait
+     * @returns {Function} Debounced function
+     */
+    debounce: function(func, wait) {
+        let timeout;
+        
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+};
+
+// Initialize the application when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Get configuration from global variable or use defaults
+    const config = window.mannarConfig || {};
+    
+    // Initialize the application
+    App.init({
+        debug: config.debug || false,
+        enableContentCaching: config.enableContentCaching || true,
+        authEnabled: config.authEnabled || false,
+        uploadEnabled: config.uploadEnabled || false,
+        cloudinaryEnabled: config.cloudinaryEnabled || false,
+        cloudinaryConfig: config.cloudinaryConfig || null,
+        
+        // Firebase configuration
+        firebaseApiKey: config.firebaseApiKey,
+        firebaseAuthDomain: config.firebaseAuthDomain,
+        firebaseProjectId: config.firebaseProjectId,
+        firebaseStorageBucket: config.firebaseStorageBucket,
+        firebaseMessagingSenderId: config.firebaseMessagingSenderId,
+        firebaseAppId: config.firebaseAppId,
+        firebaseMeasurementId: config.firebaseMeasurementId
+    });
 });
+
+// Export the App namespace
+export default App;

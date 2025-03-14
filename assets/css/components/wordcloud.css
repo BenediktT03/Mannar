@@ -1,415 +1,263 @@
 /**
- * Word Cloud Component
- * Interactive word cloud visualization with variable word sizes based on weight
- * Used for displaying keywords, tags, or related concepts
+ * Word Cloud Component Styles
+ * 
+ * Styles for the dynamic word cloud feature on the Mannar website.
+ * Creates an interactive cloud of weighted words.
  */
 
-/* Base container for the word cloud */
+/* Word cloud container */
 .textbubble {
-  display: flex;
-  width: 80%;
-  margin: 2rem auto;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem 0;
-  transition: opacity var(--transition-standard);
-  overflow: hidden;
-  position: relative;
+    background-color: var(--neutral-100);
+    padding: 20px;
+    border-radius: var(--border-radius-lg);
+    margin: 30px 0;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow);
 }
 
-/* Main word cloud list */
+/* Word cloud list */
 .word-cloud {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  line-height: 2.75rem;
-  width: 100%;
-  margin: 2rem auto;
-  position: relative;
-}
-
-/* Word elements */
-.word-cloud li {
-  display: inline-block;
-  margin: 0.25rem;
-  transition: transform var(--transition-standard);
-}
-
-.word-cloud li:hover {
-  z-index: 2;
-}
-
-/* Animation for word elements */
-.word-cloud li a {
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.5s ease, transform 0.5s ease, 
-              color var(--transition-standard), 
-              text-shadow var(--transition-standard);
-  display: inline-block;
-}
-
-/* Basic word link styling */
-.word-cloud a {
-  --size: 4;
-  --color: var(--text-color);
-  --hover-color: var(--primary-color);
-  color: var(--color);
-  font-size: calc(var(--size) * 0.25rem + 0.5rem);
-  display: inline-block;
-  padding: 0.125rem 0.35rem;
-  position: relative;
-  text-decoration: none;
-  border-radius: 4px;
-  transition: color var(--transition-standard),
-              transform var(--transition-standard),
-              text-shadow var(--transition-standard),
-              background-color var(--transition-standard);
-  will-change: transform, color;
-  font-weight: 500;
-}
-
-/* Hover effects */
-.word-cloud a:hover,
-.word-cloud a:focus {
-  color: var(--hover-color);
-  transform: scale(1.1) translateY(-2px);
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.15);
-  background-color: rgba(var(--primary-color-rgb, 52, 152, 219), 0.1);
-  text-decoration: none;
-}
-
-/* Background hover effect */
-.word-cloud a::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 0;
-  height: 100%;
-  background: var(--color);
-  transform: translate(-50%, 0);
-  opacity: 0.08;
-  transition: width var(--transition-standard);
-  z-index: -1;
-  border-radius: 4px;
-  pointer-events: none;
-}
-
-.word-cloud a:hover::before,
-.word-cloud a:focus::before {
-  width: 100%;
-}
-
-/* Word size variations based on weight */
-.word-cloud a[data-weight="1"] { --size: 1; --color: var(--text-light); }
-.word-cloud a[data-weight="2"] { --size: 2; --color: var(--text-color); }
-.word-cloud a[data-weight="3"] { --size: 3; --color: var(--text-color); }
-.word-cloud a[data-weight="4"] { --size: 4; --color: var(--text-color); }
-.word-cloud a[data-weight="5"] { --size: 5; --color: var(--text-color); }
-.word-cloud a[data-weight="6"] { --size: 6; --color: var(--secondary-color); }
-.word-cloud a[data-weight="7"] { --size: 7; --color: var(--secondary-color); }
-.word-cloud a[data-weight="8"] { --size: 8; --color: var(--secondary-dark, var(--secondary-color)); }
-.word-cloud a[data-weight="9"] { --size: 9; --color: var(--secondary-dark, var(--secondary-color)); font-weight: 700; }
-
-/* Cloud shapes - optional modifiers */
-.word-cloud.cloud-circle {
-  border-radius: 50%;
-  padding: 2rem;
-}
-
-.word-cloud.cloud-oval {
-  border-radius: 50%;
-  padding: 2rem;
-  width: 70%;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* Admin interface styles */
-.word-cloud-admin {
-  max-height: 450px;
-  overflow-y: auto;
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  padding: var(--spacing-md);
-  background-color: white;
-}
-
-.word-item {
-  display: flex;
-  align-items: center;
-  padding: var(--spacing-sm) var(--spacing-xs);
-  margin-bottom: var(--spacing-sm);
-  border-bottom: 1px solid var(--border-color);
-  background-color: white;
-  transition: background-color var(--transition-speed) ease;
-  border-radius: var(--border-radius);
-}
-
-.word-item:hover {
-  background-color: var(--light-color);
-}
-
-.word-item:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
-}
-
-.draggable-handle {
-  cursor: grab;
-  padding: var(--spacing-xs);
-  margin-right: var(--spacing-sm);
-  color: var(--text-light);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.draggable-handle:active {
-  cursor: grabbing;
-}
-
-.draggable-handle i {
-  font-size: 1.2rem;
-}
-
-.word-text {
-  flex: 1;
-  padding: var(--spacing-xs);
-}
-
-.word-text input {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  transition: border-color var(--transition-speed) ease;
-}
-
-.word-text input:focus {
-  border-color: var(--primary-color);
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb, 52, 152, 219), 0.25);
-}
-
-.word-weight {
-  width: 80px;
-  margin: 0 var(--spacing-sm);
-  padding: 0 var(--spacing-xs);
-  display: flex;
-  align-items: center;
-}
-
-.word-weight select {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  background-color: white;
-  cursor: pointer;
-}
-
-.word-link {
-  flex: 2;
-  padding: 0 var(--spacing-xs);
-}
-
-.word-link input {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  transition: border-color var(--transition-speed) ease;
-}
-
-.word-link input:focus {
-  border-color: var(--primary-color);
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb, 52, 152, 219), 0.25);
-}
-
-.delete-word-btn {
-  margin-left: auto;
-  background-color: transparent;
-  border: none;
-  color: var(--danger-color);
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: background-color var(--transition-speed) ease;
-  cursor: pointer;
-}
-
-.delete-word-btn:hover {
-  background-color: rgba(var(--danger-color-rgb, 231, 76, 60), 0.1);
-}
-
-.delete-word-btn i {
-  font-size: 1.2rem;
-}
-
-/* Add new word button */
-#addWordBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  margin-top: var(--spacing-md);
-}
-
-#addWordBtn i {
-  margin-right: 0.5rem;
-}
-
-/* Word cloud preview in admin */
-.word-cloud-preview {
-  margin-top: var(--spacing-lg);
-  padding: var(--spacing-md);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  background-color: white;
-}
-
-.word-cloud-preview h4 {
-  margin-top: 0;
-  margin-bottom: var(--spacing-md);
-  color: var(--secondary-color);
-  text-align: center;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .textbubble {
-    width: 95%;
-    padding: 1rem 0;
-  }
-  
-  .word-cloud {
-    width: 100%;
-    line-height: 2rem;
-  }
-  
-  .word-cloud a {
-    font-size: calc(var(--size) * 0.2rem + 0.5rem);
-    padding: 0.15rem 0.25rem;
-  }
-  
-  .word-item {
+    display: flex;
     flex-wrap: wrap;
-  }
-  
-  .word-text {
-    flex: 1 0 100%;
-    margin-bottom: var(--spacing-xs);
-  }
-  
-  .word-weight {
-    width: 60px;
+    justify-content: center;
+    align-items: center;
+    list-style: none;
+    padding: 0;
     margin: 0;
-  }
-  
-  .word-link {
-    flex: 1;
-    margin-bottom: var(--spacing-xs);
-  }
-  
-  .delete-word-btn {
-    width: 30px;
-    height: 30px;
-  }
+    position: relative;
+    min-height: 200px;
 }
 
-/* Accessibility improvements */
-@media (prefers-reduced-motion: reduce) {
-  .word-cloud li a,
-  .word-cloud a,
-  .word-cloud a::before,
-  .word-item,
-  .word-text input,
-  .word-link input,
-  .delete-word-btn {
-    transition: none !important;
-    animation: none !important;
-  }
-  
-  .word-cloud a:hover,
-  .word-cloud a:focus {
-    transform: none;
-    text-shadow: none;
-  }
+/* Word cloud item */
+.word-cloud li {
+    display: inline-block;
+    margin: 5px;
+    transition: transform var(--transition-normal) ease, 
+                opacity var(--transition-normal) ease;
+    opacity: 0;
+    transform: translateY(20px);
 }
 
-/* Keyboard navigation */
-.word-cloud a:focus-visible {
-  outline: 3px solid var(--primary-color);
-  outline-offset: 2px;
+/* Word cloud link */
+.word-cloud li a {
+    display: inline-block;
+    padding: 5px 10px;
+    text-decoration: none;
+    color: var(--primary-color);
+    font-weight: var(--font-weight-normal);
+    border-radius: var(--border-radius);
+    transition: background-color var(--transition-fast) ease, 
+                transform var(--transition-fast) ease, 
+                color var(--transition-fast) ease;
+}
+
+.word-cloud li a:hover {
+    background-color: var(--primary-color);
+    color: white;
+    transform: scale(1.05);
+    text-decoration: none;
+}
+
+.word-cloud li a:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* Word weights based on data-weight attribute */
+.word-cloud li a[data-weight="1"] {
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+.word-cloud li a[data-weight="2"] {
+    font-size: 0.9rem;
+    opacity: 0.75;
+}
+
+.word-cloud li a[data-weight="3"] {
+    font-size: 1rem;
+    opacity: 0.8;
+}
+
+.word-cloud li a[data-weight="4"] {
+    font-size: 1.1rem;
+    opacity: 0.85;
+}
+
+.word-cloud li a[data-weight="5"] {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+.word-cloud li a[data-weight="6"] {
+    font-size: 1.3rem;
+    font-weight: var(--font-weight-semibold);
+    opacity: 0.95;
+}
+
+.word-cloud li a[data-weight="7"] {
+    font-size: 1.4rem;
+    font-weight: var(--font-weight-semibold);
+}
+
+.word-cloud li a[data-weight="8"] {
+    font-size: 1.5rem;
+    font-weight: var(--font-weight-semibold);
+}
+
+.word-cloud li a[data-weight="9"] {
+    font-size: 1.6rem;
+    font-weight: var(--font-weight-bold);
+}
+
+.word-cloud li a[data-weight="10"] {
+    font-size: 1.8rem;
+    font-weight: var(--font-weight-bold);
 }
 
 /* Loading state */
-.word-cloud-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 200px;
+.word-cloud.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100px;
 }
 
-.word-cloud-loading .spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid rgba(var(--primary-color-rgb, 52, 152, 219), 0.2);
-  border-radius: 50%;
-  border-top-color: var(--primary-color);
-  animation: spin 1s linear infinite;
+.word-cloud.loading:after {
+    content: '';
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top-color: var(--primary-color);
+    animation: spin 1s ease-in-out infinite;
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+    to { transform: rotate(360deg); }
 }
 
-/* Theme support */
-.theme-dark .word-cloud a {
-  --hover-color: var(--primary-light, #5dade2);
+/* Animation delay for staggered appearance */
+.word-cloud li:nth-child(1) { transition-delay: 0.05s; }
+.word-cloud li:nth-child(2) { transition-delay: 0.1s; }
+.word-cloud li:nth-child(3) { transition-delay: 0.15s; }
+.word-cloud li:nth-child(4) { transition-delay: 0.2s; }
+.word-cloud li:nth-child(5) { transition-delay: 0.25s; }
+.word-cloud li:nth-child(6) { transition-delay: 0.3s; }
+.word-cloud li:nth-child(7) { transition-delay: 0.35s; }
+.word-cloud li:nth-child(8) { transition-delay: 0.4s; }
+.word-cloud li:nth-child(9) { transition-delay: 0.45s; }
+.word-cloud li:nth-child(10) { transition-delay: 0.5s; }
+.word-cloud li:nth-child(11) { transition-delay: 0.55s; }
+.word-cloud li:nth-child(12) { transition-delay: 0.6s; }
+.word-cloud li:nth-child(13) { transition-delay: 0.65s; }
+.word-cloud li:nth-child(14) { transition-delay: 0.7s; }
+.word-cloud li:nth-child(15) { transition-delay: 0.75s; }
+.word-cloud li:nth-child(16) { transition-delay: 0.8s; }
+.word-cloud li:nth-child(17) { transition-delay: 0.85s; }
+.word-cloud li:nth-child(18) { transition-delay: 0.9s; }
+.word-cloud li:nth-child(19) { transition-delay: 0.95s; }
+.word-cloud li:nth-child(20) { transition-delay: 1s; }
+
+/* Word cloud item visible state */
+.word-cloud.animated li {
+    opacity: 1;
+    transform: translateY(0);
 }
 
-.theme-dark .word-cloud a::before {
-  opacity: 0.15;
+/* Admin panel word cloud styles */
+.word-cloud-admin {
+    background-color: white;
+    border: 1px solid var(--neutral-300);
+    border-radius: var(--border-radius);
+    padding: 20px;
 }
 
-/* Tooltip on hover */
-.word-cloud a[data-description] {
-  position: relative;
+.word-cloud-admin .word-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: var(--neutral-100);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--neutral-300);
 }
 
-.word-cloud a[data-description]::after {
-  content: attr(data-description);
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%) translateY(-5px);
-  background-color: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 0.5rem;
-  border-radius: var(--border-radius);
-  font-size: 0.875rem;
-  white-space: nowrap;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-  pointer-events: none;
-  z-index: 10;
+.word-cloud-admin .word-drag-handle {
+    cursor: grab;
+    margin-right: 10px;
+    color: var(--neutral-500);
 }
 
-.word-cloud a[data-description]:hover::after,
-.word-cloud a[data-description]:focus::after {
-  opacity: 1;
-  visibility: visible;
-  transform: translateX(-50%) translateY(0);
+.word-cloud-admin .word-text {
+    flex-grow: 1;
+    margin-right: 10px;
+}
+
+.word-cloud-admin .word-weight {
+    width: 80px;
+    margin-right: 10px;
+}
+
+.word-cloud-admin .word-link {
+    flex-grow: 2;
+    margin-right: 10px;
+}
+
+.word-cloud-admin .word-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.word-cloud-admin .word-actions button {
+    padding: 5px 10px;
+    background-color: transparent;
+    border: 1px solid var(--neutral-300);
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast) ease;
+}
+
+.word-cloud-admin .word-actions button:hover {
+    background-color: var(--neutral-200);
+}
+
+.word-cloud-admin .word-actions .delete-word {
+    color: var(--error-color);
+}
+
+.word-cloud-admin .word-actions .delete-word:hover {
+    background-color: var(--error-light);
+    color: white;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+    .word-cloud-admin .word-item {
+        flex-wrap: wrap;
+    }
+    
+    .word-cloud-admin .word-link {
+        flex-basis: 100%;
+        margin-top: 10px;
+        margin-bottom: 10px;
+    }
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    .word-cloud li {
+        transition: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+    
+    .word-cloud li a {
+        transition: none !important;
+    }
+    
+    .word-cloud.loading:after {
+        animation: none !important;
+    }
 }
