@@ -1,0 +1,43 @@
+/**
+ * Mannar Website - Main CSS
+ * Central entry point for all CSS styles
+ * This file imports all stylesheets in the correct order to ensure proper cascading
+ */
+
+/* ===== BASE STYLES ===== */
+/* These define the foundation of the site's design */
+@import 'base/variables.css';  /* Must be loaded first as other CSS files use these variables */
+@import 'base/reset.css';      /* Normalizes browser differences and provides a clean slate */
+@import 'base/typography.css'; /* Defines text styles, fonts, and hierarchies */
+
+/* ===== LAYOUT COMPONENTS ===== */
+/* These define the structural elements and overall page layout */
+@import 'layout/grid.css';      /* Grid system for page layout */
+@import 'layout/containers.css'; /* Content container styles */
+@import 'layout/header.css';    /* Header area styling */
+@import 'layout/footer.css';    /* Footer area styling */
+
+/* ===== UI COMPONENTS ===== */
+/* Reusable interface elements used throughout the site */
+@import 'components/buttons.css';    /* Button styles and variations */
+@import 'components/cards.css';      /* Card component styles */
+@import 'components/forms.css';      /* Form elements and validation styles */
+@import 'components/navigation.css'; /* Navigation menus and links */
+@import 'components/wordcloud.css';  /* Word cloud visualization styles */
+@import 'components/gallery.css';    /* Image gallery styles */
+@import 'components/modal.css';      /* Modal dialog styles */
+
+/* ===== PAGE-SPECIFIC STYLES ===== */
+/* Styles that only apply to specific pages */
+@import 'pages/home.css';      /* Homepage specific styles */
+@import 'pages/templates.css'; /* Template page styles */
+
+/* ===== ADMIN STYLES ===== */
+/* Styles used only in the admin area */
+@import 'pages/admin.css';     /* Admin panel styles */
+
+/* ===== UTILITIES ===== */
+/* Helper classes and functionality */
+@import 'utils/animations.css'; /* Animation definitions */
+@import 'utils/helpers.css';    /* Utility classes for common tasks */
+@import 'utils/responsive.css'; /* Responsive breakpoints and adjustments - should come last to override other styles */
